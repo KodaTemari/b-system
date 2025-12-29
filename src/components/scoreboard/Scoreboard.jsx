@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useScoreboard } from '../../hooks/scoreboard/useScoreboard';
+import { getText as getLocalizedText, getCurrentLanguage } from '../../locales';
 import Header from './ui/Header';
 import PlayerInfoPanel from './ui/PlayerInfoPanel';
 import SectionNav from './ui/SectionNav';
@@ -92,6 +93,71 @@ const Scoreboard = () => {
     setSettingOpen(false);
   };
 
+  // 結果確認セクションの承認状態管理（gameDataから読み込み）
+  const approvals = gameData?.match?.approvals || {
+    red: false,
+    referee: false,
+    blue: false
+  };
+
+  const handleApproval = (type) => {
+    // gameDataから最新の承認状態を取得
+    const currentApprovals = gameData?.match?.approvals || {
+      red: false,
+      referee: false,
+      blue: false
+    };
+    
+    const newApprovals = {
+      ...currentApprovals,
+      [type]: !currentApprovals[type]
+    };
+    
+    // gameDataに保存してctrlとviewで連動
+    const updatedGameData = {
+      ...gameData,
+      match: {
+        ...(gameData.match || {}),
+        approvals: newApprovals
+      }
+    };
+    saveData(updatedGameData);
+  };
+
+  const allApproved = approvals.red && approvals.referee && approvals.blue;
+
+  // data-tieBreak属性をred?.tieBreakとblue?.tieBreakの値から設定（すべてのセクションで）
+  useEffect(() => {
+    const scoreboardElement = document.getElementById('scoreboard');
+    if (!scoreboardElement) return;
+
+    const redTieBreak = red?.tieBreak || false;
+    const blueTieBreak = blue?.tieBreak || false;
+    const redScore = red?.score || 0;
+    const blueScore = blue?.score || 0;
+
+    // スコアに差がある場合、data-tieBreak属性を削除
+    if (redScore !== blueScore) {
+      const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
+      if (currentTieBreak) {
+        scoreboardElement.removeAttribute('data-tieBreak');
+      }
+    } else {
+      // 同点の場合、redTieBreakとblueTieBreakの値に基づいてdata-tieBreak属性を設定
+      if (redTieBreak === true) {
+        scoreboardElement.setAttribute('data-tieBreak', 'red');
+      } else if (blueTieBreak === true) {
+        scoreboardElement.setAttribute('data-tieBreak', 'blue');
+      } else {
+        // タイブレークがない場合は削除
+        const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
+        if (currentTieBreak) {
+          scoreboardElement.removeAttribute('data-tieBreak');
+        }
+      }
+    }
+  }, [red?.tieBreak, blue?.tieBreak, red?.score, blue?.score]);
+
   // matchFinishedセクションとresultCheckセクションの時に勝敗判定を行う
   const prevScoresRef = useRef({ red: null, blue: null });
   const prevTieBreaksRef = useRef({ red: null, blue: null });
@@ -121,7 +187,10 @@ const Scoreboard = () => {
       if (redScore > blueScore) {
         winner = 'red';
         // スコアに差がある場合、タイブレーク関連をリセット
-        scoreboardElement.removeAttribute('data-tieBreak');
+        const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
+        if (currentTieBreak) {
+          scoreboardElement.removeAttribute('data-tieBreak');
+        }
         // 前回の値と比較して、変更がある場合のみ保存（無限ループを防ぐため非同期で実行）
         if (isCtrl && saveData && (redTieBreak !== false || blueTieBreak !== false) && scoresChanged) {
           setTimeout(() => {
@@ -152,7 +221,10 @@ const Scoreboard = () => {
       } else if (blueScore > redScore) {
         winner = 'blue';
         // スコアに差がある場合、タイブレーク関連をリセット
-        scoreboardElement.removeAttribute('data-tieBreak');
+        const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
+        if (currentTieBreak) {
+          scoreboardElement.removeAttribute('data-tieBreak');
+        }
         // 前回の値と比較して、変更がある場合のみ保存（無限ループを防ぐため非同期で実行）
         if (isCtrl && saveData && (redTieBreak !== false || blueTieBreak !== false) && scoresChanged) {
           setTimeout(() => {
@@ -182,23 +254,19 @@ const Scoreboard = () => {
         }
       } else {
         // 同点の場合、タイブレークで勝敗を判断
-        const tieBreakColor = scoreboardElement.getAttribute('data-tieBreak');
-        if (tieBreakColor === 'red') {
+        // redTieBreakとblueTieBreakの値に基づいてdata-tieBreak属性を確実に設定
+        if (redTieBreak === true) {
           winner = 'red';
-        } else if (tieBreakColor === 'blue') {
+          // data-tieBreak属性を設定（winMark表示のため）
+          scoreboardElement.setAttribute('data-tieBreak', 'red');
+        } else if (blueTieBreak === true) {
           winner = 'blue';
+          // data-tieBreak属性を設定（winMark表示のため）
+          scoreboardElement.setAttribute('data-tieBreak', 'blue');
         } else {
-          // data-tieBreak属性がない場合、gameDataのtieBreakフィールドを確認
-          if (redTieBreak === true) {
-            winner = 'red';
-            // data-tieBreak属性を設定（winMark表示のため）
-            scoreboardElement.setAttribute('data-tieBreak', 'red');
-          } else if (blueTieBreak === true) {
-            winner = 'blue';
-            // data-tieBreak属性を設定（winMark表示のため）
-            scoreboardElement.setAttribute('data-tieBreak', 'blue');
-          }
-          // タイブレークもない場合は引き分け（winner = null）
+          // タイブレークがない場合は引き分け（winner = null）
+          // data-tieBreak属性を削除
+          scoreboardElement.removeAttribute('data-tieBreak');
         }
       }
 
@@ -297,6 +365,39 @@ const Scoreboard = () => {
           redScores={red?.scores || []}
           blueScores={blue?.scores || []}
         />
+      )}
+
+      {/* resultCheckセクション（viewモードでも表示） */}
+      {section === 'resultCheck' && (
+        <div id="resultCheck">
+          {/* 承認ボタンはviewモードでも表示 */}
+          <div className="approvalButtons">
+            <button
+              type="button"
+              className={`btn approval ${approvals.red ? 'approved' : ''}`}
+              onClick={() => handleApproval('red')}
+            >
+              {getLocalizedText('buttons.redApproval', getCurrentLanguage())}
+            </button>
+            <button
+              type="button"
+              className={`btn approval ${approvals.referee ? 'approved' : ''}`}
+              onClick={() => handleApproval('referee')}
+            >
+              {getLocalizedText('buttons.refereeApproval', getCurrentLanguage())}
+            </button>
+            <button
+              type="button"
+              className={`btn approval ${approvals.blue ? 'approved' : ''}`}
+              onClick={() => handleApproval('blue')}
+            >
+              {getLocalizedText('buttons.blueApproval', getCurrentLanguage())}
+            </button>
+          </div>
+          <div className={`matchCompleted ${allApproved ? 'visible' : ''}`}>
+            {getLocalizedText('buttons.matchCompleted', getCurrentLanguage())}
+          </div>
+        </div>
       )}
 
       {/* セクション進行ナビゲーション */}

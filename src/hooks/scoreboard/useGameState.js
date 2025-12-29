@@ -365,19 +365,33 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             ball: initialData.red?.ball ?? prevData.red?.ball,
             time: initialData.red?.time ?? prevData.red?.time,
             isRun: initialData.red?.isRun ?? prevData.red?.isRun,
-            score: initialData.red?.score ?? prevData.red?.score
+            score: initialData.red?.score ?? prevData.red?.score,
+            tieBreak: initialData.red?.tieBreak ?? prevData.red?.tieBreak
           },
           blue: {
             ...prevData.blue,
             ball: initialData.blue?.ball ?? prevData.blue?.ball,
             time: initialData.blue?.time ?? prevData.blue?.time,
             isRun: initialData.blue?.isRun ?? prevData.blue?.isRun,
-            score: initialData.blue?.score ?? prevData.blue?.score
+            score: initialData.blue?.score ?? prevData.blue?.score,
+            tieBreak: initialData.blue?.tieBreak ?? prevData.blue?.tieBreak
+          },
+          warmup: {
+            ...prevData.warmup,
+            time: initialData.warmup?.time ?? prevData.warmup?.time,
+            isRun: initialData.warmup?.isRun ?? prevData.warmup?.isRun
+          },
+          interval: {
+            ...prevData.interval,
+            time: initialData.interval?.time ?? prevData.interval?.time,
+            isRun: initialData.interval?.isRun ?? prevData.interval?.isRun
           },
           match: {
             ...prevData.match,
             sectionID: initialData.match?.sectionID ?? prevData.match?.sectionID,
+            section: initialData.match?.section ?? prevData.match?.section,
             sections: initialData.match?.sections ?? prevData.match?.sections,
+            approvals: initialData.match?.approvals ?? prevData.match?.approvals,
             end: (() => {
               const extractEndNumber = (sectionName) => {
                 if (sectionName && sectionName.startsWith('end')) {

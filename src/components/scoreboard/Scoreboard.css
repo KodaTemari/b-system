@@ -1,6 +1,7 @@
 @charset "utf-8";
 
 :root {
+  /* フォントサイズ */
   --font-size-2s: calc(12rem / 16);
   --font-size-s: calc(14rem / 16);
   --font-size-m: 1rem;
@@ -13,6 +14,48 @@
   --font-size-h2: calc(36rem / 16);
   --font-size-h3: calc(30rem / 16);
   --font-size-h4: calc(22rem / 16);
+
+  /* 色 - 赤系 */
+  --color-red: 162, 47, 47;
+  --color-red-base: rgba(var(--color-red), 1);
+  --color-red-light: rgba(var(--color-red), 0.3);
+  --color-red-medium: rgba(var(--color-red), 0.5);
+
+  /* 色 - 青系 */
+  --color-blue: 16, 87, 193;
+  --color-blue-base: rgba(var(--color-blue), 1);
+  --color-blue-light: rgba(var(--color-blue), 0.3);
+  --color-blue-medium: rgba(var(--color-blue), 0.5);
+
+  /* 色 - グレー系 */
+  --color-gray-dark: #222;
+  --color-gray-darker: #1a1a1a;
+  --color-gray-medium-dark: #2a2a2a;
+  --color-gray-base: #444;
+  --color-gray-light: #666;
+  --color-gray-lighter: #CCC;
+  --color-gray-rgb: 68, 68, 68;
+  --color-gray-rgb-light: rgba(var(--color-gray-rgb), 0.5);
+  --color-gray-rgb-medium: rgba(var(--color-gray-rgb), 0.8);
+
+  /* 色 - 白系 */
+  --color-white: #FFF;
+  --color-white-base: rgba(255, 255, 255, 1);
+  --color-white-light: rgba(255, 255, 255, 0.8);
+  --color-white-medium: rgba(255, 255, 255, 0.3);
+  --color-white-dark: rgba(255, 255, 255, 0.1);
+
+  /* 色 - 黒系 */
+  --color-black: #000;
+  --color-black-light: rgba(0, 0, 0, 0.3);
+  --color-black-medium: rgba(0, 0, 0, 0.5);
+  --color-black-dark: rgba(0, 0, 0, 0.8);
+  --color-black-darker: rgba(0, 0, 0, 0.95);
+
+  /* 色 - 緑系（承認ボタン用） */
+  --color-green: 46, 125, 50;
+  --color-green-light: rgba(var(--color-green), 0.7);
+  --color-green-base: rgba(var(--color-green), 1);
 }
 
 #scoreboard {
@@ -156,7 +199,7 @@
   outline: none;
   padding: 0;
   appearance: none;
-  color: #FFF;
+  color: var(--color-white);
 }
 
 [data-mode="view"] #scoreboard main button,
@@ -194,12 +237,14 @@
 }
 
 #endsBox {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100%;
   width: 100%;
   font-size: 7vmin;
   border-radius: 2vmin;
-  background: #444;
+  background: var(--color-gray-base);
   text-align: center;
 }
 
@@ -326,8 +371,8 @@
   height: 41vh;
   border-collapse: collapse;
   font-size: 3vmin;
-  color: #fff;
-  background-color: rgba(0, 0, 0, 0.5);
+  color: var(--color-white);
+  background-color: var(--color-black-medium);
   border-radius: 2vmin;
   display: table;
   table-layout: fixed;
@@ -336,7 +381,7 @@
 }
 
 #resultTable thead {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--color-white-dark);
   display: table-header-group;
 }
 
@@ -344,21 +389,21 @@
   padding: 1vh 1vw;
   text-align: center;
   font-weight: bold;
-  border: 0.4vmin solid #222;
-  background-color: #444;
+  border: 0.4vmin solid var(--color-gray-dark);
+  background-color: var(--color-gray-base);
   font-size: 1.5vmin;
 }
 
 #resultTable th:nth-child(2) {
-  background-color: rgba(68, 68, 68, 0.8);
+  background-color: var(--color-gray-rgb-medium);
 }
 
 #resultTable th:first-child {
-  background-color: rgba(162, 47, 47, 0.5);
+  background-color: var(--color-red-medium);
 }
 
 #resultTable th:last-child {
-  background-color: rgba(16, 87, 193, 0.5);
+  background-color: var(--color-blue-medium);
 }
 
 #resultTable th:first-child,
@@ -385,7 +430,7 @@
 }
 
 #resultTable td:nth-child(2) {
-  background-color: rgba(68, 68, 68, 0.5);
+  background-color: var(--color-gray-rgb-light);
   font-size: 2vmin;
 }
 
@@ -417,7 +462,7 @@
 #resultTable td {
   padding: 0;
   text-align: center;
-  border: 0.4vmin solid #222;
+  border: 0.4vmin solid var(--color-gray-dark);
 }
 
 #resultTable td:first-child,
@@ -430,29 +475,29 @@
 }
 
 #resultTable tbody td:first-child {
-  background-color: rgba(162, 47, 47, 0.3);
-  color: #fff;
+  background-color: var(--color-red-light);
+  color: var(--color-white);
   font-weight: bold;
   font-size: 3vmin;
 }
 
 #resultTable tbody td:first-child.has-score {
-  background-color: rgba(162, 47, 47, 1);
+  background-color: var(--color-red-base);
 }
 
 #resultTable tbody td:last-child {
-  background-color: rgba(16, 87, 193, 0.3);
-  color: #fff;
+  background-color: var(--color-blue-light);
+  color: var(--color-white);
   font-weight: bold;
   font-size: 3vmin;
 }
 
 #resultTable tbody td:last-child.has-score {
-  background-color: rgba(16, 87, 193, 1);
+  background-color: var(--color-blue-base);
 }
 
 #resultTable tbody td:nth-child(2) {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-white-light);
 }
 
 #scoreboard main section h2 {
@@ -496,7 +541,7 @@
   background-size: cover;
   width: 7.2vmin;
   height: 10vmin;
-  box-shadow: 0 0 0 1px #222 inset;
+  box-shadow: 0 0 0 1px var(--color-gray-dark) inset;
 }
 
 #red .bibs {
@@ -539,7 +584,7 @@
   right: 3vw;
   width: 13vmin;
   height: 13vmin;
-  border: solid 0.3vmin #FFF;
+  border: solid 0.3vmin var(--color-white);
   border-radius: 2vmin;
   box-sizing: border-box;
   font-size: 12vmin;
@@ -600,7 +645,7 @@
   position: absolute;
   width: 30vmin;
   height: 30vmin;
-  border: 2vmin solid #FFF;
+  border: 2vmin solid var(--color-white);
   border-radius: 50%;
   pointer-events: none;
   z-index: 10;
@@ -614,17 +659,40 @@
 [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
 [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
 [data-section="resultCheck"][data-tieBreak="red"] #red .winMark,
-[data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark {
+[data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark,
+[data-section="matchFinished"][data-win="red"] #red .winMark,
+[data-section="matchFinished"][data-win="blue"] #blue .winMark,
+[data-section="resultCheck"][data-win="red"] #red .winMark,
+[data-section="resultCheck"][data-win="blue"] #blue .winMark {
   display: block;
 }
 
 [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
-[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark {
+[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
+[data-section="matchFinished"][data-win="red"] #red .winMark,
+[data-section="matchFinished"][data-win="blue"] #blue .winMark {
   transform: scale(1.5);
 }
 
 [data-section="resultCheck"][data-tieBreak="red"] #red .winMark,
-[data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark {
+[data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark,
+[data-section="resultCheck"][data-win="red"] #red .winMark,
+[data-section="resultCheck"][data-win="blue"] #blue .winMark {
+  transform: scale(1.15);
+}
+
+/* viewモード専用のwinMarkサイズ調整 */
+[data-mode="view"] [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
+[data-mode="view"] [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
+[data-mode="view"] [data-section="matchFinished"][data-win="red"] #red .winMark,
+[data-mode="view"] [data-section="matchFinished"][data-win="blue"] #blue .winMark {
+  transform: scale(1.3);
+}
+
+[data-mode="view"] [data-section="resultCheck"][data-tieBreak="red"] #red .winMark,
+[data-mode="view"] [data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark,
+[data-mode="view"] [data-section="resultCheck"][data-win="red"] #red .winMark,
+[data-mode="view"] [data-section="resultCheck"][data-win="blue"] #blue .winMark {
   transform: scale(1.15);
 }
 
@@ -650,24 +718,24 @@
 #sectionNav .btn {
   display: inline-block;
   padding: 1vmin 7vmin;
-  border: solid 0.5vmin #FFF;
+  border: solid 0.5vmin var(--color-white);
   border-radius: 15vmin;
   font-size: 8vmin;
 }
 
 #sectionNav .timer {
   padding: 0 5vw;
-  background: #444;
+  background: var(--color-gray-base);
 }
 
 #red .score button,
 #red .time button {
-  background-color: rgba(162,47,47,0.3);
+  background-color: var(--color-red-light);
 }
 
 #blue .score button,
 #blue .time button {
-  background-color: rgba(16,87,193,0.3);
+  background-color: var(--color-blue-light);
 }
 
 [data-mode="ctrl"] #red .time button:disabled,
@@ -683,7 +751,7 @@
 [data-section="resultCheck"] #red [name="redScoreBtn"],
 [data-tiebreak="red"] #red [name="redScoreBtn"],
 #red h2::after {
-  background-color: rgba(162,47,47,1);
+  background-color: var(--color-red-base);
 }
 
 [data-active="score"] #blue .score button,
@@ -693,7 +761,7 @@
 [data-section="resultCheck"] #blue [name="blueScoreBtn"],
 [data-tiebreak="blue"] #blue [name="blueScoreBtn"],
 #blue h2::after {
-  background-color: rgba(16,87,193,1);
+  background-color: var(--color-blue-base);
 }
 
 #scoreboard:not([data-section="interval"]) [data-active="score"] .score {
@@ -709,13 +777,33 @@
 }
 
 [data-active="score"] .time button {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--color-white-medium);
   font-size: 15vmin;
 }
 
-#scoreboard[data-section="matchFinished"] .score,
-[data-mode="view"] #scoreboard[data-section="matchFinished"] .score {
+/* viewモードで得点調整中: 得点を大きく、タイマーを小さく（タイブレークセクションを除く） */
+[data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .score {
+  height: 45vh;
+}
+
+[data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .score button {
+  font-size: 50vmin;
+}
+
+[data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .time {
+  height: 17vh;
+}
+
+[data-mode="view"] #scoreboard[data-scoreadjust="true"] .time button {
+  font-size: 15vmin;
+}
+
+#scoreboard[data-section="matchFinished"] .score {
   height: 47vh;
+}
+
+[data-mode="view"] #scoreboard[data-section="matchFinished"] .score {
+  height: 59vh;
 }
 
 #scoreboard[data-section="resultCheck"] .score,
@@ -723,10 +811,6 @@
   height: 41vh;
 }
 
-#scoreboard[data-section="matchFinished"] #red [name="redScoreBtn"],
-#scoreboard[data-section="matchFinished"] #blue [name="blueScoreBtn"] {
-  font-size: 55vmin;
-}
 
 #scoreboard[data-section="resultCheck"] #red [name="redScoreBtn"],
 #scoreboard[data-section="resultCheck"] #blue [name="blueScoreBtn"] {
@@ -761,7 +845,7 @@
 }
 
 /* resultCheckセクションの承認ボタン */
-#sec-resultCheck {
+#resultCheck {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -769,47 +853,47 @@
   padding: 2vh 0;
 }
 
-#sec-resultCheck .approvalButtons {
+#resultCheck .approvalButtons {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
   width: 100%;
 }
 
-#sec-resultCheck .approvalButtons .btn.approval {
+#resultCheck .approvalButtons .btn.approval {
   flex: 1;
   max-width: 25vw;
   padding: 2vh 2vw;
   font-size: 4vmin;
   border: 0.3vmin solid #fff;
   border-radius: 5vmin;
-  background-color: rgba(0, 0, 0, 0.3);
-  color: #fff;
+  background-color: var(--color-black-light);
+  color: var(--color-white);
   transition: all 0.3s;
   position: relative;
 }
 
-#sec-resultCheck .approvalButtons .btn.approval.approved {
-  background-color: rgba(46, 125, 50, 0.7);
-  border-color: rgba(46, 125, 50, 1);
+#resultCheck .approvalButtons .btn.approval.approved {
+  background-color: var(--color-green-light);
+  border-color: var(--color-green-base);
   position: relative;
 }
 
-#sec-resultCheck .approvalButtons .btn.approval.approved::before {
+#resultCheck .approvalButtons .btn.approval.approved::before {
   content: '✔';
   position: absolute;
   top: 50%;
   left: 1vw;
   transform: translateY(-50%);
   font-size: 6vmin;
-  color: #fff;
+  color: var(--color-white);
   pointer-events: none;
   z-index: 1;
 }
 
-#sec-resultCheck .matchCompleted {
+#resultCheck .matchCompleted {
   font-size: 6vmin;
-  color: #fff;
+  color: var(--color-white);
   font-weight: bold;
   text-align: center;
   padding: 2vh 0;
@@ -817,7 +901,7 @@
   transition: opacity 0.3s;
 }
 
-#sec-resultCheck .matchCompleted.visible {
+#resultCheck .matchCompleted.visible {
   opacity: 1;
 }
 
@@ -933,7 +1017,7 @@
   width: 100%;
   /*height: 50vh;*/
   /*padding-top: 10vh;*/
-  background-color: #222;
+  background-color: var(--color-gray-dark);
   text-align: center;
   box-sizing: border-box;
 }
@@ -953,6 +1037,12 @@
 
 [data-mode="ctrl"] [data-section="interval"] #sectionNav {
   /*padding-top: 3vh;*/
+}
+
+/* インターバルセクションの時に赤、青のタイマーを透明度0に */
+[data-section="interval"] #red .time,
+[data-section="interval"] #blue .time {
+  opacity: 0;
 }
 
 [data-section="matchFinished"] .time,
@@ -1085,7 +1175,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #222;
+    background-color: var(--color-gray-dark);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1104,7 +1194,7 @@
     font-size: 8rem;
     font-weight: bold;
     margin: 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 2px 2px 4px var(--color-black-medium);
 }
 
 @keyframes timeModalFadeOut {
@@ -1135,7 +1225,7 @@
 
 [data-setcolor="true"] #sectionNav [name="setColor"] {
   transform: scale(0.8);
-  border-color: #666;
+  border-color: var(--color-gray-light);
   opacity: 0.5;
 }
 
@@ -1176,7 +1266,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: var(--color-black-light);
 }
 
 #settingDetailsModal {
@@ -1186,12 +1276,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.95);
+  background-color: var(--color-black-darker);
   z-index: 1001;
 }
 
 [data-mode="view"] #settingModal {
-  background-color: rgba(0, 0, 0, 0.95);
+  background-color: var(--color-black-darker);
 }
 
 /* タイブレークボタンのスタイル */
@@ -1216,8 +1306,8 @@
 }
 
 #detailsModal {
-  background-color: #1a1a1a;
-  color: #ffffff;
+  background-color: var(--color-gray-darker);
+  color: var(--color-white);
   padding: 2rem;
   border-radius: 10px;
   max-width: 900px;
@@ -1228,8 +1318,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  border: 1px solid #333;
+    box-shadow: 0 10px 30px var(--color-black-dark);
+  border: 1px solid var(--color-gray-medium);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
@@ -1239,7 +1329,7 @@
 #detailsModal h2 {
   text-align: center;
   margin-bottom: 1.6rem;
-  color: #ffffff;
+  color: var(--color-white);
   font-size: 1rem;
   opacity: 1;
   grid-column: 1 / -1;
@@ -1247,14 +1337,14 @@
 
 .settingSection {
   padding: 1rem;
-  border: 1px solid #444;
-  background-color: #2a2a2a;
+  border: 1px solid var(--color-gray-base);
+  background-color: var(--color-gray-medium-dark);
   border-radius: 8px;
 }
 
 .settingSection h3 {
   margin-bottom: 1rem;
-  color: #ffffff;
+  color: var(--color-white);
   font-size: 1.2rem;
 }
 
@@ -1268,18 +1358,18 @@
 .inputGroup label {
   min-width: 120px;
   font-weight: bold;
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .inputGroup input,
 .inputGroup select {
   flex: 1;
   padding: 0.5rem;
-  border: 1px solid #555;
+  border: 1px solid var(--color-gray-base);
   border-radius: 4px;
   font-size: 1rem;
-  background-color: #333;
-  color: #ffffff;
+  background-color: var(--color-gray-base);
+  color: var(--color-white);
 }
 
 .modalButtons {
@@ -1293,11 +1383,11 @@
 #scoreboard .okBtn {
   display: inline-block;
   padding: 1vmin 7vmin;
-  border: solid 2px #FFF;
+  border: solid 2px var(--color-white);
   border-radius: 15vmin;
   font-size: 1.2rem;
   background-color: transparent;
-  color: #FFF;
+  color: var(--color-white);
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -1326,7 +1416,7 @@
 
 #setting #fullscreenBtn:hover {
   opacity: 0.8;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: var(--color-black-dark);
 }
 
 .settingOpen #setting,
@@ -1344,7 +1434,7 @@
 .settingOpen .finishWarmup,
 .settingOpen .startInterval,
 .settingOpen #sec-matchFinished,
-.settingOpen #sec-resultCheck .approvalButtons,
+.settingOpen #resultCheck .approvalButtons,
 .settingOpen #resultTable {
   opacity: 0.1;
 }
@@ -1369,11 +1459,11 @@
 #restartEndContainer .btn {
   display: inline-block;
   padding: 1vmin 7vmin;
-  border: solid 0.5vmin #FFF;
+  border: solid 0.5vmin var(--color-white);
   border-radius: 15vmin;
   font-size: 8vmin;
   background: transparent;
-  color: #FFF;
+  color: var(--color-white);
   cursor: pointer;
 }
 
@@ -1445,7 +1535,7 @@ opacity: 0.8;
   top: calc(0.6vh + 0.6vmin);
   width: calc(100% - 1.2vmin);
   height: 0.4vh;
-  background-color: #666;
+  background-color: var(--color-gray-light);
   z-index: 0;
   pointer-events: none;
   transform: translateY(-50%);
@@ -1482,7 +1572,7 @@ opacity: 0.8;
 }
 
 #endsSetting .step-item.step-current.step-has-line::after {
-  background-color: #666;
+  background-color: var(--color-gray-light);
   z-index: 1;
   top: calc(0.6vh + 0.6vmin);
   height: 0.4vh;
@@ -1548,7 +1638,7 @@ opacity: 0.8;
 }
 
 #endsSetting .step-item.step-completed .step-label {
-  color: #666;
+  color: var(--color-gray-light);
 }
 
 #endsSetting .step-item.step-current .step-indicator {
@@ -1561,18 +1651,18 @@ opacity: 0.8;
 }
 
 #endsSetting .step-item.step-current .step-label {
-  color: #FFF;
+  color: var(--color-white);
   font-weight: bold;
   transform: scale(1.2);
 }
 
 #endsSetting .step-item.step-future .step-indicator {
   border: none;
-  background-color: #666;
+  background-color: var(--color-gray-light);
 }
 
 #endsSetting .step-item.step-future .step-label {
-  color: #666;
+  color: var(--color-gray-light);
   font-weight: normal;
 }
 
@@ -1654,7 +1744,7 @@ opacity: 0.8;
 #timeSetting button {
   width: 10vmin;
   height: 10vmin;
-  border: solid 0.3vmin #FFF;
+  border: solid 0.3vmin var(--color-white);
   border-radius: 2vmin;
   box-sizing: border-box;
   font-size: 6vmin;

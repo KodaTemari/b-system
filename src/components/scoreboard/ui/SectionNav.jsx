@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../locales';
 import colorIcon from '../img/icon_color.png';
 
@@ -39,21 +39,6 @@ const SectionNavigation = ({
     return getLocalizedText(`buttons.${key}`, currentLang);
   };
 
-  // 結果確認セクションの承認状態管理
-  const [approvals, setApprovals] = useState({
-    red: false,
-    referee: false,
-    blue: false
-  });
-
-  const handleApproval = (type) => {
-    setApprovals(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-  };
-
-  const allApproved = approvals.red && approvals.referee && approvals.blue;
 
   // セクションごとの表示制御
   const getCurrentSectionId = () => {
@@ -63,7 +48,6 @@ const SectionNavigation = ({
     if (section === 'finalShot') return 'sec-finalShot';
     if (section === 'tieBreak') return 'sec-tieBreak';
     if (section === 'matchFinished') return 'sec-matchFinished';
-    if (section === 'resultCheck') return 'sec-resultCheck';
     
     // エンドセクションの場合
     if (section && section.startsWith('end')) {
@@ -86,7 +70,7 @@ const SectionNavigation = ({
   return (
     <TagName id="sectionNav">
       {/* standbyセクション */}
-      {currentSectionId === 'sec-standby' && section !== 'matchFinished' && (
+      {currentSectionId === 'sec-standby' && section !== 'matchFinished' && section !== 'resultCheck' && (
         <div id="sec-standby">
           {/* ctrlとview両方に表示 */}
           <div id="matchInfo">
@@ -341,37 +325,6 @@ const SectionNavigation = ({
         </div>
       )}
 
-      {/* resultCheckセクション（ctrl画面のみ） */}
-      {isCtrl && currentSectionId === 'sec-resultCheck' && (
-        <div id="sec-resultCheck">
-          <div className="approvalButtons">
-            <button
-              type="button"
-              className={`btn approval ${approvals.red ? 'approved' : ''}`}
-              onClick={() => handleApproval('red')}
-            >
-              {getText('redApproval')}
-            </button>
-            <button
-              type="button"
-              className={`btn approval ${approvals.referee ? 'approved' : ''}`}
-              onClick={() => handleApproval('referee')}
-            >
-              {getText('refereeApproval')}
-            </button>
-            <button
-              type="button"
-              className={`btn approval ${approvals.blue ? 'approved' : ''}`}
-              onClick={() => handleApproval('blue')}
-            >
-              {getText('blueApproval')}
-            </button>
-          </div>
-          <div className={`matchCompleted ${allApproved ? 'visible' : ''}`}>
-            {getText('matchCompleted')}
-          </div>
-        </div>
-      )}
     </TagName>
   );
 };
