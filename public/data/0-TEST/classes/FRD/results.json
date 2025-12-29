@@ -1,0 +1,87 @@
+[
+  {
+    "title": "1回戦 第1試合",
+    "time": "13:50",
+    "round": 1,
+    "matchIDs": {
+      "G-1": {
+        "red": {
+          "playerID": "27",
+          "name": "BBT Casa Jr.",
+          "score": 2,
+          "scores": [],
+          "tieBreak": false,
+          "result": "win"
+        },
+        "blue": {
+          "playerID": "1",
+          "name": "ラッキーピース",
+          "score": 1,
+          "scores": [],
+          "tieBreak": false,
+          "result": "lose"
+        }
+      },
+      "Z-1": {
+        "red": {
+          "playerID": "",
+          "name": "田島 政貴",
+          "score": 2,
+          "scores": [
+            1,
+            0
+          ],
+          "tieBreak": false,
+          "result": "lose"
+        },
+        "blue": {
+          "playerID": "",
+          "name": "名前 入力",
+          "score": 2,
+          "scores": [
+            0,
+            1
+          ],
+          "tieBreak": true,
+          "result": "win"
+        }
+      }
+    }
+  },
+  {
+    "title": "1回戦 第2試合",
+    "time": "14:15",
+    "round": 1,
+    "matchIDs": {}
+  },
+  {
+    "title": "2回戦",
+    "time": "14:50",
+    "round": 2,
+    "matchIDs": {}
+  },
+  {
+    "title": "2回戦",
+    "time": "14:50",
+    "round": 3,
+    "matchIDs": {}
+  },
+  {
+    "title": "3回戦",
+    "time": "15:25",
+    "round": 4,
+    "matchIDs": {}
+  },
+  {
+    "title": "準決勝",
+    "time": "16:00",
+    "round": 4,
+    "matchIDs": {}
+  },
+  {
+    "title": "決勝",
+    "time": "16:35",
+    "round": 4,
+    "matchIDs": {}
+  }
+]

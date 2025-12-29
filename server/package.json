@@ -1,0 +1,36 @@
+{
+  "name": "b-system-server",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "description": "Backend API for b-system scoreboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "fs-extra": "^11.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "eslint": "^8.0.0"
+  },
+  "eslintConfig": {
+    "env": {
+      "node": true,
+      "es2021": true,
+      "commonjs": true
+    },
+    "extends": ["eslint:recommended"],
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "script"
+    },
+    "rules": {
+      "no-console": "off",
+      "no-unused-vars": "warn"
+    }
+  }
+}

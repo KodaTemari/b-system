@@ -1,0 +1,37 @@
+{
+  "gameName": "テスト大会",
+  "classifications": [
+    "FRD"
+  ],
+  "courts": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H"
+  ],
+  "match": {
+    "totalEnds": 6,
+    "sections": [
+      "standby",
+      "warmup",
+      "end1",
+      "interval",
+      "end2",
+      "interval",
+      "end3",
+      "interval",
+      "end4",
+      "interval",
+      "end5",
+      "interval",
+      "end6",
+      "matchFinished",
+      "resultCheck"
+    ],
+    "tieBreak": "finalShot"
+  }
+}

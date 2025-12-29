@@ -1,0 +1,68 @@
+{
+  "matchID": "",
+  "match": {
+    "totalEnds": 6,
+    "sectionID": 0,
+    "section": "standby",
+    "end": 0
+  },
+  "screen": {
+    "active": "",
+    "setColor": true,
+    "scoreAdjusting": false
+  },
+  "warmup": {
+    "limit": 120000,
+    "time": 120000,
+    "isRun": false
+  },
+  "interval": {
+    "limit": 60000,
+    "time": 60000,
+    "isRun": false
+  },
+  "red": {
+    "name": "赤チーム",
+    "score": 1,
+    "scores": [
+      1,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    "limit": 360000,
+    "ball": 7,
+    "isRun": false,
+    "time": 300000,
+    "tieBreak": false,
+    "result": "win",
+    "playerID": ""
+  },
+  "blue": {
+    "name": "青チーム",
+    "score": 6,
+    "scores": [
+      3,
+      2,
+      1,
+      1,
+      0,
+      1
+    ],
+    "limit": 360000,
+    "ball": 6,
+    "isRun": false,
+    "time": 300000,
+    "tieBreak": false,
+    "result": "lose",
+    "playerID": "",
+    "reset": ""
+  },
+  "courtId": "",
+  "classification": "BC1/BC2",
+  "category": "グループA",
+  "matchName": "第1回戦",
+  "lastUpdated": "2025-10-08T13:16:54.956Z"
+}

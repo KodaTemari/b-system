@@ -1,0 +1,40 @@
+{
+  "matchID": "",
+  "classification": "",
+  "match": {
+    "ends": 4,
+    "sectionID": 0,
+    "confirmColor": false
+  },
+  "warmup": {
+    "limit": 120000
+  },
+  "interval": {
+    "limit": 60000
+  },
+  "red": {
+    "playerID": "",
+    "name": "",
+    "score": 0,
+    "scores": [],
+    "limit": 300000,
+    "ball": 7,
+    "isRun": false,
+    "time": 300000,
+    "tieBreak": false,
+    "result": ""
+  },
+  "blue": {
+    "playerID": "",
+    "name": "",
+    "score": 0,
+    "scores": [],
+    "limit": 300000,
+    "ball": 6,
+    "isRun": false,
+    "time": 300000,
+    "tieBreak": false,
+    "reset": ""
+  },
+  "lastUpdated": ""
+}

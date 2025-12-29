@@ -1,0 +1,50 @@
+@charset "utf-8";
+
+html, body, object, iframe, form,
+h1, h2, h3, h4, h5, h6, p,
+dl, dt, dd, ol, ul, li,
+table, caption, tr, th, td,
+figure {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+  font-family: "BIZ UDPGothic", "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro W3", "メイリオ", Meiryo, Arial, verdana, sans-serif;
+  background-color: #222;
+  color: #fff;
+}
+
+img {
+  border: 0;
+  max-width: 100%;
+  height: auto;
+}
+
+ul {
+  list-style: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+input, select {
+  vertical-align: middle;
+}
+
+.sub {
+  font-size: 80%;
+}
+
+.hide {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip: rect(1px, 1px, 1px, 1px);
+}

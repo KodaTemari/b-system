@@ -1,0 +1,49 @@
+{
+  "sections": {
+    "standby": "Standby",
+    "warmup": "Warmup",
+    "end1": "End 1",
+    "end2": "End 2",
+    "end3": "End 3",
+    "end4": "End 4",
+    "end5": "End 5",
+    "end6": "End 6",
+    "interval": "Interval",
+    "matchFinished": "Match Finished",
+    "resultCheck": "Result Check",
+    "reset": "Reset",
+    "ok": "OK",
+    "loading": "Loading data...",
+    "tieBreak": "Tie Break",
+    "finalShot": "Final Shot"
+  },
+  "timer": {
+    "red": "Red Timer",
+    "blue": "Blue Timer",
+    "warmup": "Warmup",
+    "interval": "Interval"
+  },
+  "buttons": {
+    "start": "Start",
+    "stop": "Stop",
+    "reset": "Reset",
+    "setColor": "Confirm Color",
+    "resetColor": "Reset Color",
+    "changeColor": "Change Color",
+    "startWarmup": "Start Warmup",
+    "finishWarmup": "Finish Warmup",
+    "startInterval": "Start Interval",
+    "finishInterval": "Finish Interval",
+    "selectTeamName": "Select Team Name",
+    "setting": "Settings",
+    "fullscreen": "Fullscreen",
+    "redApproval": "Red Approval",
+    "refereeApproval": "Referee Approval",
+    "blueApproval": "Blue Approval",
+    "matchCompleted": "Match Completed"
+  },
+  "errors": {
+    "loading": "Loading data...",
+    "errorOccurred": "An error occurred"
+  }
+}
