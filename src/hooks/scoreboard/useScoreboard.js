@@ -360,6 +360,77 @@ export const useScoreboard = () => {
     }
   }, [blueTimer.remainingMs, gameData.blue.isRun, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
 
+  // ペナルティースロー表示の判定（ボール数が0で、ペナルティーボールが1以上）
+  useEffect(() => {
+    if (!isCtrl) return;
+    
+    const redBall = gameData.red?.ball || 0;
+    const blueBall = gameData.blue?.ball || 0;
+    const redPenaltyBall = gameData.red?.penaltyBall || 0;
+    const bluePenaltyBall = gameData.blue?.penaltyBall || 0;
+    
+    // ボール数が0で、ペナルティーボールが1以上の場合、penaltyThrow中に切り替え
+    if (redBall === 0 && blueBall === 0 && (redPenaltyBall > 0 || bluePenaltyBall > 0)) {
+      // ペナルティーボールを持っているサイドのタイマーを1分（60000ms）に設定
+      // 両方のサイドにペナルティーボールがある場合は、両方のタイマーを1分に設定
+      if (redPenaltyBall > 0 && gameData.red.time !== 60000) {
+        updateTimer('red', 60000, false);
+      }
+      if (bluePenaltyBall > 0 && gameData.blue.time !== 60000) {
+        updateTimer('blue', 60000, false);
+      }
+      
+      // ペナルティーボールの数だけ各サイドのボールを復活
+      if (gameData.red.ball !== redPenaltyBall) {
+        updateBall('red', redPenaltyBall);
+      }
+      if (gameData.blue.ball !== bluePenaltyBall) {
+        updateBall('blue', bluePenaltyBall);
+      }
+      
+      // penaltyThrow中の状態をgameDataに保存
+      updateField('screen', 'penaltyThrow', true);
+      
+      // データを保存
+      if (saveData) {
+        const updatedGameData = {
+          ...gameData,
+          red: {
+            ...gameData.red,
+            ball: redPenaltyBall,
+            time: redPenaltyBall > 0 ? 60000 : gameData.red.time,
+            isRun: false
+          },
+          blue: {
+            ...gameData.blue,
+            ball: bluePenaltyBall,
+            time: bluePenaltyBall > 0 ? 60000 : gameData.blue.time,
+            isRun: false
+          },
+          screen: {
+            ...gameData.screen,
+            penaltyThrow: true
+          }
+        };
+        saveData(updatedGameData);
+      }
+    }
+    // 赤・青両方のペナルティボールが0になった場合、penaltyThrow中を終了
+    if (redPenaltyBall === 0 && bluePenaltyBall === 0 && gameData.screen?.penaltyThrow) {
+      updateField('screen', 'penaltyThrow', false);
+      if (saveData) {
+        const updatedGameData = {
+          ...gameData,
+          screen: {
+            ...gameData.screen,
+            penaltyThrow: false
+          }
+        };
+        saveData(updatedGameData);
+      }
+    }
+  }, [gameData.red?.ball, gameData.blue?.ball, gameData.red?.penaltyBall, gameData.blue?.penaltyBall, isCtrl, updateTimer, updateBall, saveData, gameData]);
+
   useEffect(() => {
     if (warmupTimer.remainingMs <= 0 && gameData.warmup.isRun) {
       handlers.handleTimerEnd();

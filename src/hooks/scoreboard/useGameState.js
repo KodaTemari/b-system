@@ -22,7 +22,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       screen: {
         active: '',
         setColor: false,
-        scoreAdjusting: false
+        scoreAdjusting: false,
+        penaltyThrow: false
       },
       warmup: {
         limit: TIMER_LIMITS.WARMUP
@@ -362,6 +363,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           ...prevData,
           red: {
             ...prevData.red,
+            ...(initialData.red || {}),
             ball: initialData.red?.ball ?? prevData.red?.ball,
             time: initialData.red?.time ?? prevData.red?.time,
             isRun: initialData.red?.isRun ?? prevData.red?.isRun,
@@ -370,6 +372,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           },
           blue: {
             ...prevData.blue,
+            ...(initialData.blue || {}),
             ball: initialData.blue?.ball ?? prevData.blue?.ball,
             time: initialData.blue?.time ?? prevData.blue?.time,
             isRun: initialData.blue?.isRun ?? prevData.blue?.isRun,
@@ -407,6 +410,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             ...prevData.screen,
             setColor: initialData.screen?.setColor ?? prevData.screen?.setColor ?? false,
             scoreAdjusting: initialData.screen?.scoreAdjusting ?? prevData.screen?.scoreAdjusting ?? false,
+            penaltyThrow: initialData.screen?.penaltyThrow ?? prevData.screen?.penaltyThrow ?? false,
             // screen.activeの更新処理（ctrlとviewで分岐）
             active: (() => {
               const currentActive = prevData.screen?.active;

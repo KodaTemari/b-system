@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useScoreboard } from '../../hooks/scoreboard/useScoreboard';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../locales';
+import { calculateBallCount } from '../../utils/scoreboard/gameLogic';
+import { TIMER_LIMITS } from '../../utils/scoreboard/constants';
 import Header from './ui/Header';
 import PlayerInfoPanel from './ui/PlayerInfoPanel';
 import SectionNav from './ui/SectionNav';
 import SettingModal from './ui/SettingModal';
+import PenaltyModal from './ui/PenaltyModal';
+import TimeoutModal from './ui/TimeoutModal';
+import TimeoutTimerModal from './ui/TimeoutTimerModal';
+import ConfirmModal from './ui/ConfirmModal';
 import ResultTable from './ui/ResultTable';
 import './Scoreboard.css';
 
@@ -91,6 +97,441 @@ const Scoreboard = () => {
 
   const handleSettingModalClose = () => {
     setSettingOpen(false);
+  };
+
+  // 反則モーダルの状態管理
+  const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
+  const [selectedTeamColor, setSelectedTeamColor] = useState(null);
+  
+  // タイムアウトモーダルの状態管理
+  const [timeoutModalOpen, setTimeoutModalOpen] = useState(false);
+  const [selectedTimeoutTeamColor, setSelectedTimeoutTeamColor] = useState(null);
+  const [timeoutTimerModalOpen, setTimeoutTimerModalOpen] = useState(false);
+  const [timeoutTimerTeamColor, setTimeoutTimerTeamColor] = useState(null);
+  const [timeoutTimerType, setTimeoutTimerType] = useState(null);
+  
+  // 確認モーダルの状態管理
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [pendingPenalty, setPendingPenalty] = useState(null); // { teamColor, penaltyId }
+  
+  // penaltyThrow中かどうかを判定
+  // gameData.screen.penaltyThrowの状態を使用
+  const isPenaltyThrow = gameData?.screen?.penaltyThrow || false;
+
+  // 反則ボタンクリックハンドラー
+  const handlePenaltyClick = (teamColor) => {
+    setSelectedTeamColor(teamColor);
+    setPenaltyModalOpen(true);
+    // モーダルを表示
+    setTimeout(() => {
+      const dialog = document.getElementById('penaltyModal');
+      if (dialog) {
+        dialog.showModal();
+      }
+    }, 0);
+  };
+
+  // タイムアウトボタンクリックハンドラー
+  const handleTimeoutClick = (teamColor) => {
+    setSelectedTimeoutTeamColor(teamColor);
+    setTimeoutModalOpen(true);
+  };
+
+  // タイムアウトモーダルの表示管理
+  useEffect(() => {
+    if (timeoutModalOpen && selectedTimeoutTeamColor) {
+      const dialog = document.getElementById('timeoutModal');
+      if (dialog) {
+        dialog.showModal();
+      }
+    }
+  }, [timeoutModalOpen, selectedTimeoutTeamColor]);
+  
+  // タイムアウトタイマーモーダルの表示制御
+  useEffect(() => {
+    if (timeoutTimerModalOpen && timeoutTimerTeamColor && timeoutTimerType) {
+      const dialog = document.getElementById('timeoutTimerModal');
+      if (dialog) {
+        dialog.showModal();
+      }
+    } else {
+      const dialog = document.getElementById('timeoutTimerModal');
+      if (dialog) {
+        dialog.close();
+      }
+    }
+  }, [timeoutTimerModalOpen, timeoutTimerTeamColor, timeoutTimerType]);
+  
+  // LocalStorageからタイムアウトタイマーの状態を監視（ctrlとviewの両方で表示）
+  useEffect(() => {
+    const checkTimeoutTimers = () => {
+      const timeoutTypes = ['medical', 'technical'];
+      const teamColors = ['red', 'blue'];
+      
+      for (const teamColor of teamColors) {
+        for (const timeoutType of timeoutTypes) {
+          const storageKey = `timeout_${teamColor}_${timeoutType}`;
+          try {
+            const stored = localStorage.getItem(storageKey);
+            if (stored) {
+              const data = JSON.parse(stored);
+              if (data.isRunning && data.time > 0) {
+                // タイマーが実行中の場合、モーダルを開く
+                if (!timeoutTimerModalOpen || timeoutTimerTeamColor !== teamColor || timeoutTimerType !== timeoutType) {
+                  setTimeoutTimerTeamColor(teamColor);
+                  setTimeoutTimerType(timeoutType);
+                  setTimeoutTimerModalOpen(true);
+                }
+              } else if (!data.isRunning && timeoutTimerModalOpen && timeoutTimerTeamColor === teamColor && timeoutTimerType === timeoutType) {
+                // タイマーが停止した場合、モーダルを閉じる（viewモードでも動作）
+                setTimeoutTimerModalOpen(false);
+                setTimeoutTimerTeamColor(null);
+                setTimeoutTimerType(null);
+              }
+            } else if (timeoutTimerModalOpen && timeoutTimerTeamColor === teamColor && timeoutTimerType === timeoutType) {
+              // LocalStorageから削除された場合、モーダルを閉じる
+              setTimeoutTimerModalOpen(false);
+              setTimeoutTimerTeamColor(null);
+              setTimeoutTimerType(null);
+            }
+          } catch (error) {
+            console.error('Error checking timeout timer:', error);
+          }
+        }
+      }
+    };
+    
+    // 初回チェック
+    checkTimeoutTimers();
+    
+    // LocalStorageの変更を監視
+    const handleStorageChange = (e) => {
+      if (e.key && e.key.startsWith('timeout_')) {
+        checkTimeoutTimers();
+      }
+    };
+    
+    const handleCustomEvent = (e) => {
+      if (e.detail?.key && e.detail.key.startsWith('timeout_')) {
+        checkTimeoutTimers();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('timeoutTimerUpdate', handleCustomEvent);
+    
+    // 定期的にチェック（同じウィンドウ内の更新を検知）
+    const interval = setInterval(checkTimeoutTimers, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('timeoutTimerUpdate', handleCustomEvent);
+      clearInterval(interval);
+    };
+  }, [timeoutTimerModalOpen, timeoutTimerTeamColor, timeoutTimerType]);
+
+  // タイムアウト選択ハンドラー（ローカルのみで管理、JSONには保存しない）
+  const handleTimeoutSelect = (teamColor, timeoutId, time) => {
+    // タイムアウトタイマーモーダルを開く
+    setTimeoutTimerTeamColor(teamColor);
+    setTimeoutTimerType(timeoutId);
+    setTimeoutTimerModalOpen(true);
+    
+    // タイムアウト選択モーダルを閉じる
+    setTimeoutModalOpen(false);
+    setSelectedTimeoutTeamColor(null);
+    
+    // タイマーを開始（LocalStorageに保存）
+    const storageKey = `timeout_${teamColor}_${timeoutId}`;
+    try {
+      const data = {
+        time: time,
+        isRunning: true
+      };
+      localStorage.setItem(storageKey, JSON.stringify(data));
+      window.dispatchEvent(new CustomEvent('timeoutTimerUpdate', {
+        detail: { key: storageKey, data }
+      }));
+    } catch (error) {
+      console.error('Error starting timeout timer:', error);
+    }
+  };
+  
+  // タイムアウトタイマーの更新ハンドラー（ローカルのみで管理、JSONには保存しない）
+  // eslint-disable-next-line no-unused-vars
+  const handleTimeoutTimeUpdate = (teamColor, timeoutId, newTime) => {
+    // タイムアウトはローカルのみで管理するため、JSONには保存しない
+  };
+
+  // 反則選択ハンドラー
+  const handlePenaltySelect = (teamColor, penaltyId) => {
+    if (!gameData || !isCtrl) return;
+    
+    // 確認が必要な反則かどうかを判定
+    const requiresConfirmation = ['redCard', 'restartedEnd', 'forfeit'].includes(penaltyId);
+    
+    // 2枚目のイエローカードの場合も確認が必要
+    if (penaltyId === 'yellowCard' || penaltyId === 'penaltyBallAndYellowCard') {
+      const currentYellowCard = gameData[teamColor]?.yellowCard || 0;
+      if (currentYellowCard === 1) {
+        // 2枚目になる場合、確認モーダルを表示
+        setPendingPenalty({ teamColor, penaltyId });
+        setConfirmModalOpen(true);
+        setTimeout(() => {
+          const dialog = document.getElementById('confirmModal');
+          if (dialog) {
+            dialog.showModal();
+          }
+        }, 0);
+        return;
+      }
+    }
+    
+    if (requiresConfirmation) {
+      // 確認が必要な場合は、確認モーダルを表示
+      setPendingPenalty({ teamColor, penaltyId });
+      setConfirmModalOpen(true);
+      setTimeout(() => {
+        const dialog = document.getElementById('confirmModal');
+        if (dialog) {
+          dialog.showModal();
+        }
+      }, 0);
+      // 反則モーダルは閉じない（確認後に閉じる）
+    } else {
+      // 確認が不要な場合は、直接処理を実行
+      executePenalty(teamColor, penaltyId);
+    }
+  };
+  
+  // 反則処理の実行
+  const executePenalty = (teamColor, penaltyId) => {
+    if (!gameData || !isCtrl) return;
+    
+    const currentTeamData = gameData[teamColor] || {};
+    const opponentColor = teamColor === 'red' ? 'blue' : 'red';
+    const currentOpponentData = gameData[opponentColor] || {};
+    
+    let updatedTeamData = { ...currentTeamData };
+    let updatedOpponentData = { ...currentOpponentData };
+    
+    // 反則負けになるかどうかを判定
+    const isForfeit = penaltyId === 'redCard' || penaltyId === 'forfeit' || 
+                      (penaltyId === 'yellowCard' && (currentTeamData.yellowCard || 0) === 1) ||
+                      (penaltyId === 'penaltyBallAndYellowCard' && (currentTeamData.yellowCard || 0) === 1);
+    
+    // ペナルティIDに応じてカウントを増やす
+    switch (penaltyId) {
+      case 'penaltyBall':
+        // ペナルティーボールは相手チームに追加
+        updatedOpponentData.penaltyBall = (currentOpponentData.penaltyBall || 0) + 1;
+        break;
+      case 'yellowCard':
+        // イエローカードは反則したチームに追加
+        updatedTeamData.yellowCard = (currentTeamData.yellowCard || 0) + 1;
+        break;
+      case 'penaltyBallAndYellowCard':
+        // ペナルティーボールは相手チームに、イエローカードは反則したチームに追加
+        updatedOpponentData.penaltyBall = (currentOpponentData.penaltyBall || 0) + 1;
+        updatedTeamData.yellowCard = (currentTeamData.yellowCard || 0) + 1;
+        break;
+      case 'redCard':
+        // レッドカードは反則したチームに追加
+        updatedTeamData.redCard = (currentTeamData.redCard || 0) + 1;
+        break;
+      case 'retractionAndPenaltyBall':
+        // ペナルティーボールは相手チームに追加（リトラクションは反則したチームのもの）
+        updatedOpponentData.penaltyBall = (currentOpponentData.penaltyBall || 0) + 1;
+        break;
+      case 'restartedEnd': {
+        // リスターテッドエンドの処理：エンドを最初からやり直す
+        // 現在のエンド番号を取得
+        const currentEnd = gameData.match?.end || 0;
+        if (currentEnd > 0) {
+          // ボール数をリセット
+          const redBalls = calculateBallCount(currentEnd, 'red');
+          const blueBalls = calculateBallCount(currentEnd, 'blue');
+          updatedTeamData.ball = redBalls;
+          updatedOpponentData.ball = blueBalls;
+          
+          // タイマーをリセット
+          updatedTeamData.time = TIMER_LIMITS.GAME;
+          updatedTeamData.isRun = false;
+          updatedOpponentData.time = TIMER_LIMITS.GAME;
+          updatedOpponentData.isRun = false;
+        }
+        break;
+      }
+      case 'forfeit':
+        // 没収試合の処理（必要に応じて実装）
+        break;
+      default:
+        break;
+    }
+    
+    // 反則負けの場合、スコアを設定（反則負けチーム0、相手6）
+    if (isForfeit) {
+      updatedTeamData.score = 0;
+      updatedOpponentData.score = 6;
+    }
+    
+    // gameDataを更新して保存
+    const updatedGameData = {
+      ...gameData,
+      [teamColor]: updatedTeamData,
+      [opponentColor]: updatedOpponentData
+    };
+    
+    // リスターテッドエンドの場合、ボール数とタイマーを更新
+    if (penaltyId === 'restartedEnd') {
+      const currentEnd = gameData.match?.end || 0;
+      if (currentEnd > 0) {
+        // ボール数をリセット
+        const redBalls = calculateBallCount(currentEnd, 'red');
+        const blueBalls = calculateBallCount(currentEnd, 'blue');
+        handleBallChange('red', redBalls);
+        handleBallChange('blue', blueBalls);
+        
+        // タイマーをリセット
+        handleTimerToggle('red', false, TIMER_LIMITS.GAME);
+        handleTimerToggle('blue', false, TIMER_LIMITS.GAME);
+        
+        // ペナルティスロー状態を解除
+        const finalGameData = {
+          ...updatedGameData,
+          screen: {
+            ...updatedGameData.screen,
+            penaltyThrow: false
+          }
+        };
+        saveData(finalGameData);
+      }
+    }
+    
+    // データを保存（これにより、useDataSyncが更新を検知して、gameDataが更新される）
+    saveData(updatedGameData);
+    
+    // 反則負けの場合、試合終了セクションへ移動
+    if (isForfeit) {
+      // #scoreboardにdata-forfeit="true"を設定
+      const scoreboardElement = document.getElementById('scoreboard');
+      if (scoreboardElement) {
+        scoreboardElement.setAttribute('data-forfeit', 'true');
+      }
+      
+      // matchFinishedセクションに移動
+      const sections = gameData.match?.sections || [];
+      const matchFinishedIndex = sections.findIndex(s => s === 'matchFinished');
+      if (matchFinishedIndex !== -1) {
+        // セクションを更新するために、gameDataを直接更新
+        const finalGameData = {
+          ...updatedGameData,
+          match: {
+            ...updatedGameData.match,
+            sectionID: matchFinishedIndex,
+            section: 'matchFinished'
+          }
+        };
+        saveData(finalGameData);
+      }
+    }
+    
+    // モーダルを閉じる
+    const penaltyDialog = document.getElementById('penaltyModal');
+    if (penaltyDialog) {
+      penaltyDialog.close();
+    }
+    const settingDialog = document.getElementById('settingModal');
+    if (settingDialog) {
+      settingDialog.close();
+    }
+    handleSettingModalClose();
+  };
+  
+  // 確認モーダルのOKハンドラー
+  const handleConfirmOk = () => {
+    if (pendingPenalty) {
+      executePenalty(pendingPenalty.teamColor, pendingPenalty.penaltyId);
+      setPendingPenalty(null);
+    }
+    setConfirmModalOpen(false);
+  };
+  
+  // 確認モーダルのキャンセルハンドラー
+  const handleConfirmCancel = () => {
+    setPendingPenalty(null);
+    setConfirmModalOpen(false);
+  };
+  
+  // 確認モーダルのメッセージを取得
+  const getConfirmMessage = () => {
+    if (!pendingPenalty) return '';
+    
+    const { teamColor, penaltyId } = pendingPenalty;
+    
+    if (penaltyId === 'restartedEnd') {
+      return getLocalizedText('confirm.restartedEnd', getCurrentLanguage()) || 'エンドをやりなおします。';
+    } else if (penaltyId === 'redCard' || penaltyId === 'forfeit') {
+      const teamText = teamColor === 'red' 
+        ? getLocalizedText('confirm.redForfeit', getCurrentLanguage()) || '赤の反則負けになります。'
+        : getLocalizedText('confirm.blueForfeit', getCurrentLanguage()) || '青の反則負けになります。';
+      return teamText;
+    } else if (penaltyId === 'yellowCard' || penaltyId === 'penaltyBallAndYellowCard') {
+      // 2枚目のイエローカード
+      const teamText = teamColor === 'red' 
+        ? getLocalizedText('confirm.redSecondYellowCard', getCurrentLanguage()) || '2枚目のイエローカードで赤の反則負けになります。'
+        : getLocalizedText('confirm.blueSecondYellowCard', getCurrentLanguage()) || '2枚目のイエローカードで青の反則負けになります。';
+      return teamText;
+    }
+    
+    return '';
+  };
+
+  // ペナルティ削除ハンドラー
+  const handlePenaltyRemove = (teamColor, penaltyType) => {
+    if (!gameData || !isCtrl) return;
+    
+    const currentTeamData = gameData[teamColor] || {};
+    const currentCount = currentTeamData[penaltyType] || 0;
+    
+    if (currentCount <= 0) return;
+    
+    let updatedTeamData = { ...currentTeamData };
+    
+    // カウントが2以上の場合、-1する。1の場合のみ0にする
+    if (currentCount >= 2) {
+      updatedTeamData[penaltyType] = currentCount - 1;
+    } else {
+      updatedTeamData[penaltyType] = 0;
+    }
+    
+    // gameDataを更新して保存
+    const updatedGameData = {
+      ...gameData,
+      [teamColor]: updatedTeamData
+    };
+    
+    // ペナルティボールを削除した場合、penaltyThrow終了条件をチェック
+    if (penaltyType === 'penaltyBall') {
+      const redPenaltyBall = updatedGameData.red?.penaltyBall || 0;
+      const bluePenaltyBall = updatedGameData.blue?.penaltyBall || 0;
+      
+      // 赤・青両方のペナルティボールが0になった場合、penaltyThrow中を終了
+      if (redPenaltyBall === 0 && bluePenaltyBall === 0 && updatedGameData.screen?.penaltyThrow) {
+        updatedGameData.screen = {
+          ...updatedGameData.screen,
+          penaltyThrow: false
+        };
+      }
+    }
+    
+    saveData(updatedGameData);
+  };
+
+  // 反則モーダル閉じるハンドラー
+  const handlePenaltyModalClose = () => {
+    setPenaltyModalOpen(false);
+    setSelectedTeamColor(null);
   };
 
   // 結果確認セクションの承認状態管理（gameDataから読み込み）
@@ -310,7 +751,7 @@ const Scoreboard = () => {
   }
 
   return (
-    <div id="scoreboard" data-section={section} data-setcolor={setColor} data-active={active} data-scoreadjust={scoreAdjusting ? 'true' : 'false'} className={settingOpen ? 'settingOpen' : ''}>
+    <div id="scoreboard" data-section={section} data-setcolor={setColor} data-active={active} data-scoreadjust={scoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} className={settingOpen ? 'settingOpen' : ''}>
       <Header
         section={section}
         sectionID={sectionID}
@@ -339,6 +780,11 @@ const Scoreboard = () => {
           onBallChange={(newBallValue) => handleBallChange('red', newBallValue)}
           onSelect={handleSelect}
           onTieBreakSelect={handleTieBreakSelect}
+          penaltyBall={red?.penaltyBall || 0}
+          yellowCard={red?.yellowCard || 0}
+          redCard={red?.redCard || 0}
+          onPenaltyRemove={handlePenaltyRemove}
+          isCtrl={isCtrl}
         />
         
         <PlayerInfoPanel
@@ -356,8 +802,20 @@ const Scoreboard = () => {
           onBallChange={(newBallValue) => handleBallChange('blue', newBallValue)}
           onSelect={handleSelect}
           onTieBreakSelect={handleTieBreakSelect}
+          penaltyBall={blue?.penaltyBall || 0}
+          yellowCard={blue?.yellowCard || 0}
+          redCard={blue?.redCard || 0}
+          onPenaltyRemove={handlePenaltyRemove}
+          isCtrl={isCtrl}
         />
       </main>
+
+      {/* penaltyThrow中に「ペナルティボール」を表示 */}
+      {isPenaltyThrow && (
+        <div id="penaltyThrowLabel">
+          {getLocalizedText('penalties.penaltyBall', getCurrentLanguage()) || 'ペナルティボール'}
+        </div>
+      )}
 
       {/* 結果表 - resultCheckセクションの時のみ表示 */}
       {section === 'resultCheck' && (
@@ -420,6 +878,8 @@ const Scoreboard = () => {
         isCtrl={isCtrl}
         active={active}
         scoreAdjusting={scoreAdjusting}
+        redPenaltyBall={red?.penaltyBall || 0}
+        bluePenaltyBall={blue?.penaltyBall || 0}
         onConfirmColorToggle={() => updateConfirmColor(!setColor, saveData)}
         onStartWarmup={handleStartWarmup}
         onWarmupTimerToggle={handleWarmupTimerToggle}
@@ -454,6 +914,64 @@ const Scoreboard = () => {
             onClose={handleSettingModalClose}
             scoreAdjusting={scoreAdjusting}
             onRestartEnd={handleRestartEnd}
+            onPenaltyClick={handlePenaltyClick}
+            onTimeoutClick={handleTimeoutClick}
+          />
+        )}
+
+        {/* 反則選択モーダル */}
+        {penaltyModalOpen && selectedTeamColor && (
+          <PenaltyModal
+            teamColor={selectedTeamColor}
+            onSelectPenalty={handlePenaltySelect}
+            onClose={handlePenaltyModalClose}
+            getText={getText}
+          />
+        )}
+
+        {/* タイムアウト選択モーダル */}
+        {timeoutModalOpen && selectedTimeoutTeamColor && (
+          <TimeoutModal
+            teamColor={selectedTimeoutTeamColor}
+            onSelectTimeout={handleTimeoutSelect}
+            onClose={() => {
+              setTimeoutModalOpen(false);
+              setSelectedTimeoutTeamColor(null);
+            }}
+            getText={getText}
+            timeoutData={null}
+            onTimeoutTimeUpdate={handleTimeoutTimeUpdate}
+          />
+        )}
+
+        {/* タイムアウトタイマーモーダル */}
+        {timeoutTimerModalOpen && timeoutTimerTeamColor && timeoutTimerType && (
+          <TimeoutTimerModal
+            teamColor={timeoutTimerTeamColor}
+            timeoutType={timeoutTimerType}
+            isCtrl={isCtrl}
+            onClose={() => {
+              setTimeoutTimerModalOpen(false);
+              setTimeoutTimerTeamColor(null);
+              setTimeoutTimerType(null);
+              // ctrlモードの場合、設定モーダルも閉じる
+              if (isCtrl) {
+                setSettingOpen(false);
+                const settingDialog = document.getElementById('settingModal');
+                if (settingDialog) {
+                  settingDialog.close();
+                }
+              }
+            }}
+          />
+        )}
+
+        {/* 確認モーダル */}
+        {confirmModalOpen && (
+          <ConfirmModal
+            message={getConfirmMessage()}
+            onConfirm={handleConfirmOk}
+            onCancel={handleConfirmCancel}
           />
         )}
     </div>

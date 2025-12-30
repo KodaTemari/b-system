@@ -40,7 +40,32 @@
     "redApproval": "Red Approval",
     "refereeApproval": "Referee Approval",
     "blueApproval": "Blue Approval",
-    "matchCompleted": "Match Completed"
+    "matchCompleted": "Match Completed",
+    "penalty": "Penalty",
+    "timeout": "Timeout",
+    "redPenalty": "Red Penalty",
+    "bluePenalty": "Blue Penalty",
+    "ok": "OK",
+    "cancel": "Cancel"
+  },
+  "confirm": {
+    "restartedEnd": "Restart the end.",
+    "redForfeit": "Red team will forfeit.",
+    "blueForfeit": "Blue team will forfeit.",
+    "redSecondYellowCard": "Red team will forfeit due to second yellow card.",
+    "blueSecondYellowCard": "Blue team will forfeit due to second yellow card."
+  },
+  "penalties": {
+    "lineCross": "Line Cross",
+    "throwBeforeInstruction": "Throw Before Instruction",
+    "retraction": "Retraction",
+    "penaltyBall": "Penalty Ball",
+    "retractionAndPenaltyBall": "Retraction and Penalty Ball",
+    "penaltyBallAndYellowCard": "Penalty Ball and Yellow Card",
+    "yellowCard": "Yellow Card",
+    "redCard": "Red Card",
+    "restartedEnd": "Restarted End",
+    "forfeit": "Forfeit"
   },
   "errors": {
     "loading": "Loading data...",

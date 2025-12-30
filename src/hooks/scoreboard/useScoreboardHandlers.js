@@ -25,11 +25,8 @@ export const useScoreboardHandlers = ({
   const handleSelect = useCallback((color) => {
     // スコアボタンを押したときにdata-activeを設定（ctrlモードのみ）
     if (isCtrl) {
-      if (color === 'red') {
-        updateScreenActive('red-score');
-      } else if (color === 'blue') {
-        updateScreenActive('blue-score');
-      }
+      const activeValue = color === 'red' ? 'red-score' : 'blue-score';
+      updateScreenActive(activeValue);
       // スコアボタンを押しても、scoreAdjustingフラグはリセットしない
       // （インターバル開始ボタンは＋ボタンを押したときに表示され、スコアボタンを押しても消えない）
       
@@ -40,7 +37,7 @@ export const useScoreboardHandlers = ({
         updateTimer('red', redTime, false);
         updateTimer('blue', blueTime, false);
         
-        // ゲームデータを保存
+        // ゲームデータを保存（screen.activeも含める、scoreAdjustingフラグは保持）
         if (saveData) {
           const updatedGameData = {
             ...gameData,
@@ -51,6 +48,11 @@ export const useScoreboardHandlers = ({
             blue: {
               ...gameData.blue,
               isRun: false
+            },
+            screen: {
+              ...gameData.screen,
+              active: activeValue,
+              scoreAdjusting: gameData.screen?.scoreAdjusting ?? false
             }
           };
           saveData(updatedGameData);
@@ -210,44 +212,108 @@ export const useScoreboardHandlers = ({
       // タイマー停止
       updateTimer(color, currentTime, false);
       
-      // タイマー停止時にボールを1つ減らす（ボールが0より大きい場合のみ）
-      if (gameData[color].ball > 0) {
-        const newBallCount = gameData[color].ball - 1;
-        updateBall(color, newBallCount);
+      // penaltyThrow中かどうかを判定
+      // gameData.screen.penaltyThrowの状態を使用
+      // 開始条件：すべてのボールが0で、ペナルティボールが1以上
+      // 終了条件：ボールを投げきる（すべてのボールが0になる）
+      const isPenaltyThrow = gameData.screen?.penaltyThrow || false;
+      
+      // penaltyThrow中の場合、ペナルティボールを-1
+      if (isPenaltyThrow && gameData[color].penaltyBall > 0) {
+        const newPenaltyBall = gameData[color].penaltyBall - 1;
+        updateField(color, 'penaltyBall', newPenaltyBall);
         
-        // ボール更新を保存（ctrlモードの場合のみ）
-        if (isCtrl && saveData) {
-          const updatedGameData = {
-            ...gameData,
-            [color]: {
-              ...gameData[color],
-              isRun: false,
-              time: currentTime,
-              ball: newBallCount
-            },
-            screen: {
-              ...gameData.screen,
-              active: ''
-            }
-          };
-          saveData(updatedGameData);
+        // まだペナルティボールが1以上残っている場合、タイマーを1分に戻す
+        const shouldResetTimer = newPenaltyBall > 0;
+        const timerTime = shouldResetTimer ? 60000 : currentTime;
+        
+        if (shouldResetTimer) {
+          updateTimer(color, 60000, false);
+        }
+        
+        // タイマー停止時にボールを1つ減らす
+        if (gameData[color].ball > 0) {
+          const newBallCount = gameData[color].ball - 1;
+          updateBall(color, newBallCount);
+          
+          // ボール更新とペナルティボール更新を保存（ctrlモードの場合のみ）
+          if (isCtrl && saveData) {
+            const updatedGameData = {
+              ...gameData,
+              [color]: {
+                ...gameData[color],
+                isRun: false,
+                time: timerTime,
+                ball: newBallCount,
+                penaltyBall: newPenaltyBall
+              },
+              screen: {
+                ...gameData.screen,
+                active: ''
+              }
+            };
+            saveData(updatedGameData);
+          }
+        } else {
+          // ボールが0の場合でもタイマー停止とペナルティボール更新を保存（ctrlモードの場合のみ）
+          if (isCtrl && saveData) {
+            const updatedGameData = {
+              ...gameData,
+              [color]: {
+                ...gameData[color],
+                isRun: false,
+                time: timerTime,
+                penaltyBall: newPenaltyBall
+              },
+              screen: {
+                ...gameData.screen,
+                active: ''
+              }
+            };
+            saveData(updatedGameData);
+          }
         }
       } else {
-        // ボールが0の場合でもタイマー停止を保存（ctrlモードの場合のみ）
-        if (isCtrl && saveData) {
-          const updatedGameData = {
-            ...gameData,
-            [color]: {
-              ...gameData[color],
-              isRun: false,
-              time: currentTime
-            },
-            screen: {
-              ...gameData.screen,
-              active: ''
-            }
-          };
-          saveData(updatedGameData);
+        // 通常のタイマー停止処理（penaltyThrow中でない場合）
+        // タイマー停止時にボールを1つ減らす（ボールが0より大きい場合のみ）
+        if (gameData[color].ball > 0) {
+          const newBallCount = gameData[color].ball - 1;
+          updateBall(color, newBallCount);
+          
+          // ボール更新を保存（ctrlモードの場合のみ）
+          if (isCtrl && saveData) {
+            const updatedGameData = {
+              ...gameData,
+              [color]: {
+                ...gameData[color],
+                isRun: false,
+                time: currentTime,
+                ball: newBallCount
+              },
+              screen: {
+                ...gameData.screen,
+                active: ''
+              }
+            };
+            saveData(updatedGameData);
+          }
+        } else {
+          // ボールが0の場合でもタイマー停止を保存（ctrlモードの場合のみ）
+          if (isCtrl && saveData) {
+            const updatedGameData = {
+              ...gameData,
+              [color]: {
+                ...gameData[color],
+                isRun: false,
+                time: currentTime
+              },
+              screen: {
+                ...gameData.screen,
+                active: ''
+              }
+            };
+            saveData(updatedGameData);
+          }
         }
       }
     }

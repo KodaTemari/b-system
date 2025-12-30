@@ -111,6 +111,25 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       const url = `${apiUrl}/api/game/${id}/court/${court}`;
       
       // sectionsとtieBreakを除外して保存（init.jsonから取得するため）
+      // タイムアウト関連の項目も除外（ローカルのみで管理）
+      const cleanRed = data.red ? { ...data.red } : {};
+      const cleanBlue = data.blue ? { ...data.blue } : {};
+      
+      // タイムアウト関連の項目を削除
+      delete cleanRed.medicalTimeoutUsed;
+      delete cleanRed.medicalTimeoutTime;
+      delete cleanRed.medicalTimeoutRunning;
+      delete cleanRed.technicalTimeoutUsed;
+      delete cleanRed.technicalTimeoutTime;
+      delete cleanRed.technicalTimeoutRunning;
+      
+      delete cleanBlue.medicalTimeoutUsed;
+      delete cleanBlue.medicalTimeoutTime;
+      delete cleanBlue.medicalTimeoutRunning;
+      delete cleanBlue.technicalTimeoutUsed;
+      delete cleanBlue.technicalTimeoutTime;
+      delete cleanBlue.technicalTimeoutRunning;
+      
       const dataToSave = {
         ...data,
         match: data.match ? {
@@ -121,7 +140,9 @@ export const useDataSync = (id, cls, court, isCtrl) => {
           sectionID: 0,
           sections: undefined,
           tieBreak: undefined
-        }
+        },
+        red: cleanRed,
+        blue: cleanBlue
       };
       
       const response = await fetch(url, {

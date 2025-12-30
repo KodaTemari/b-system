@@ -2,19 +2,20 @@
   "matchID": "",
   "match": {
     "totalEnds": 6,
-    "sectionID": 5,
-    "section": "interval",
+    "sectionID": 0,
+    "section": "standby",
     "end": 0,
     "approvals": {
-      "red": false,
-      "referee": false,
-      "blue": false
+      "red": true,
+      "referee": true,
+      "blue": true
     }
   },
   "screen": {
     "active": "",
-    "setColor": true,
-    "scoreAdjusting": false
+    "setColor": false,
+    "scoreAdjusting": false,
+    "penaltyThrow": false
   },
   "warmup": {
     "limit": 120000,
@@ -27,34 +28,37 @@
     "isRun": false
   },
   "red": {
-    "name": "青チーム",
-    "score": 9,
+    "name": "赤チーム",
+    "score": 1,
     "scores": [
+      4,
+      2,
+      0,
       3,
-      0,
-      0,
-      1,
       7,
-      2
+      3
     ],
     "limit": 360000,
     "ball": 6,
     "isRun": false,
     "time": 300000,
-    "tieBreak": true,
+    "tieBreak": false,
     "result": "lose",
-    "playerID": ""
+    "playerID": "",
+    "yellowCard": 0,
+    "penaltyBall": 0,
+    "redCard": 0
   },
   "blue": {
-    "name": "赤チーム",
-    "score": 9,
+    "name": "青チーム",
+    "score": 6,
     "scores": [
+      1,
       3,
       2,
-      1,
       0,
       0,
-      7
+      9
     ],
     "limit": 360000,
     "ball": 7,
@@ -63,7 +67,10 @@
     "tieBreak": false,
     "result": "win",
     "playerID": "",
-    "reset": ""
+    "reset": "",
+    "penaltyBall": 0,
+    "redCard": 0,
+    "yellowCard": 0
   },
   "courtId": "",
   "classification": "BC1/BC2",

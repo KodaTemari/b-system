@@ -41,7 +41,39 @@
     "redApproval": "赤 承認",
     "refereeApproval": "主審 承認",
     "blueApproval": "青 承認",
-    "matchCompleted": "試合完了"
+    "matchCompleted": "試合完了",
+    "penalty": "反則",
+    "timeout": "タイムアウト",
+    "redPenalty": "赤の反則",
+    "bluePenalty": "青の反則",
+    "redTimeout": "赤のタイムアウト",
+    "blueTimeout": "青のタイムアウト",
+    "end": "終了",
+    "ok": "OK",
+    "cancel": "キャンセル"
+  },
+  "timeouts": {
+    "medical": "メディカルタイムアウト",
+    "technical": "テクニカルタイムアウト"
+  },
+  "confirm": {
+    "restartedEnd": "エンドをやりなおします。",
+    "redForfeit": "赤の反則負けになります。",
+    "blueForfeit": "青の反則負けになります。",
+    "redSecondYellowCard": "2枚目のイエローカードで赤の反則負けになります。",
+    "blueSecondYellowCard": "2枚目のイエローカードで青の反則負けになります。"
+  },
+  "penalties": {
+    "lineCross": "ラインクロス",
+    "throwBeforeInstruction": "指示前の投球",
+    "retraction": "リトラクション",
+    "penaltyBall": "ペナルティボール",
+    "retractionAndPenaltyBall": "リトラクション および ペナルティボール",
+    "penaltyBallAndYellowCard": "ペナルティボール および イエローカード",
+    "yellowCard": "イエローカード",
+    "redCard": "レッドカード",
+    "restartedEnd": "リスターテッドエンド",
+    "forfeit": "没収試合"
   },
   "errors": {
     "loading": "データを読み込み中...",

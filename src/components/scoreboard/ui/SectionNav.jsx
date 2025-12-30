@@ -24,6 +24,8 @@ const SectionNavigation = ({
   isCtrl,
   active,
   scoreAdjusting,
+  redPenaltyBall = 0,
+  bluePenaltyBall = 0,
   onConfirmColorToggle,
   onStartWarmup,
   onWarmupTimerToggle,
@@ -120,6 +122,12 @@ const SectionNavigation = ({
       {/* warmupセクション */}
       {currentSectionId === 'sec-warmup' && (
         <div id="sec-warmup">
+          {/* viewモードのみ「ウォームアップ」という文字を表示 */}
+          {!isCtrl && (
+            <div className="warmupLabel">
+              {getLocalizedText('sections.warmup', getCurrentLanguage()) || 'ウォームアップ'}
+            </div>
+          )}
           <button 
             type="button" 
             name="warmupTimerBtn" 
@@ -150,12 +158,15 @@ const SectionNavigation = ({
         仕様：
         - エンドセクション（最終エンド以外）の場合
         - かつ、点数加算ボタンが押されたとき（scoreAdjusting=true）
+        - かつ、ペナルティボールが0の場合
         - 「インターバル開始」ボタンを表示
         流れ：ウォームアップ → エンド1 → インターバル → エンド2 → インターバル → ...
       */}
       {isCtrl && 
        currentSectionId === 'sec-end' && 
-       scoreAdjusting && (
+       scoreAdjusting &&
+       redPenaltyBall === 0 &&
+       bluePenaltyBall === 0 && (
         <div id="sec-end">
           {/* 「インターバル開始」ボタンを表示 */}
           <button 
@@ -270,16 +281,19 @@ const SectionNavigation = ({
                 );
               }
               
-              // それ以外の場合は「インターバル開始」ボタンを表示
-              return (
-                <button 
-                  type="button" 
-                  className="btn startInterval" 
-                  onClick={onNextSection}
-                >
-                  {getText('startInterval')}
-                </button>
-              );
+              // それ以外の場合は「インターバル開始」ボタンを表示（ペナルティボールが0の場合のみ）
+              if (redPenaltyBall === 0 && bluePenaltyBall === 0) {
+                return (
+                  <button 
+                    type="button" 
+                    className="btn startInterval" 
+                    onClick={onNextSection}
+                  >
+                    {getText('startInterval')}
+                  </button>
+                );
+              }
+              return null;
             })()
           )}
         </div>

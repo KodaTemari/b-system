@@ -17,11 +17,17 @@ const PlayerInfoPanel = ({
   otherIsRun, 
   onTimerToggle, 
   onBallChange, 
-  onTieBreakSelect
+  onTieBreakSelect,
+  penaltyBall = 0,
+  yellowCard = 0,
+  redCard = 0,
+  onPenaltyRemove,
+  isCtrl = false
 }) => {
   const [showAdjust, setShowAdjust] = useState(false);
   const remainingMs = propRemainingMs || 0;
   const [textScale, setTextScale] = useState(1);
+  const [showDeleteIcon, setShowDeleteIcon] = useState({ penaltyBall: false, yellowCard: false, redCard: false });
   const nameElementRef = useRef(null);
   const h2ElementRef = useRef(null);
   
@@ -98,6 +104,34 @@ const PlayerInfoPanel = ({
     }
   };
 
+  const handlePenaltyIconClick = (penaltyType) => {
+    if (!isCtrl) return;
+    setShowDeleteIcon(prev => {
+      // 他のアイコンの削除モードを解除し、クリックしたアイコンの削除モードをトグル
+      const newState = {
+        penaltyBall: false,
+        yellowCard: false,
+        redCard: false
+      };
+      // 現在のアイコンが削除モードでない場合のみ、削除モードを有効にする
+      if (!prev[penaltyType]) {
+        newState[penaltyType] = true;
+      }
+      return newState;
+    });
+  };
+
+  const handlePenaltyDelete = (e, penaltyType) => {
+    e.stopPropagation();
+    if (onPenaltyRemove) {
+      onPenaltyRemove(color, penaltyType);
+    }
+    setShowDeleteIcon(prev => ({
+      ...prev,
+      [penaltyType]: false
+    }));
+  };
+
   return (
     <section id={color}>
       <h2 ref={h2ElementRef}>
@@ -111,6 +145,56 @@ const PlayerInfoPanel = ({
         </span>
       </h2>
       <div className="score">
+        <div className="penaltyIcons">
+          {penaltyBall > 0 && (
+            <span 
+              className={`penaltyIcon penaltyBall ${isCtrl ? 'penaltyIcon-clickable' : ''} ${showDeleteIcon.penaltyBall ? 'penaltyIcon-delete-mode' : ''}`}
+              data-count={penaltyBall}
+              onClick={() => isCtrl && handlePenaltyIconClick('penaltyBall')}
+            >
+              {isCtrl && showDeleteIcon.penaltyBall && (
+                <span 
+                  className="penaltyIcon-delete"
+                  onClick={(e) => handlePenaltyDelete(e, 'penaltyBall')}
+                >
+                  ×
+                </span>
+              )}
+            </span>
+          )}
+          {yellowCard > 0 && (
+            <span 
+              className={`penaltyIcon yellowCard ${isCtrl ? 'penaltyIcon-clickable' : ''} ${showDeleteIcon.yellowCard ? 'penaltyIcon-delete-mode' : ''}`}
+              data-count={yellowCard}
+              onClick={() => isCtrl && handlePenaltyIconClick('yellowCard')}
+            >
+              {isCtrl && showDeleteIcon.yellowCard && (
+                <span 
+                  className="penaltyIcon-delete"
+                  onClick={(e) => handlePenaltyDelete(e, 'yellowCard')}
+                >
+                  ×
+                </span>
+              )}
+            </span>
+          )}
+          {redCard > 0 && (
+            <span 
+              className={`penaltyIcon redCard ${isCtrl ? 'penaltyIcon-clickable' : ''} ${showDeleteIcon.redCard ? 'penaltyIcon-delete-mode' : ''}`}
+              data-count={redCard}
+              onClick={() => isCtrl && handlePenaltyIconClick('redCard')}
+            >
+              {isCtrl && showDeleteIcon.redCard && (
+                <span 
+                  className="penaltyIcon-delete"
+                  onClick={(e) => handlePenaltyDelete(e, 'redCard')}
+                >
+                  ×
+                </span>
+              )}
+            </span>
+          )}
+        </div>
         <button
           type="button"
           name={scoreBtnName}

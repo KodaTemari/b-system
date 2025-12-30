@@ -17,7 +17,9 @@ const SettingModal = ({
   getText,
   onClose,
   scoreAdjusting,
-  onRestartEnd
+  onRestartEnd,
+  onPenaltyClick,
+  onTimeoutClick
 }) => {
   // セクションごとの表示制御
   const shouldShowRedBlueTimers = () => {
@@ -36,6 +38,15 @@ const SettingModal = ({
   const shouldShowIntervalTimer = () => {
     // インターバルの時のみインターバルタイマーを表示
     return section === 'interval';
+  };
+
+  const shouldShowPenaltyAndTimeout = () => {
+    // スタンバイ、ウォームアップ、試合終了、結果確認のセクションでは表示しない
+    if (section === 'standby') return false;
+    if (section === 'warmup') return false;
+    if (section === 'matchFinished') return false;
+    if (section === 'resultCheck') return false;
+    return true;
   };
 
   return (
@@ -180,6 +191,60 @@ const SettingModal = ({
               {getLocalizedText('buttons.restartEnd', getCurrentLanguage())}
             </button>
           </div>
+        )}
+
+        {/* 反則・タイムアウトボタン */}
+        {shouldShowPenaltyAndTimeout() && (
+          <div id="penaltyTimeoutSetting">
+          <div className="penaltyTimeoutGroup red">
+            <button 
+              type="button" 
+              name="redPenaltyBtn" 
+              className="btn penalty"
+              onClick={() => onPenaltyClick && onPenaltyClick('red')}
+            >
+              {getLocalizedText('buttons.penalty', getCurrentLanguage()) || '反則'}
+            </button>
+            <button 
+              type="button" 
+              name="redTimeoutBtn" 
+              className="btn timeout"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (onTimeoutClick) {
+                  onTimeoutClick('red');
+                }
+              }}
+            >
+              {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'タイムアウト'}
+            </button>
+          </div>
+          <div className="penaltyTimeoutGroup blue">
+            <button 
+              type="button" 
+              name="bluePenaltyBtn" 
+              className="btn penalty"
+              onClick={() => onPenaltyClick && onPenaltyClick('blue')}
+            >
+              {getLocalizedText('buttons.penalty', getCurrentLanguage()) || '反則'}
+            </button>
+            <button 
+              type="button" 
+              name="blueTimeoutBtn" 
+              className="btn timeout"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (onTimeoutClick) {
+                  onTimeoutClick('blue');
+                }
+              }}
+            >
+              {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'タイムアウト'}
+            </button>
+          </div>
+        </div>
         )}
 
         <div id="timeSetting">
