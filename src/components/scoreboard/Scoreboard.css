@@ -292,7 +292,7 @@
 }
 
 [data-section="standby"] .settingModalCloseBtn {
-  top: 25vh;
+  top: 30vh;
 }
 
 [data-section="warmup"] #setting [name="settingBtn"] {
@@ -1176,10 +1176,6 @@
   height: 100vh;
 }
 
-[data-mode="ctrl"] [data-section="interval"] #sectionNav {
-  /*padding-top: 3vh;*/
-}
-
 /* インターバルセクションの時に赤、青のタイマーを透明度0に */
 [data-section="interval"] #red .time,
 [data-section="interval"] #blue .time {
@@ -1433,6 +1429,75 @@
 
 [data-mode="view"] #settingModal {
   background-color: var(--color-black-darker);
+}
+
+/* スタンバイセクションの入力欄 */
+#standbySetting {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  padding: 2vh 1vw;
+}
+
+#standbySetting input {
+  position: absolute;
+  top: 3vh;
+  color: var(--color-white);
+  padding: 2vh 0.5vw;
+  border: solid 0.5vmin var(--color-white);
+  border-radius: 1vmin;
+  box-sizing: border-box;
+  background-color: var(--color-gray-dark);
+  font-weight: normal;
+  font-family: inherit;
+  font-size: 4vmin;
+  width: 22vw;
+}
+
+#standbySetting input:focus {
+  background-color: var(--color-white);
+  color: var(--color-gray-dark);
+  outline: none;
+}
+
+#standbySetting #classificationInput {
+  left: 15vw;
+  background-color: var(--color-gray-dark) !important;
+  color: var(--color-white) !important;
+}
+
+#standbySetting #classificationInput:focus {
+  background-color: var(--color-white) !important;
+  color: var(--color-gray-dark) !important;
+}
+
+#standbySetting #categoryInput {
+  left: 37.5vw;
+  background-color: var(--color-gray-dark) !important;
+  color: var(--color-white) !important;
+}
+
+#standbySetting #categoryInput:focus {
+  background-color: var(--color-white) !important;
+  color: var(--color-gray-dark) !important;
+}
+
+#standbySetting #matchNameInput {
+  left: 60vw;
+}
+
+#standbySetting #redNameInput,
+#standbySetting #blueNameInput {
+  top: 42.2vh;
+  font-size: 7vmin;
+  text-align: center;
+  left: 1vw;
+  width: 45.7vw;
+}
+
+#standbySetting #blueNameInput {
+  left: inherit;
+  right: 1vw;
 }
 
 /* タイブレークボタンのスタイル */

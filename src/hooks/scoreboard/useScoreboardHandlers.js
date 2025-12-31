@@ -19,7 +19,9 @@ export const useScoreboardHandlers = ({
   setShowTimeModal,
   saveData,
   isCtrl,
-  currentLang
+  currentLang,
+  id,
+  court
 }) => {
   // スコア選択ハンドラー
   const handleSelect = useCallback((color) => {
@@ -407,6 +409,44 @@ export const useScoreboardHandlers = ({
     }
   }, [isCtrl, saveData, gameData, updateScreenActive, updateScoreAdjusting]);
 
+  // 勝敗判定を行うヘルパー関数
+  const determineMatchWinner = useCallback((redScore, blueScore, gameData, scoreboardElement) => {
+    let winner = null;
+
+    // まずスコアを比較（スコアが高い方が勝者を優先）
+    if (redScore > blueScore) {
+      winner = 'red';
+      // スコアに差がある場合、タイブレーク関連をリセット
+      if (scoreboardElement) {
+        scoreboardElement.removeAttribute('data-tieBreak');
+      }
+    } else if (blueScore > redScore) {
+      winner = 'blue';
+      // スコアに差がある場合、タイブレーク関連をリセット
+      if (scoreboardElement) {
+        scoreboardElement.removeAttribute('data-tieBreak');
+      }
+    } else {
+      // 同点の場合、タイブレークで勝敗を判断
+      const tieBreakColor = scoreboardElement?.getAttribute('data-tieBreak');
+      if (tieBreakColor === 'red') {
+        winner = 'red';
+      } else if (tieBreakColor === 'blue') {
+        winner = 'blue';
+      } else {
+        // data-tieBreak属性がない場合、gameDataのtieBreakフィールドを確認
+        if (gameData.red?.tieBreak === true) {
+          winner = 'red';
+        } else if (gameData.blue?.tieBreak === true) {
+          winner = 'blue';
+        }
+        // タイブレークもない場合は引き分け（winner = null）
+      }
+    }
+    
+    return winner;
+  }, []);
+
   // セクション進行ハンドラー
   const handleNextSection = useCallback(() => {
     const currentSectionID = gameData.match?.sectionID || 0;
@@ -505,43 +545,20 @@ export const useScoreboardHandlers = ({
         }
       }
       
+      // 試合終了セクションまたは結果確認セクションに移行する場合、ペナルティボールを0にする
+      if (nextSection === 'matchFinished' || nextSection === 'resultCheck') {
+        updateField('red', 'penaltyBall', 0);
+        updateField('blue', 'penaltyBall', 0);
+        // penaltyThrow状態も解除
+        updateField('screen', 'penaltyThrow', false);
+      }
+      
       // 試合終了セクションに移行する場合、勝敗判定を行う
       if (nextSection === 'matchFinished') {
         const scoreboardElement = document.getElementById('scoreboard');
         const redScore = gameData.red?.score || 0;
         const blueScore = gameData.blue?.score || 0;
-        let winner = null;
-
-        // まずスコアを比較（スコアが高い方が勝者を優先）
-        if (redScore > blueScore) {
-          winner = 'red';
-          // スコアに差がある場合、タイブレーク関連をリセット
-          if (scoreboardElement) {
-            scoreboardElement.removeAttribute('data-tieBreak');
-          }
-        } else if (blueScore > redScore) {
-          winner = 'blue';
-          // スコアに差がある場合、タイブレーク関連をリセット
-          if (scoreboardElement) {
-            scoreboardElement.removeAttribute('data-tieBreak');
-          }
-        } else {
-          // 同点の場合、タイブレークで勝敗を判断
-          const tieBreakColor = scoreboardElement?.getAttribute('data-tieBreak');
-          if (tieBreakColor === 'red') {
-            winner = 'red';
-          } else if (tieBreakColor === 'blue') {
-            winner = 'blue';
-          } else {
-            // data-tieBreak属性がない場合、gameDataのtieBreakフィールドを確認
-            if (gameData.red?.tieBreak === true) {
-              winner = 'red';
-            } else if (gameData.blue?.tieBreak === true) {
-              winner = 'blue';
-            }
-            // タイブレークもない場合は引き分け（winner = null）
-          }
-        }
+        const winner = determineMatchWinner(redScore, blueScore, gameData, scoreboardElement);
         
         // data-win属性を設定
         if (scoreboardElement) {
@@ -665,64 +682,51 @@ export const useScoreboardHandlers = ({
           };
         }
         
+        // 試合終了セクションまたは結果確認セクションの場合、ペナルティボールを0にする
+        if (nextSection === 'matchFinished' || nextSection === 'resultCheck') {
+          updatedGameData.red = {
+            ...gameData.red,
+            penaltyBall: 0
+          };
+          updatedGameData.blue = {
+            ...gameData.blue,
+            penaltyBall: 0
+          };
+          // penaltyThrow状態も解除
+          updatedGameData.screen = {
+            ...updatedGameData.screen,
+            penaltyThrow: false
+          };
+        }
+        
         // 試合終了セクションの場合、勝敗判定を行い、resultフィールドを設定
         if (nextSection === 'matchFinished') {
           const scoreboardElement = document.getElementById('scoreboard');
           const redScore = gameData.red?.score || 0;
           const blueScore = gameData.blue?.score || 0;
-          let winner = null;
+          const winner = determineMatchWinner(redScore, blueScore, gameData, scoreboardElement);
 
-          // まずスコアを比較（スコアが高い方が勝者を優先）
-          if (redScore > blueScore) {
-            winner = 'red';
+          // resultフィールドを設定
+          if (redScore > blueScore || blueScore > redScore) {
             // スコアに差がある場合、タイブレーク関連をリセット
             updatedGameData.red = {
-              ...gameData.red,
+              ...updatedGameData.red,
               tieBreak: false,
-              result: 'win'
+              result: winner === 'red' ? 'win' : 'lose'
             };
             updatedGameData.blue = {
-              ...gameData.blue,
+              ...updatedGameData.blue,
               tieBreak: false,
-              result: 'lose'
-            };
-          } else if (blueScore > redScore) {
-            winner = 'blue';
-            // スコアに差がある場合、タイブレーク関連をリセット
-            updatedGameData.red = {
-              ...gameData.red,
-              tieBreak: false,
-              result: 'lose'
-            };
-            updatedGameData.blue = {
-              ...gameData.blue,
-              tieBreak: false,
-              result: 'win'
+              result: winner === 'blue' ? 'win' : 'lose'
             };
           } else {
-            // 同点の場合、タイブレークで勝敗を判断
-            const tieBreakColor = scoreboardElement?.getAttribute('data-tieBreak');
-            if (tieBreakColor === 'red') {
-              winner = 'red';
-            } else if (tieBreakColor === 'blue') {
-              winner = 'blue';
-            } else {
-              // data-tieBreak属性がない場合、gameDataのtieBreakフィールドを確認
-              if (gameData.red?.tieBreak === true) {
-                winner = 'red';
-              } else if (gameData.blue?.tieBreak === true) {
-                winner = 'blue';
-              }
-              // タイブレークもない場合は引き分け（winner = null）
-            }
-            
-            // resultフィールドを設定
+            // 同点の場合
             updatedGameData.red = {
-              ...gameData.red,
+              ...updatedGameData.red,
               result: winner === 'red' ? 'win' : (winner === 'blue' ? 'lose' : 'draw')
             };
             updatedGameData.blue = {
-              ...gameData.blue,
+              ...updatedGameData.blue,
               result: winner === 'blue' ? 'win' : (winner === 'red' ? 'lose' : 'draw')
             };
           }
@@ -731,7 +735,7 @@ export const useScoreboardHandlers = ({
         saveData(updatedGameData);
       }
     }
-  }, [gameData, updateSection, updateBall, updateTimer, updateScoreAdjusting, isCtrl, saveData]);
+  }, [gameData, updateSection, updateBall, updateTimer, updateScoreAdjusting, isCtrl, saveData, determineMatchWinner]);
 
   // ウォームアップ開始ハンドラー
   const handleStartWarmup = useCallback(() => {
@@ -912,75 +916,43 @@ export const useScoreboardHandlers = ({
   }, [setShowTimeModal]);
 
   // リセットハンドラー
-  const handleReset = useCallback(() => {
-    // ゲームデータをリセット
-    if (saveData) {
-      const resetData = {
-        matchID: '',
-        match: {
-          totalEnds: 4,
-          sectionID: 0
-        },
-        screen: {
-          active: '',
-          setColor: false
-        },
-        warmup: {
-          limit: 120000
-        },
-        interval: {
-          limit: 60000
-        },
-        red: {
-          name: '',
-          score: 0,
-          scores: [],
-          limit: 300000,
-          ball: 7,
-          isRun: false,
-          time: 300000,
-          tieBreak: false,
-          result: '',
-          playerID: ''
-        },
-        blue: {
-          name: '',
-          score: 0,
-          scores: [],
-          limit: 300000,
-          ball: 6,
-          isRun: false,
-          time: 300000,
-          tieBreak: false,
-          result: '',
-          playerID: '',
-          reset: ''
-        },
-        courtId: '',
-        class: '',
-        matchName: '',
-        lastUpdated: new Date().toISOString()
-      };
-      saveData(resetData);
-    }
-  }, [saveData]);
-
-  // セクション変更ハンドラー
-  const handleSectionChange = useCallback((section, sectionID) => {
-    // セクション情報を更新
-    if (updateSection) {
-      updateSection(section, sectionID);
-    }
+  const handleReset = useCallback(async () => {
+    // reset/game.jsonを読み込んでリセット
+    if (!id || !court || !saveData) return;
     
-    // セクション変更時にボール数を再計算
-    const { redBalls, blueBalls } = calculateBallCount(gameData, sectionID);
-    if (redBalls !== gameData.red.ball) {
-      updateBall('red', redBalls);
+    try {
+      const apiUrl = 'http://localhost:3001';
+      const resetUrl = `${apiUrl}/data/${id}/reset/game.json`;
+      const response = await fetch(resetUrl);
+      
+      if (response.ok) {
+        const resetData = await response.json();
+        // init.jsonからsectionsとtieBreakを読み込む
+        const initUrl = `${apiUrl}/data/${id}/init.json`;
+        const initResponse = await fetch(initUrl);
+        if (initResponse.ok) {
+          const initData = await initResponse.json();
+          const sectionsData = initData.match?.sections || null;
+          const tieBreakData = initData.match?.tieBreak || initData.tieBreak || null;
+          
+          if (sectionsData || tieBreakData) {
+            resetData.match = {
+              ...resetData.match,
+              ...(sectionsData && { sections: sectionsData }),
+              ...(tieBreakData && { tieBreak: tieBreakData })
+            };
+          }
+        }
+        // lastUpdatedを現在時刻に更新
+        resetData.lastUpdated = new Date().toISOString();
+        saveData(resetData);
+      } else {
+        console.error('リセットデータの読み込みに失敗しました');
+      }
+    } catch (error) {
+      console.error('リセット処理エラー:', error);
     }
-    if (blueBalls !== gameData.blue.ball) {
-      updateBall('blue', blueBalls);
-    }
-  }, [gameData, updateSection, updateBall]);
+  }, [id, court, saveData]);
 
   // エンド選択ハンドラー
   const handleEndsSelect = useCallback((e) => {
@@ -1019,7 +991,16 @@ export const useScoreboardHandlers = ({
       updateField('interval', 'time', gameData.interval.limit);
     }
     
-    handleSectionChange(section, sectionID);
+    // 試合終了セクションまたは結果確認セクションに移行する場合、ペナルティボールを0にする
+    if (section === 'matchFinished' || section === 'resultCheck') {
+      updateField('red', 'penaltyBall', 0);
+      updateField('blue', 'penaltyBall', 0);
+      // penaltyThrow状態も解除
+      updateField('screen', 'penaltyThrow', false);
+    }
+    
+    // セクション情報を更新
+    updateSection(section, sectionID);
     
     // エンド切り替え時はsectionNavの中身を消すため、activeとscoreAdjustingをリセット
     if (isCtrl) {
@@ -1077,9 +1058,26 @@ export const useScoreboardHandlers = ({
         };
       }
       
+      // 試合終了セクションまたは結果確認セクションの場合、ペナルティボールを0にする
+      if (section === 'matchFinished' || section === 'resultCheck') {
+        updatedGameData.red = {
+          ...gameData.red,
+          penaltyBall: 0
+        };
+        updatedGameData.blue = {
+          ...gameData.blue,
+          penaltyBall: 0
+        };
+        // penaltyThrow状態も解除
+        updatedGameData.screen = {
+          ...updatedGameData.screen,
+          penaltyThrow: false
+        };
+      }
+      
       saveData(updatedGameData);
     }
-  }, [handleSectionChange, isCtrl, saveData, gameData, updateScreenActive, updateScoreAdjusting, updateBall, updateTimer, updateField]);
+  }, [isCtrl, saveData, gameData, updateScreenActive, updateScoreAdjusting, updateBall, updateTimer, updateField, updateSection]);
 
   // 時間調整ハンドラー
   const handleTimeAdjust = useCallback((timerType, adjustment) => {
@@ -1196,7 +1194,6 @@ export const useScoreboardHandlers = ({
     handleFinalShot,
     handleTimerEnd,
     handleReset,
-    handleSectionChange,
     handleEndsSelect,
     handleTimeAdjust,
     handleSwapTeamNames,

@@ -118,6 +118,14 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }));
   }, []);
 
+  // 直接プロパティ更新関数（classification, category, matchNameなど）
+  const updateDirectField = useCallback((fieldName, value) => {
+    setGameData(prevData => ({
+      ...prevData,
+      [fieldName]: value
+    }));
+  }, []);
+
   // スコア更新
   const updateScore = useCallback((color, newScore) => {
     updateField(color, 'score', newScore);
@@ -435,6 +443,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
   return {
     gameData,
     updateField,
+    updateDirectField,
     updateScore,
     updateTimer,
     updateBall,

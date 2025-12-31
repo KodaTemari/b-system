@@ -19,7 +19,9 @@ const SettingModal = ({
   scoreAdjusting,
   onRestartEnd,
   onPenaltyClick,
-  onTimeoutClick
+  onTimeoutClick,
+  gameData,
+  onUpdateField
 }) => {
   // セクションごとの表示制御
   const shouldShowRedBlueTimers = () => {
@@ -56,7 +58,7 @@ const SettingModal = ({
           <img src={resetIcon} alt={getLocalizedText('buttons.reset', getCurrentLanguage())} />
         </button>
 
-        <nav 
+        <div 
           id="endsSetting" 
           role="progressbar" 
           aria-label="ゲーム進行状況"
@@ -171,7 +173,68 @@ const SettingModal = ({
               );
             })}
           </ol>
-        </nav>
+        </div>
+
+        {/* スタンバイセクションの入力欄 */}
+        {section === 'standby' && (
+          <div id="standbySetting">
+            <input
+              id="classificationInput"
+              type="text"
+              placeholder={getLocalizedText('labels.classification', getCurrentLanguage()) || 'クラス'}
+              value={gameData?.classification || ''}
+              onChange={(e) => {
+                if (onUpdateField) {
+                  onUpdateField('classification', null, e.target.value);
+                }
+              }}
+            />
+            <input
+              id="categoryInput"
+              type="text"
+              placeholder={getLocalizedText('labels.category', getCurrentLanguage()) || 'カテゴリー'}
+              value={gameData?.category || ''}
+              onChange={(e) => {
+                if (onUpdateField) {
+                  onUpdateField('category', null, e.target.value);
+                }
+              }}
+            />
+            <input
+              id="matchNameInput"
+              type="text"
+              placeholder={getLocalizedText('labels.matchName', getCurrentLanguage()) || '試合名'}
+              value={gameData?.matchName || ''}
+              onChange={(e) => {
+                if (onUpdateField) {
+                  onUpdateField('matchName', null, e.target.value);
+                }
+              }}
+            />
+            <input
+              id="redNameInput"
+              type="text"
+              placeholder={getLocalizedText('labels.redName', getCurrentLanguage()) || '赤の名前'}
+              value={gameData?.red?.name || ''}
+              onChange={(e) => {
+                if (onUpdateField) {
+                  onUpdateField('red', 'name', e.target.value);
+                }
+              }}
+            />
+            <input
+              id="blueNameInput"
+              type="text"
+              placeholder={getLocalizedText('labels.blueName', getCurrentLanguage()) || '青の名前'}
+              value={gameData?.blue?.name || ''}
+              onChange={(e) => {
+                if (onUpdateField) {
+                  onUpdateField('blue', 'name', e.target.value);
+                }
+              }}
+            />
+          </div>
+        )}
 
         {/* エンド再開ボタン（settingOpenかつscoreAdjustingかつエンドセクションの時のみ表示） */}
         {scoreAdjusting && section && section.startsWith('end') && (
@@ -247,9 +310,11 @@ const SettingModal = ({
         </div>
         )}
 
-        <div id="timeSetting">
-          {/* 赤・青タイマー調整（エンド、ファイナルショット、タイブレークの時のみ表示） */}
-          {shouldShowRedBlueTimers() && (
+        {/* タイマー設定（スタンバイセクションの時は非表示） */}
+        {section !== 'standby' && (
+          <div id="timeSetting">
+            {/* 赤・青タイマー調整（エンド、ファイナルショット、タイブレークの時のみ表示） */}
+            {shouldShowRedBlueTimers() && (
             <>
               <div className="btnList">
                 <div>
@@ -316,7 +381,8 @@ const SettingModal = ({
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
         
         <form method="dialog">
           <button className="settingModalCloseBtn">

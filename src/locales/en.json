@@ -53,7 +53,8 @@
     "redForfeit": "Red team will forfeit.",
     "blueForfeit": "Blue team will forfeit.",
     "redSecondYellowCard": "Red team will forfeit due to second yellow card.",
-    "blueSecondYellowCard": "Blue team will forfeit due to second yellow card."
+    "blueSecondYellowCard": "Blue team will forfeit due to second yellow card.",
+    "reset": "Reset all data. Are you sure?"
   },
   "penalties": {
     "lineCross": "Line Cross",
@@ -70,5 +71,12 @@
   "errors": {
     "loading": "Loading data...",
     "errorOccurred": "An error occurred"
+  },
+  "labels": {
+    "classification": "Classification",
+    "category": "Category",
+    "matchName": "Match Name",
+    "redName": "Red Name",
+    "blueName": "Blue Name"
   }
 }

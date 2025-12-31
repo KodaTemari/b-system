@@ -30,6 +30,7 @@ export const useScoreboard = () => {
   const {
     gameData,
     updateField,
+    updateDirectField,
     updateScore,
     updateTimer,
     updateBall,
@@ -156,7 +157,9 @@ export const useScoreboard = () => {
     setShowTimeModal,
     saveData,
     isCtrl,
-    currentLang
+    currentLang,
+    id,
+    court
   });
 
   // ウォームアップタイマー切り替えハンドラー（warmupTimer.remainingMsを使用）
@@ -242,14 +245,15 @@ export const useScoreboard = () => {
   }, [isCtrl]);
 
   // data-mode="view"の時にURLを書き換え
-  useEffect(() => {
-    if (!isCtrl && !mode) {
-      // 現在のURLパスを取得し、?p=viewを追加
-      const currentPath = window.location.pathname;
-      const newUrl = `${currentPath}?p=view`;
-      window.history.replaceState({}, '', newUrl);
-    }
-  }, [isCtrl, mode]);
+  // 将来的に本部システムと連携する際には不要になる可能性があるため、コメント化
+  // useEffect(() => {
+  //   if (!isCtrl && !mode) {
+  //     // 現在のURLパスを取得し、?p=viewを追加
+  //     const currentPath = window.location.pathname;
+  //     const newUrl = `${currentPath}?p=view`;
+  //     window.history.replaceState({}, '', newUrl);
+  //   }
+  // }, [isCtrl, mode]);
 
   // キーボードショートカット
   useEffect(() => {
@@ -501,6 +505,8 @@ export const useScoreboard = () => {
     // ゲーム状態更新関数
     updateConfirmColor,
     saveData,
+    updateField,
+    updateDirectField,
     
     // ハンドラー
     ...handlers,

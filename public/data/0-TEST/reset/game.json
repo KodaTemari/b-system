@@ -1,40 +1,67 @@
 {
   "matchID": "",
-  "classification": "",
   "match": {
-    "ends": 4,
+    "totalEnds": 6,
     "sectionID": 0,
-    "confirmColor": false
+    "section": "standby",
+    "end": 0,
+    "approvals": {
+      "red": false,
+      "referee": false,
+      "blue": false
+    }
+  },
+  "screen": {
+    "active": "",
+    "setColor": false,
+    "scoreAdjusting": false,
+    "penaltyThrow": false
   },
   "warmup": {
-    "limit": 120000
+    "limit": 120000,
+    "time": 120000,
+    "isRun": false
   },
   "interval": {
-    "limit": 60000
+    "limit": 60000,
+    "time": 60000,
+    "isRun": false
   },
   "red": {
-    "playerID": "",
-    "name": "",
+    "name": "Red",
     "score": 0,
-    "scores": [],
-    "limit": 300000,
-    "ball": 7,
-    "isRun": false,
-    "time": 300000,
-    "tieBreak": false,
-    "result": ""
-  },
-  "blue": {
-    "playerID": "",
-    "name": "",
-    "score": 0,
-    "scores": [],
-    "limit": 300000,
+    "scores": [
+    ],
+    "limit": 360000,
     "ball": 6,
     "isRun": false,
-    "time": 300000,
+    "time": 360000,
     "tieBreak": false,
-    "reset": ""
+    "result": "",
+    "playerID": "",
+    "yellowCard": 0,
+    "penaltyBall": 0,
+    "redCard": 0
   },
+  "blue": {
+    "name": "Blue",
+    "score": 0,
+    "scores": [
+    ],
+    "limit": 360000,
+    "ball": 6,
+    "isRun": false,
+    "time": 360000,
+    "tieBreak": false,
+    "result": "",
+    "playerID": "",
+    "yellowCard": 0,
+    "penaltyBall": 0,
+    "redCard": 0
+  },
+  "courtId": "",
+  "classification": "",
+  "category": "",
+  "matchName": "",
   "lastUpdated": ""
 }

@@ -17,12 +17,10 @@ const SectionNavigation = ({
   classification,
   warmup,
   interval,
-  isLastEndSection,
   isTie,
   warmupTimer,
   intervalTimer,
   isCtrl,
-  active,
   scoreAdjusting,
   redPenaltyBall = 0,
   bluePenaltyBall = 0,
@@ -32,7 +30,6 @@ const SectionNavigation = ({
   onNextSection,
   onIntervalTimerToggle,
   onTieBreak,
-  onFinalShot,
   onSwapTeamNames
 }) => {
   // テキスト取得関数（現在の言語を使用）

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useScoreboard } from '../../hooks/scoreboard/useScoreboard';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../locales';
 import { calculateBallCount } from '../../utils/scoreboard/gameLogic';
@@ -86,7 +86,9 @@ const Scoreboard = () => {
     handleSwapTeamNames,
     getText,
     updateConfirmColor,
-    saveData
+    saveData,
+    updateField,
+    updateDirectField
   } = useScoreboard();
 
   // 設定モーダル開閉ハンドラー
@@ -113,6 +115,7 @@ const Scoreboard = () => {
   // 確認モーダルの状態管理
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [pendingPenalty, setPendingPenalty] = useState(null); // { teamColor, penaltyId }
+  const [pendingReset, setPendingReset] = useState(false); // リセット確認用
   
   // penaltyThrow中かどうかを判定
   // gameData.screen.penaltyThrowの状態を使用
@@ -257,11 +260,6 @@ const Scoreboard = () => {
     }
   };
   
-  // タイムアウトタイマーの更新ハンドラー（ローカルのみで管理、JSONには保存しない）
-  // eslint-disable-next-line no-unused-vars
-  const handleTimeoutTimeUpdate = (teamColor, timeoutId, newTime) => {
-    // タイムアウトはローカルのみで管理するため、JSONには保存しない
-  };
 
   // 反則選択ハンドラー
   const handlePenaltySelect = (teamColor, penaltyId) => {
@@ -448,9 +446,24 @@ const Scoreboard = () => {
     handleSettingModalClose();
   };
   
+  // リセット確認ハンドラー
+  const handleResetClick = () => {
+    setPendingReset(true);
+    setConfirmModalOpen(true);
+    setTimeout(() => {
+      const dialog = document.getElementById('confirmModal');
+      if (dialog) {
+        dialog.showModal();
+      }
+    }, 0);
+  };
+
   // 確認モーダルのOKハンドラー
   const handleConfirmOk = () => {
-    if (pendingPenalty) {
+    if (pendingReset) {
+      handleReset();
+      setPendingReset(false);
+    } else if (pendingPenalty) {
       executePenalty(pendingPenalty.teamColor, pendingPenalty.penaltyId);
       setPendingPenalty(null);
     }
@@ -460,11 +473,16 @@ const Scoreboard = () => {
   // 確認モーダルのキャンセルハンドラー
   const handleConfirmCancel = () => {
     setPendingPenalty(null);
+    setPendingReset(false);
     setConfirmModalOpen(false);
   };
   
   // 確認モーダルのメッセージを取得
   const getConfirmMessage = () => {
+    if (pendingReset) {
+      return getLocalizedText('confirm.reset', getCurrentLanguage()) || 'すべてのデータをリセットします。よろしいですか？';
+    }
+    
     if (!pendingPenalty) return '';
     
     const { teamColor, penaltyId } = pendingPenalty;
@@ -599,6 +617,42 @@ const Scoreboard = () => {
     }
   }, [red?.tieBreak, blue?.tieBreak, red?.score, blue?.score]);
 
+  // タイブレークリセット処理のヘルパー関数
+  const resetTieBreakData = useCallback((scoreboardElement, isCtrl, saveData, id, court, scoresChanged) => {
+    if (!isCtrl || !saveData || !scoresChanged) return;
+    
+    const currentTieBreak = scoreboardElement?.getAttribute('data-tieBreak');
+    if (currentTieBreak) {
+      scoreboardElement.removeAttribute('data-tieBreak');
+    }
+    
+    // 前回の値と比較して、変更がある場合のみ保存（無限ループを防ぐため非同期で実行）
+    setTimeout(() => {
+      if (id && court) {
+        const storedData = localStorage.getItem(`scoreboard_${id}_${court}_data`);
+        if (storedData) {
+          try {
+            const currentGameData = JSON.parse(storedData);
+            const updatedGameData = {
+              ...currentGameData,
+              red: {
+                ...currentGameData.red,
+                tieBreak: false
+              },
+              blue: {
+                ...currentGameData.blue,
+                tieBreak: false
+              }
+            };
+            saveData(updatedGameData);
+          } catch (err) {
+            console.error('データ更新エラー:', err);
+          }
+        }
+      }
+    }, 0);
+  }, []);
+
   // matchFinishedセクションとresultCheckセクションの時に勝敗判定を行う
   const prevScoresRef = useRef({ red: null, blue: null });
   const prevTieBreaksRef = useRef({ red: null, blue: null });
@@ -628,70 +682,14 @@ const Scoreboard = () => {
       if (redScore > blueScore) {
         winner = 'red';
         // スコアに差がある場合、タイブレーク関連をリセット
-        const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
-        if (currentTieBreak) {
-          scoreboardElement.removeAttribute('data-tieBreak');
-        }
-        // 前回の値と比較して、変更がある場合のみ保存（無限ループを防ぐため非同期で実行）
-        if (isCtrl && saveData && (redTieBreak !== false || blueTieBreak !== false) && scoresChanged) {
-          setTimeout(() => {
-            if (id && court) {
-              const storedData = localStorage.getItem(`scoreboard_${id}_${court}_data`);
-              if (storedData) {
-                try {
-                  const currentGameData = JSON.parse(storedData);
-                  const updatedGameData = {
-                    ...currentGameData,
-                    red: {
-                      ...currentGameData.red,
-                      tieBreak: false
-                    },
-                    blue: {
-                      ...currentGameData.blue,
-                      tieBreak: false
-                    }
-                  };
-                  saveData(updatedGameData);
-                } catch (err) {
-                  console.error('データ更新エラー:', err);
-                }
-              }
-            }
-          }, 0);
+        if ((redTieBreak !== false || blueTieBreak !== false) && scoresChanged) {
+          resetTieBreakData(scoreboardElement, isCtrl, saveData, id, court, scoresChanged);
         }
       } else if (blueScore > redScore) {
         winner = 'blue';
         // スコアに差がある場合、タイブレーク関連をリセット
-        const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
-        if (currentTieBreak) {
-          scoreboardElement.removeAttribute('data-tieBreak');
-        }
-        // 前回の値と比較して、変更がある場合のみ保存（無限ループを防ぐため非同期で実行）
-        if (isCtrl && saveData && (redTieBreak !== false || blueTieBreak !== false) && scoresChanged) {
-          setTimeout(() => {
-            if (id && court) {
-              const storedData = localStorage.getItem(`scoreboard_${id}_${court}_data`);
-              if (storedData) {
-                try {
-                  const currentGameData = JSON.parse(storedData);
-                  const updatedGameData = {
-                    ...currentGameData,
-                    red: {
-                      ...currentGameData.red,
-                      tieBreak: false
-                    },
-                    blue: {
-                      ...currentGameData.blue,
-                      tieBreak: false
-                    }
-                  };
-                  saveData(updatedGameData);
-                } catch (err) {
-                  console.error('データ更新エラー:', err);
-                }
-              }
-            }
-          }, 0);
+        if ((redTieBreak !== false || blueTieBreak !== false) && scoresChanged) {
+          resetTieBreakData(scoreboardElement, isCtrl, saveData, id, court, scoresChanged);
         }
       } else {
         // 同点の場合、タイブレークで勝敗を判断
@@ -730,7 +728,7 @@ const Scoreboard = () => {
       hasProcessedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section, red?.score, blue?.score, red?.tieBreak, blue?.tieBreak, isCtrl, id, court]);
+  }, [section, red?.score, blue?.score, red?.tieBreak, blue?.tieBreak, isCtrl, id, court, resetTieBreakData]);
 
   // ローディング表示
   if (isLoading) {
@@ -871,12 +869,10 @@ const Scoreboard = () => {
         classification={classification}
         warmup={warmup}
         interval={interval}
-        isLastEndSection={isLastEndSection}
         isTie={isTie}
         warmupTimer={warmupTimer}
         intervalTimer={intervalTimer}
         isCtrl={isCtrl}
-        active={active}
         scoreAdjusting={scoreAdjusting}
         redPenaltyBall={red?.penaltyBall || 0}
         bluePenaltyBall={blue?.penaltyBall || 0}
@@ -886,7 +882,6 @@ const Scoreboard = () => {
         onNextSection={handleNextSection}
         onIntervalTimerToggle={handleIntervalTimerToggle}
         onTieBreak={handleTieBreak}
-        onFinalShot={handleFinalShot}
         onSwapTeamNames={handleSwapTeamNames}
         key={currentLang}
       />
@@ -907,7 +902,7 @@ const Scoreboard = () => {
             section={section}
             sections={gameData.match?.sections}
             totalEnds={match?.totalEnds}
-            handleReset={handleReset}
+            handleReset={handleResetClick}
             handleEndsSelect={handleEndsSelect}
             handleTimeAdjust={handleTimeAdjust}
             getText={getText}
@@ -916,6 +911,33 @@ const Scoreboard = () => {
             onRestartEnd={handleRestartEnd}
             onPenaltyClick={handlePenaltyClick}
             onTimeoutClick={handleTimeoutClick}
+            gameData={gameData}
+            onUpdateField={(parent, child, value) => {
+              if (child) {
+                // red.name や blue.name の場合
+                updateField(parent, child, value);
+                if (saveData) {
+                  const updatedGameData = {
+                    ...gameData,
+                    [parent]: {
+                      ...gameData[parent],
+                      [child]: value
+                    }
+                  };
+                  saveData(updatedGameData);
+                }
+              } else {
+                // classification, category, matchName の場合（直接プロパティ）
+                updateDirectField(parent, value);
+                if (saveData) {
+                  const updatedGameData = {
+                    ...gameData,
+                    [parent]: value
+                  };
+                  saveData(updatedGameData);
+                }
+              }
+            }}
           />
         )}
 
@@ -940,7 +962,7 @@ const Scoreboard = () => {
             }}
             getText={getText}
             timeoutData={null}
-            onTimeoutTimeUpdate={handleTimeoutTimeUpdate}
+            onTimeoutTimeUpdate={null}
           />
         )}
 
@@ -967,7 +989,7 @@ const Scoreboard = () => {
         )}
 
         {/* 確認モーダル */}
-        {confirmModalOpen && (
+        {confirmModalOpen && (pendingPenalty || pendingReset) && (
           <ConfirmModal
             message={getConfirmMessage()}
             onConfirm={handleConfirmOk}
