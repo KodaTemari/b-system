@@ -1144,8 +1144,6 @@
   left: 0;
   bottom: 0;
   width: 100%;
-  /*height: 50vh;*/
-  /*padding-top: 10vh;*/
   background-color: var(--color-gray-dark);
   text-align: center;
   box-sizing: border-box;
@@ -1322,7 +1320,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: var(--color-gray-dark);
+    background-color: var(--color-gray-medium-dark);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1444,14 +1442,16 @@
   top: 3vh;
   color: var(--color-white);
   padding: 2vh 0.5vw;
-  border: solid 0.5vmin var(--color-white);
+  border: solid 0.3vmin var(--color-white-medium);
   border-radius: 1vmin;
   box-sizing: border-box;
-  background-color: var(--color-gray-dark);
+  background-color: var(--color-gray-medium-dark);
   font-weight: normal;
   font-family: inherit;
   font-size: 4vmin;
   width: 22vw;
+  box-shadow: inset 0.2vmin 0.2vmin 1vmin rgba(0, 0, 0, 0.5),
+              inset -0.1vmin -0.1vmin 0.5vmin rgba(255, 255, 255, 0.1);
 }
 
 #standbySetting input:focus {
@@ -1461,29 +1461,15 @@
 }
 
 #standbySetting #classificationInput {
-  left: 15vw;
-  background-color: var(--color-gray-dark) !important;
-  color: var(--color-white) !important;
-}
-
-#standbySetting #classificationInput:focus {
-  background-color: var(--color-white) !important;
-  color: var(--color-gray-dark) !important;
+  left: 16vw;
 }
 
 #standbySetting #categoryInput {
-  left: 37.5vw;
-  background-color: var(--color-gray-dark) !important;
-  color: var(--color-white) !important;
-}
-
-#standbySetting #categoryInput:focus {
-  background-color: var(--color-white) !important;
-  color: var(--color-gray-dark) !important;
+  left: 38.5vw;
 }
 
 #standbySetting #matchNameInput {
-  left: 60vw;
+  left: 61vw;
 }
 
 #standbySetting #redNameInput,

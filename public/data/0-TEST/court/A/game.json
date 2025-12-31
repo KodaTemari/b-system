@@ -39,7 +39,7 @@
       3
     ],
     "limit": 360000,
-    "ball": 7,
+    "ball": 6,
     "isRun": false,
     "time": 300000,
     "tieBreak": false,
@@ -50,7 +50,7 @@
     "redCard": 0
   },
   "blue": {
-    "name": "青",
+    "name": "青チーム",
     "score": 6,
     "scores": [
       1,
@@ -61,7 +61,7 @@
       9
     ],
     "limit": 360000,
-    "ball": 6,
+    "ball": 7,
     "isRun": false,
     "time": 300000,
     "tieBreak": false,
@@ -73,7 +73,7 @@
   },
   "courtId": "",
   "classification": "BC1/BC2",
-  "category": "グループ",
+  "category": "グループA",
   "matchName": "第1回戦",
   "lastUpdated": "2025-10-08T13:16:54.956Z"
 }
