@@ -262,6 +262,7 @@
 #setting [name="settingBtn"] {
   top: 62vh;
   left: 47vw;
+  z-index: 100;
 }
 
 #scoreboard .settingModalCloseBtn {
@@ -287,7 +288,7 @@
 }
 
 [data-section="matchFinished"] #setting [name="settingBtn"],
-[data-section="resultCheck"] #setting [name="settingBtn"] {
+[data-section="resultApproval"] #setting [name="settingBtn"] {
   opacity: 0.2;
 }
 
@@ -295,12 +296,16 @@
   top: 30vh;
 }
 
-[data-section="warmup"] #setting [name="settingBtn"] {
+[data-section="warmup"] #setting [name="settingBtn"],
+[data-section="warmup1"] #setting [name="settingBtn"],
+[data-section="warmup2"] #setting [name="settingBtn"] {
   top: 22vh;
   opacity: 0.3;
 }
 
-[data-section="warmup"] .settingModalCloseBtn {
+[data-section="warmup"] .settingModalCloseBtn,
+[data-section="warmup1"] .settingModalCloseBtn,
+[data-section="warmup2"] .settingModalCloseBtn {
   top: 22vh;
 }
 
@@ -333,23 +338,23 @@
   text-align: center;
 }
 
-#scoreboard[data-section="resultCheck"] main {
+#scoreboard[data-section="resultApproval"] main {
   justify-content: space-between;
 }
 
-#scoreboard[data-section="resultCheck"] main #red {
+#scoreboard[data-section="resultApproval"] main #red {
   align-self: flex-start;
 }
 
-#scoreboard[data-section="resultCheck"] main #blue {
+#scoreboard[data-section="resultApproval"] main #blue {
   align-self: flex-end;
 }
 
-#scoreboard[data-section="resultCheck"] .score {
+#scoreboard[data-section="resultApproval"] .score {
   width: 35vw;
 }
 
-#scoreboard[data-section="resultCheck"] #blue .score {
+#scoreboard[data-section="resultApproval"] #blue .score {
   margin-left: auto;
 }
 
@@ -787,12 +792,12 @@
 [data-section="tieBreak"][data-tieBreak="blue"] #blue .winMark,
 [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
 [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
-[data-section="resultCheck"][data-tieBreak="red"] #red .winMark,
-[data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark,
+[data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
+[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
 [data-section="matchFinished"][data-win="red"] #red .winMark,
 [data-section="matchFinished"][data-win="blue"] #blue .winMark,
-[data-section="resultCheck"][data-win="red"] #red .winMark,
-[data-section="resultCheck"][data-win="blue"] #blue .winMark {
+[data-section="resultApproval"][data-win="red"] #red .winMark,
+[data-section="resultApproval"][data-win="blue"] #blue .winMark {
   display: block;
 }
 
@@ -803,10 +808,10 @@
   transform: scale(1.5);
 }
 
-[data-section="resultCheck"][data-tieBreak="red"] #red .winMark,
-[data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark,
-[data-section="resultCheck"][data-win="red"] #red .winMark,
-[data-section="resultCheck"][data-win="blue"] #blue .winMark {
+[data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
+[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
+[data-section="resultApproval"][data-win="red"] #red .winMark,
+[data-section="resultApproval"][data-win="blue"] #blue .winMark {
   transform: scale(1.15);
 }
 
@@ -818,10 +823,10 @@
   transform: scale(1.3);
 }
 
-[data-mode="view"] [data-section="resultCheck"][data-tieBreak="red"] #red .winMark,
-[data-mode="view"] [data-section="resultCheck"][data-tieBreak="blue"] #blue .winMark,
-[data-mode="view"] [data-section="resultCheck"][data-win="red"] #red .winMark,
-[data-mode="view"] [data-section="resultCheck"][data-win="blue"] #blue .winMark {
+[data-mode="view"] [data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
+[data-mode="view"] [data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
+[data-mode="view"] [data-section="resultApproval"][data-win="red"] #red .winMark,
+[data-mode="view"] [data-section="resultApproval"][data-win="blue"] #blue .winMark {
   transform: scale(1.15);
 }
 
@@ -877,7 +882,7 @@
 [data-active="red-score"] #red [name="redScoreBtn"],
 [data-active="red-time"] #red .time button,
 [data-section="matchFinished"] #red [name="redScoreBtn"],
-[data-section="resultCheck"] #red [name="redScoreBtn"],
+[data-section="resultApproval"] #red [name="redScoreBtn"],
 [data-tiebreak="red"] #red [name="redScoreBtn"],
 #red h2::after {
   background-color: var(--color-red-base);
@@ -887,7 +892,7 @@
 [data-active="blue-score"] #blue [name="blueScoreBtn"],
 [data-active="blue-time"] #blue .time button,
 [data-section="matchFinished"] #blue [name="blueScoreBtn"],
-[data-section="resultCheck"] #blue [name="blueScoreBtn"],
+[data-section="resultApproval"] #blue [name="blueScoreBtn"],
 [data-tiebreak="blue"] #blue [name="blueScoreBtn"],
 #blue h2::after {
   background-color: var(--color-blue-base);
@@ -935,14 +940,14 @@
   height: 59vh;
 }
 
-#scoreboard[data-section="resultCheck"] .score,
-[data-mode="view"] #scoreboard[data-section="resultCheck"] .score {
+#scoreboard[data-section="resultApproval"] .score,
+[data-mode="view"] #scoreboard[data-section="resultApproval"] .score {
   height: 41vh;
 }
 
 
-#scoreboard[data-section="resultCheck"] #red [name="redScoreBtn"],
-#scoreboard[data-section="resultCheck"] #blue [name="blueScoreBtn"] {
+#scoreboard[data-section="resultApproval"] #red [name="redScoreBtn"],
+#scoreboard[data-section="resultApproval"] #blue [name="blueScoreBtn"] {
   font-size: 35vmin;
 }
 
@@ -951,21 +956,21 @@
 }
 
 [data-section="matchFinished"] .win,
-[data-section="resultCheck"] .win {
+[data-section="resultApproval"] .win {
   display: block;
   position: relative;
   height: 10vh;
   opacity: 0;
 }
 
-[data-section="resultCheck"] .win {
+[data-section="resultApproval"] .win {
   width: 35vw;
 }
 
 [data-win="red"][data-section="matchFinished"] #red .win,
 [data-win="blue"][data-section="matchFinished"] #blue .win,
-[data-win="red"][data-section="resultCheck"] #red .win,
-[data-win="blue"][data-section="resultCheck"] #blue .win {
+[data-win="red"][data-section="resultApproval"] #red .win,
+[data-win="blue"][data-section="resultApproval"] #blue .win {
   opacity: 1;
 }
 
@@ -973,8 +978,8 @@
   margin-left: auto;
 }
 
-/* resultCheckセクションの承認ボタン */
-#resultCheck {
+/* resultApprovalセクションの承認ボタン */
+#resultApproval {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -982,14 +987,14 @@
   padding: 2vh 0;
 }
 
-#resultCheck .approvalButtons {
+#resultApproval .approvalButtons {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
   width: 100%;
 }
 
-#resultCheck .approvalButtons .btn.approval {
+#resultApproval .approvalButtons .btn.approval {
   flex: 1;
   max-width: 25vw;
   padding: 2vh 2vw;
@@ -1002,13 +1007,13 @@
   position: relative;
 }
 
-#resultCheck .approvalButtons .btn.approval.approved {
+#resultApproval .approvalButtons .btn.approval.approved {
   background-color: var(--color-green-light);
   border-color: var(--color-green-base);
   position: relative;
 }
 
-#resultCheck .approvalButtons .btn.approval.approved::before {
+#resultApproval .approvalButtons .btn.approval.approved::before {
   content: '✔';
   position: absolute;
   top: 50%;
@@ -1020,7 +1025,7 @@
   z-index: 1;
 }
 
-#resultCheck .matchCompleted {
+#resultApproval .matchCompleted {
   font-size: 6vmin;
   color: var(--color-white);
   font-weight: bold;
@@ -1030,7 +1035,7 @@
   transition: opacity 0.3s;
 }
 
-#resultCheck .matchCompleted.visible {
+#resultApproval .matchCompleted.visible {
   opacity: 1;
 }
 
@@ -1153,16 +1158,37 @@
   box-sizing: border-box;
 }
 
-[data-section="warmup"] #sec-warmup {
+[data-section="warmup"] #sec-warmup,
+[data-section="warmup1"] #sec-warmup,
+[data-section="warmup2"] #sec-warmup {
   height: 82vh;
   padding-top: 8vh;
 }
 
-[data-mode="ctrl"] [data-section="warmup"] #sec-warmup {
-  padding-top: 18vh;
+/* warmup1からwarmup2への切り替わり時にフェードイン */
+[data-section="warmup2"] #sec-warmup {
+  animation: warmupFadeIn 0.5s ease-in-out forwards;
+  opacity: 0;
 }
 
-[data-section="warmup"] #sec-warmup .warmupLabel {
+@keyframes warmupFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+[data-mode="ctrl"] [data-section="warmup"] #sec-warmup,
+[data-mode="ctrl"] [data-section="warmup1"] #sec-warmup,
+[data-mode="ctrl"] [data-section="warmup2"] #sec-warmup {
+  padding-top: 6vh;
+}
+
+[data-section="warmup"] #sec-warmup .warmupLabel,
+[data-section="warmup1"] #sec-warmup .warmupLabel,
+[data-section="warmup2"] #sec-warmup .warmupLabel {
   font-size: 8vmin;
   color: var(--color-white);
   text-align: center;
@@ -1182,12 +1208,14 @@
 
 [data-section="matchFinished"] .time,
 [data-section="matchFinished"] .ball,
-[data-section="resultCheck"] .time,
-[data-section="resultCheck"] .ball {
+[data-section="resultApproval"] .time,
+[data-section="resultApproval"] .ball {
   display: none;
 }
 
 [data-section="warmup"] #timeSetting .warmupTimer,
+[data-section="warmup1"] #timeSetting .warmupTimer,
+[data-section="warmup2"] #timeSetting .warmupTimer,
 [data-section="interval"] #timeSetting .intervalTimer {
   display: flex;
   width: 100%;
@@ -1198,13 +1226,17 @@
   display: none;
 }
 
-[data-section="warmup"] #ends {
+[data-section="warmup"] #ends,
+[data-section="warmup1"] #ends,
+[data-section="warmup2"] #ends {
   top: 28vh;
   display: block;
   width: inherit;
 }
 
-[data-section="warmup"] #endsBox {
+[data-section="warmup"] #endsBox,
+[data-section="warmup1"] #endsBox,
+[data-section="warmup2"] #endsBox {
   background: none;
 }
 
@@ -1250,15 +1282,17 @@
 #scoreboard[data-section="matchFinished"] .score .plus,
 #scoreboard[data-section="matchFinished"] .score .minus,
 #scoreboard[data-section="matchFinished"] .score .tieBreak,
-[data-section="resultCheck"] #ends,
-#scoreboard[data-section="resultCheck"] .score .plus,
-#scoreboard[data-section="resultCheck"] .score .minus,
-#scoreboard[data-section="resultCheck"] .score .tieBreak {
+[data-section="resultApproval"] #ends,
+#scoreboard[data-section="resultApproval"] .score .plus,
+#scoreboard[data-section="resultApproval"] .score .minus,
+#scoreboard[data-section="resultApproval"] .score .tieBreak {
   display: none;
 }
 
 
-[data-section="warmup"] .score button[name$="ScoreBtn"] {
+[data-section="warmup"] .score button[name$="ScoreBtn"],
+[data-section="warmup1"] .score button[name$="ScoreBtn"],
+[data-section="warmup2"] .score button[name$="ScoreBtn"] {
   display: none;
 }
 
@@ -1268,7 +1302,9 @@
 }
 
 [data-section="standby"] main h2::after,
-[data-section="warmup"] main h2::after {
+[data-section="warmup"] main h2::after,
+[data-section="warmup1"] main h2::after,
+[data-section="warmup2"] main h2::after {
   content: "";
   display: inline-block;
   position: absolute;
@@ -1289,12 +1325,16 @@
 }
 
 /* ウォームアップタイマーのフォントサイズ */
-[data-section="warmup"] [name="warmupTimerBtn"] {
+[data-section="warmup"] [name="warmupTimerBtn"],
+[data-section="warmup1"] [name="warmupTimerBtn"],
+[data-section="warmup2"] [name="warmupTimerBtn"] {
   font-size: 35vmin;
 }
 
 /* ウォームアップタイマーが停止しているときの透明度 */
-[data-section="warmup"] [name="warmupTimerBtn"]:not([data-running="true"]) {
+[data-section="warmup"] [name="warmupTimerBtn"]:not([data-running="true"]),
+[data-section="warmup1"] [name="warmupTimerBtn"]:not([data-running="true"]),
+[data-section="warmup2"] [name="warmupTimerBtn"]:not([data-running="true"]) {
     opacity: 0.8;
 }
 
@@ -1308,7 +1348,7 @@
 [data-mode="view"] header [name="settingBtn"],
 [data-mode="view"] footer button,
 [data-section="matchFinished"] .score button,
-[data-section="resultCheck"] .score button {
+[data-section="resultApproval"] .score button {
     pointer-events: none;
     cursor: not-allowed;
 }
@@ -1429,6 +1469,10 @@
   background-color: var(--color-black-darker);
 }
 
+[data-section="standby"] #settingModal {
+  background-color: var(--color-black);
+}
+
 /* スタンバイセクションの入力欄 */
 #standbySetting {
   display: flex;
@@ -1437,11 +1481,10 @@
   padding: 2vh 1vw;
 }
 
-#standbySetting input {
-  position: absolute;
-  top: 3vh;
+#standbySetting input,
+#standbySetting select {
   color: var(--color-white);
-  padding: 2vh 0.5vw;
+  padding: 2vh 1vw;
   border: solid 0.3vmin var(--color-white-medium);
   border-radius: 1vmin;
   box-sizing: border-box;
@@ -1449,27 +1492,100 @@
   font-weight: normal;
   font-family: inherit;
   font-size: 4vmin;
-  width: 22vw;
+  width: 20vw;
   box-shadow: inset 0.2vmin 0.2vmin 1vmin rgba(0, 0, 0, 0.5),
               inset -0.1vmin -0.1vmin 0.5vmin rgba(255, 255, 255, 0.1);
 }
 
-#standbySetting input:focus {
+#standbySetting select {
+  padding: 2vh 1.25em 2vh 1vw;
+}
+
+#standbySetting > select,
+#standbySetting > input {
+  position: absolute;
+}
+
+#standbySetting input:focus,
+#standbySetting select:focus {
   background-color: var(--color-white);
   color: var(--color-gray-dark);
   outline: none;
 }
 
-#standbySetting #classificationInput {
-  left: 16vw;
+#standbySetting select option {
+  font-size: 4vmin;
+  background-color: var(--color-gray-medium-dark);
+  color: var(--color-white);
 }
 
-#standbySetting #categoryInput {
-  left: 38.5vw;
+#standbySetting #classificationInput,
+#standbySetting #genderInput,
+#standbySetting .detailSettingSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.25vw center;
+  background-size: 4.2vmin 4.2vmin;
+  width: 25vw;
+}
+
+#standbySetting #classificationInput:focus,
+#standbySetting #genderInput:focus,
+#standbySetting .detailSettingSelect:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23222' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+#standbySetting #classificationInput {
+  top: 3vh;
+  left: 15vw;
+  width: 28vw;
+}
+
+#standbySetting #genderInput {
+  top: 3vh;
+  left: 45vw;
+  width: 10vw;
+}
+
+#standbySetting #genderInput:disabled {
+  opacity: 0;
+  cursor: not-allowed;
 }
 
 #standbySetting #matchNameInput {
-  left: 61vw;
+  top: 3vh;
+  left: 57vw;
+  width: 28vw;
+}
+
+#standbySetting #detailSettings {
+  position: absolute;
+  top: 60vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vw 4vw;
+  justify-items: center;
+}
+
+#standbySetting .detailSettingItem {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  width: 46vw;
+}
+
+#standbySetting .detailSettingLabel {
+  color: var(--color-white);
+  font-size: 4vmin;
+  font-family: var(--font-family-base);
+  width: 14vw;
+}
+
+#standbySetting .detailSettingItem select {
+  width: 29vw;
 }
 
 #standbySetting #redNameInput,
@@ -1636,7 +1752,7 @@
 .settingOpen .finishWarmup,
 .settingOpen .startInterval,
 .settingOpen #sec-matchFinished,
-.settingOpen #resultCheck .approvalButtons,
+.settingOpen #resultApproval .approvalButtons,
 .settingOpen #resultTable {
   opacity: 0.1;
 }
@@ -1967,7 +2083,9 @@ opacity: 0.8;
   height: 39vh;
 }
 
-[data-section="warmup"] #timeSetting {
+[data-section="warmup"] #timeSetting,
+[data-section="warmup1"] #timeSetting,
+[data-section="warmup2"] #timeSetting {
   top: 34.5vh;
 }
 

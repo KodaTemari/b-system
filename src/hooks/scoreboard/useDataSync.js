@@ -45,9 +45,56 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         
         // sectionsとtieBreakをinit.jsonから取得したデータで置き換え
         if (sectionsData || tieBreakData) {
+          let processedSections = sectionsData;
+          
+          // ウォームアップの設定に応じてセクション配列を更新
+          if (processedSections) {
+            if (gameData.match?.warmup === 'none') {
+              // ウォームアップが「なし」の場合は、warmupとwarmup1、warmup2を削除
+              processedSections = processedSections.filter(s => s !== 'warmup' && s !== 'warmup1' && s !== 'warmup2');
+            } else if (gameData.match?.warmup === 'simultaneous') {
+              // ウォームアップが「同時」の場合は、warmup1とwarmup2を削除し、warmupを追加（存在しない場合）
+              processedSections = processedSections.filter(s => s !== 'warmup1' && s !== 'warmup2');
+              if (!processedSections.includes('warmup')) {
+                const standbyIndex = processedSections.indexOf('standby');
+                if (standbyIndex !== -1) {
+                  processedSections.splice(standbyIndex + 1, 0, 'warmup');
+                }
+              }
+            } else if (gameData.match?.warmup === 'separate') {
+              // ウォームアップが「別々」の場合は、warmupを削除し、warmup1とwarmup2を追加（存在しない場合）
+              processedSections = processedSections.filter(s => s !== 'warmup');
+              if (!processedSections.includes('warmup1') || !processedSections.includes('warmup2')) {
+                const standbyIndex = processedSections.indexOf('standby');
+                if (standbyIndex !== -1) {
+                  // warmup1とwarmup2が存在しない場合のみ追加
+                  if (!processedSections.includes('warmup1')) {
+                    processedSections.splice(standbyIndex + 1, 0, 'warmup1');
+                  }
+                  if (!processedSections.includes('warmup2')) {
+                    const warmup1Index = processedSections.indexOf('warmup1');
+                    if (warmup1Index !== -1) {
+                      processedSections.splice(warmup1Index + 1, 0, 'warmup2');
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          // インターバルが「なし」の場合は、セクション配列からintervalを削除
+          if (gameData.match?.interval === 'none' && processedSections) {
+            processedSections = processedSections.filter(s => s !== 'interval');
+          }
+          
+          // 結果承認が「なし」の場合は、セクション配列からresultApprovalを削除
+          if (gameData.match?.resultApproval === 'none' && processedSections) {
+            processedSections = processedSections.filter(s => s !== 'resultApproval');
+          }
+          
           gameData.match = {
             ...gameData.match,
-            ...(sectionsData && { sections: sectionsData }),
+            ...(processedSections && { sections: processedSections }),
             ...(tieBreakData && { tieBreak: tieBreakData })
           };
         }

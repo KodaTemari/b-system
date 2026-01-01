@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../locales';
 import resetIcon from '../img/icon_reset.png';
 import setting2Icon from '../img/icon_setting_2.png';
@@ -21,8 +21,207 @@ const SettingModal = ({
   onPenaltyClick,
   onTimeoutClick,
   gameData,
-  onUpdateField
+  onUpdateField,
+  id
 }) => {
+  // クラス選択肢と性別選択肢の状態
+  const [classificationOptions, setClassificationOptions] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedGender, setSelectedGender] = useState('');
+  const [selectedEnds, setSelectedEnds] = useState(totalEnds || 4);
+  const [selectedTieBreak, setSelectedTieBreak] = useState(gameData?.match?.tieBreak || 'none');
+  const [selectedWarmup, setSelectedWarmup] = useState(gameData?.match?.warmup || 'simultaneous');
+  const [selectedInterval, setSelectedInterval] = useState(gameData?.match?.interval || 'enabled');
+  const [selectedResultApproval, setSelectedResultApproval] = useState(gameData?.match?.resultApproval || 'none');
+  const [selectedRules, setSelectedRules] = useState(gameData?.match?.rules || 'worldBoccia');
+
+  // totalEndsが変更されたときに状態を更新
+  useEffect(() => {
+    setSelectedEnds(totalEnds || 4);
+  }, [totalEnds]);
+
+  // gameDataの変更に合わせて詳細設定の状態を更新
+  useEffect(() => {
+    if (gameData?.match?.tieBreak !== undefined) {
+      setSelectedTieBreak(gameData.match.tieBreak);
+    }
+    if (gameData?.match?.resultApproval !== undefined) {
+      setSelectedResultApproval(gameData.match.resultApproval);
+    }
+    if (gameData?.match?.rules !== undefined) {
+      setSelectedRules(gameData.match.rules);
+    }
+    if (gameData?.match?.warmup !== undefined) {
+      setSelectedWarmup(gameData.match.warmup);
+    }
+    if (gameData?.match?.interval !== undefined) {
+      setSelectedInterval(gameData.match.interval);
+    }
+  }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval]);
+
+  // 現在のclassificationからクラスIDと性別を解析
+  useEffect(() => {
+    if (gameData?.classification) {
+      const classification = gameData.classification;
+      // "BC1 男子" のような形式から解析
+      const parts = classification.split(' ');
+      if (parts.length >= 2) {
+        const genderPart = parts[parts.length - 1];
+        const classPart = parts.slice(0, -1).join(' ');
+        
+        // クラス名からクラスIDを逆引き
+        const findClassId = async () => {
+          try {
+            const apiUrl = 'http://localhost:3001';
+            const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+            const classDefResponse = await fetch(classDefUrl);
+            if (classDefResponse.ok) {
+              const classDefData = await classDefResponse.json();
+              const classDefinitions = classDefData.classifications || {};
+              
+              for (const [id, def] of Object.entries(classDefinitions)) {
+                if (def.name === classPart) {
+                  setSelectedClassId(id);
+                  if (genderPart === '男子') {
+                    setSelectedGender('M');
+                  } else if (genderPart === '女子') {
+                    setSelectedGender('F');
+                  }
+                  break;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('クラス解析エラー:', error);
+          }
+        };
+        findClassId();
+      } else {
+        // 性別がない場合（チーム戦など）
+        const findClassId = async () => {
+          try {
+            const apiUrl = 'http://localhost:3001';
+            const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+            const classDefResponse = await fetch(classDefUrl);
+            if (classDefResponse.ok) {
+              const classDefData = await classDefResponse.json();
+              const classDefinitions = classDefData.classifications || {};
+              
+              for (const [id, def] of Object.entries(classDefinitions)) {
+                if (def.name === classification) {
+                  setSelectedClassId(id);
+                  setSelectedGender('');
+                  break;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('クラス解析エラー:', error);
+          }
+        };
+        findClassId();
+      }
+    }
+  }, [gameData?.classification]);
+
+  // クラス定義と大会設定を読み込む
+  useEffect(() => {
+    const loadClassifications = async () => {
+      if (!id) return;
+
+      try {
+        const apiUrl = 'http://localhost:3001';
+        
+        // classDefinitions.jsonを読み込む
+        const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+        const classDefResponse = await fetch(classDefUrl);
+        let classDefinitions = {};
+        if (classDefResponse.ok) {
+          const classDefData = await classDefResponse.json();
+          classDefinitions = classDefData.classifications || {};
+        }
+
+        // init.jsonを読み込む
+        const initUrl = `${apiUrl}/data/${id}/init.json`;
+        const initResponse = await fetch(initUrl);
+        let tournamentClassifications = [];
+        if (initResponse.ok) {
+          const initData = await initResponse.json();
+          tournamentClassifications = initData.classifications || [];
+        }
+
+        // ユニークなクラスIDのリストを生成
+        const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];
+        const options = uniqueClassIds.map(classId => {
+          const classDef = classDefinitions[classId];
+          if (!classDef) return null;
+
+          return {
+            value: classId,
+            label: classDef.name,
+            hasGender: classDef.hasGender || false
+          };
+        }).filter(option => option !== null);
+
+        setClassificationOptions(options);
+      } catch (error) {
+        console.error('クラス定義の読み込みエラー:', error);
+      }
+    };
+
+    if (section === 'standby') {
+      loadClassifications();
+    }
+  }, [id, section]);
+
+  // クラスと性別の変更を処理
+  const handleClassificationChange = (classId) => {
+    setSelectedClassId(classId);
+    // クラスが変更されたら性別をリセット
+    setSelectedGender('');
+    updateClassificationValue(classId, '');
+  };
+
+  const handleGenderChange = (gender) => {
+    setSelectedGender(gender);
+    updateClassificationValue(selectedClassId, gender);
+  };
+
+  const updateClassificationValue = (classId, gender) => {
+    if (!classId) {
+      if (onUpdateField) {
+        onUpdateField('classification', null, '');
+      }
+      return;
+    }
+
+    try {
+      const apiUrl = 'http://localhost:3001';
+      const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+      fetch(classDefUrl)
+        .then(response => response.json())
+        .then(data => {
+          const classDef = data.classifications?.[classId];
+          if (!classDef) return;
+
+          let displayName = classDef.name;
+          if (gender === 'M') {
+            displayName = `${classDef.name} 男子`;
+          } else if (gender === 'F') {
+            displayName = `${classDef.name} 女子`;
+          }
+
+          if (onUpdateField) {
+            onUpdateField('classification', null, displayName);
+          }
+        })
+        .catch(error => {
+          console.error('クラス定義の読み込みエラー:', error);
+        });
+    } catch (error) {
+      console.error('エラー:', error);
+    }
+  };
   // セクションごとの表示制御
   const shouldShowRedBlueTimers = () => {
     // エンド、ファイナルショット、タイブレークの時は赤・青タイマーを表示
@@ -34,7 +233,7 @@ const SettingModal = ({
 
   const shouldShowWarmupTimer = () => {
     // ウォームアップの時のみウォームアップタイマーを表示
-    return section === 'warmup';
+    return section === 'warmup' || section === 'warmup1' || section === 'warmup2';
   };
 
   const shouldShowIntervalTimer = () => {
@@ -43,11 +242,11 @@ const SettingModal = ({
   };
 
   const shouldShowPenaltyAndTimeout = () => {
-    // スタンバイ、ウォームアップ、試合終了、結果確認のセクションでは表示しない
+    // スタンバイ、ウォームアップ、試合終了、結果承認のセクションでは表示しない
     if (section === 'standby') return false;
-    if (section === 'warmup') return false;
+    if (section === 'warmup' || section === 'warmup1' || section === 'warmup2') return false;
     if (section === 'matchFinished') return false;
-    if (section === 'resultCheck') return false;
+    if (section === 'resultApproval') return false;
     return true;
   };
 
@@ -100,7 +299,10 @@ const SettingModal = ({
                   // sections配列にtieBreakが存在する場合のみ表示
                   return sections.includes('tieBreak');
                 }
-                // エンド以外のセクション（standby, warmup, finalShot, matchFinished）は常に表示
+                // エンド以外のセクション（standby, warmup, warmup1, warmup2, finalShot, matchFinished）は常に表示
+                if (sectionName === 'warmup' || sectionName === 'warmup1' || sectionName === 'warmup2') {
+                  return true;
+                }
                 return true;
               };
 
@@ -178,28 +380,28 @@ const SettingModal = ({
         {/* スタンバイセクションの入力欄 */}
         {section === 'standby' && (
           <div id="standbySetting">
-            <input
+            <select
               id="classificationInput"
-              type="text"
-              placeholder={getLocalizedText('labels.classification', getCurrentLanguage()) || 'クラス'}
-              value={gameData?.classification || ''}
-              onChange={(e) => {
-                if (onUpdateField) {
-                  onUpdateField('classification', null, e.target.value);
-                }
-              }}
-            />
-            <input
-              id="categoryInput"
-              type="text"
-              placeholder={getLocalizedText('labels.category', getCurrentLanguage()) || 'カテゴリー'}
-              value={gameData?.category || ''}
-              onChange={(e) => {
-                if (onUpdateField) {
-                  onUpdateField('category', null, e.target.value);
-                }
-              }}
-            />
+              value={selectedClassId}
+              onChange={(e) => handleClassificationChange(e.target.value)}
+            >
+              <option value="">{getLocalizedText('labels.classification', getCurrentLanguage()) || 'クラスを選択'}</option>
+              {classificationOptions.map((option, index) => (
+                <option key={index} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              id="genderInput"
+              value={selectedGender}
+              onChange={(e) => handleGenderChange(e.target.value)}
+              disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}
+            >
+              <option value="">性別</option>
+              <option value="M">男子</option>
+              <option value="F">女子</option>
+            </select>
             <input
               id="matchNameInput"
               type="text"
@@ -233,6 +435,130 @@ const SettingModal = ({
                 }
               }}
             />
+            <div id="detailSettings">
+              <div className="detailSettingItem">
+                <label htmlFor="endsInput" className="detailSettingLabel">エンド数</label>
+                <select
+                  id="endsInput"
+                  className="detailSettingSelect"
+                  value={selectedEnds || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setSelectedEnds('');
+                      return;
+                    }
+                    const newEnds = parseInt(value, 10);
+                    if (!isNaN(newEnds)) {
+                      setSelectedEnds(newEnds);
+                      if (onUpdateField) {
+                        onUpdateField('match', 'totalEnds', newEnds);
+                      }
+                    }
+                  }}
+                >
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="tieBreakInput" className="detailSettingLabel">タイブレーク</label>
+                <select
+                  id="tieBreakInput"
+                  className="detailSettingSelect"
+                  value={selectedTieBreak}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedTieBreak(value);
+                    if (onUpdateField) {
+                      onUpdateField('match', 'tieBreak', value);
+                    }
+                  }}
+                >
+                  <option value="extraEnd">追加エンド</option>
+                  <option value="finalShot">ファイナルショット</option>
+                  <option value="none">なし</option>
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="warmupInput" className="detailSettingLabel">ウォームアップ</label>
+                <select
+                  id="warmupInput"
+                  className="detailSettingSelect"
+                  value={selectedWarmup}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedWarmup(value);
+                    if (onUpdateField) {
+                      onUpdateField('match', 'warmup', value);
+                    }
+                  }}
+                >
+                  <option value="simultaneous">2分 同時</option>
+                  <option value="separate">2分 別々</option>
+                  <option value="none">なし</option>
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="intervalInput" className="detailSettingLabel">インターバル</label>
+                <select
+                  id="intervalInput"
+                  className="detailSettingSelect"
+                  value={selectedInterval}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedInterval(value);
+                    if (onUpdateField) {
+                      onUpdateField('match', 'interval', value);
+                    }
+                  }}
+                >
+                  <option value="enabled">あり</option>
+                  <option value="none">なし</option>
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="rulesInput" className="detailSettingLabel">競技規則</label>
+                <select
+                  id="rulesInput"
+                  className="detailSettingSelect"
+                  value={selectedRules}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedRules(value);
+                    if (onUpdateField) {
+                      onUpdateField('match', 'rules', value);
+                    }
+                  }}
+                >
+                  <option value="worldBoccia">World Boccia Rules</option>
+                  <option value="friendlyMatch">フレンドリーマッチ</option>
+                  <option value="recreation">レク（反則なし）</option>
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="resultApprovalInput" className="detailSettingLabel">結果承認</label>
+                <select
+                  id="resultApprovalInput"
+                  className="detailSettingSelect"
+                  value={selectedResultApproval}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedResultApproval(value);
+                    if (onUpdateField) {
+                      onUpdateField('match', 'resultApproval', value);
+                    }
+                  }}
+                >
+                  <option value="enabled">あり</option>
+                  <option value="none">なし</option>
+                </select>
+              </div>
+            </div>
           </div>
         )}
 

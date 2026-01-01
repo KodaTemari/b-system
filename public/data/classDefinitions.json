@@ -1,0 +1,68 @@
+{
+  "classifications": {
+    "BC1": {
+      "name": "BC1",
+      "type": "individual",
+      "ends": 4,
+      "timer": 270000,
+      "hasGender": true
+    },
+    "BC2": {
+      "name": "BC2",
+      "type": "individual",
+      "ends": 4,
+      "timer": 210000,
+      "hasGender": true
+    },
+    "BC3": {
+      "name": "BC3",
+      "type": "individual",
+      "ends": 4,
+      "timer": 360000,
+      "hasGender": true
+    },
+    "BC4": {
+      "name": "BC4",
+      "type": "individual",
+      "ends": 4,
+      "timer": 210000,
+      "hasGender": true
+    },
+    "OPStanding": {
+      "name": "OP 立位",
+      "type": "individual",
+      "ends": 4,
+      "timer": 210000,
+      "hasGender": true
+    },
+    "OPSeated": {
+      "name": "OP 座位",
+      "type": "individual",
+      "ends": 4,
+      "timer": 210000,
+      "hasGender": true
+    },
+    "TeamsBC1BC2": {
+      "name": "Teams BC1/BC2",
+      "type": "team",
+      "ends": 6,
+      "timer": 300000,
+      "hasGender": false
+    },
+    "PairBC3": {
+      "name": "Pair BC3",
+      "type": "pair",
+      "ends": 4,
+      "timer": 420000,
+      "hasGender": false
+    },
+    "PairBC4": {
+      "name": "Pair BC4",
+      "type": "pair",
+      "ends": 4,
+      "timer": 240000,
+      "hasGender": false
+    }
+  }
+}
+

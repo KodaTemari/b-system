@@ -16,7 +16,10 @@ const SectionNavigation = ({
   matchName,
   classification,
   warmup,
+  warmupEnabled = true,
+  warmupMode = 'simultaneous',
   interval,
+  intervalEnabled = true,
   isTie,
   warmupTimer,
   intervalTimer,
@@ -42,7 +45,7 @@ const SectionNavigation = ({
   // セクションごとの表示制御
   const getCurrentSectionId = () => {
     if (section === 'standby') return 'sec-standby';
-    if (section === 'warmup') return 'sec-warmup';
+    if (section === 'warmup' || section === 'warmup1' || section === 'warmup2') return 'sec-warmup';
     if (section === 'interval') return 'sec-interval';
     if (section === 'finalShot') return 'sec-finalShot';
     if (section === 'tieBreak') return 'sec-tieBreak';
@@ -69,12 +72,11 @@ const SectionNavigation = ({
   return (
     <TagName id="sectionNav">
       {/* standbyセクション */}
-      {currentSectionId === 'sec-standby' && section !== 'matchFinished' && section !== 'resultCheck' && (
+      {currentSectionId === 'sec-standby' && section !== 'matchFinished' && section !== 'resultApproval' && (
         <div id="sec-standby">
           {/* ctrlとview両方に表示 */}
           <div id="matchInfo">
             <p id="classification">{classification}</p>
-            <p id="category">{category}</p>
             <p id="matchName">{matchName}</p>
           </div>
           
@@ -102,7 +104,7 @@ const SectionNavigation = ({
             </div>
           )}
           
-          {/* ctrl画面のみのウォームアップ開始ボタン */}
+          {/* ctrl画面のみのウォームアップ開始/試合開始ボタン */}
           {isCtrl && setColor && (
             <button 
               type="button" 
@@ -110,21 +112,23 @@ const SectionNavigation = ({
               className="btn" 
               onClick={onStartWarmup}
             >
-              {getText('startWarmup')}
+              {warmupEnabled ? getText('startWarmup') : getText('startMatch')}
             </button>
           )}
         </div>
       )}
 
       {/* warmupセクション */}
-      {currentSectionId === 'sec-warmup' && (
+      {currentSectionId === 'sec-warmup' && warmupEnabled && (
         <div id="sec-warmup">
-          {/* viewモードのみ「ウォームアップ」という文字を表示 */}
-          {!isCtrl && (
-            <div className="warmupLabel">
-              {getLocalizedText('sections.warmup', getCurrentLanguage()) || 'ウォームアップ'}
-            </div>
-          )}
+          {/* タイマーの上に見出しを表示 */}
+          <div className="warmupLabel">
+            {section === 'warmup1' 
+              ? (getLocalizedText('sections.warmup1', getCurrentLanguage()) || '赤 ウォームアップ')
+              : section === 'warmup2'
+              ? (getLocalizedText('sections.warmup2', getCurrentLanguage()) || '青 ウォームアップ')
+              : (getLocalizedText('sections.warmup', getCurrentLanguage()) || 'ウォームアップ')}
+          </div>
           <button 
             type="button" 
             name="warmupTimerBtn" 
@@ -138,13 +142,34 @@ const SectionNavigation = ({
           {isCtrl && (
             <>
               <br />
-              <button 
-                type="button" 
-                className="btn finishWarmup" 
-                onClick={onNextSection}
-              >
-                {getText('finishWarmup')}
-              </button>
+              {/* warmup2セクションでは、タイマーが停止している時は「ウォームアップ開始」、動いている時は「ウォームアップ終了」を表示 */}
+              {section === 'warmup2' ? (
+                !warmup.isRun ? (
+                  <button 
+                    type="button" 
+                    className="btn finishWarmup" 
+                    onClick={onWarmupTimerToggle}
+                  >
+                    {getText('startWarmup')}
+                  </button>
+                ) : (
+                  <button 
+                    type="button" 
+                    className="btn finishWarmup" 
+                    onClick={onNextSection}
+                  >
+                    {getText('finishWarmup')}
+                  </button>
+                )
+              ) : (
+                <button 
+                  type="button" 
+                  className="btn finishWarmup" 
+                  onClick={onNextSection}
+                >
+                  {getText('finishWarmup')}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -165,19 +190,19 @@ const SectionNavigation = ({
        redPenaltyBall === 0 &&
        bluePenaltyBall === 0 && (
         <div id="sec-end">
-          {/* 「インターバル開始」ボタンを表示 */}
+          {/* 「インターバル開始」または「次のエンドへ」ボタンを表示 */}
           <button 
             type="button" 
             className="btn startInterval" 
             onClick={onNextSection}
           >
-            {getText('startInterval')}
+            {intervalEnabled ? getText('startInterval') : getText('nextEnd')}
           </button>
         </div>
       )}
 
       {/* intervalセクション */}
-      {currentSectionId === 'sec-interval' && (
+      {currentSectionId === 'sec-interval' && intervalEnabled && (
         <div id="sec-interval">
           <button 
             type="button" 
@@ -234,7 +259,7 @@ const SectionNavigation = ({
                 {getLocalizedText('sections.finalShot', getCurrentLanguage())}
               </button>
             ) : (
-              // tieBreakが空文字の場合は引き分けとして試合終了
+              // tieBreakが"none"または空文字の場合は引き分けとして試合終了
               <button 
                 type="button" 
                 className="btn matchFinished" 
@@ -260,38 +285,13 @@ const SectionNavigation = ({
       {isCtrl && currentSectionId === 'sec-tieBreak' && (
         <div id="sec-tieBreak">
           {scoreAdjusting && (
-            (() => {
-              // 次のセクションを確認
-              const nextSectionID = sectionID + 1;
-              const nextSection = sections?.[nextSectionID];
-              
-              // 次のセクションがmatchFinishedの場合は「試合終了」ボタンを表示
-              if (nextSection === 'matchFinished') {
-                return (
-                  <button 
-                    type="button" 
-                    className="btn matchFinished" 
-                    onClick={onNextSection}
-                  >
-                    {getLocalizedText('sections.matchFinished', getCurrentLanguage())}
-                  </button>
-                );
-              }
-              
-              // それ以外の場合は「インターバル開始」ボタンを表示（ペナルティボールが0の場合のみ）
-              if (redPenaltyBall === 0 && bluePenaltyBall === 0) {
-                return (
-                  <button 
-                    type="button" 
-                    className="btn startInterval" 
-                    onClick={onNextSection}
-                  >
-                    {getText('startInterval')}
-                  </button>
-                );
-              }
-              return null;
-            })()
+            <button 
+              type="button" 
+              className="btn matchFinished" 
+              onClick={onNextSection}
+            >
+              {getLocalizedText('sections.matchFinished', getCurrentLanguage())}
+            </button>
           )}
         </div>
       )}
@@ -313,24 +313,24 @@ const SectionNavigation = ({
       {isCtrl && currentSectionId === 'sec-matchFinished' && (
         <div id="sec-matchFinished">
           {(() => {
-            // sections配列の最後がresultCheckかどうかを確認
+            // sections配列の最後がresultApprovalかどうかを確認
             const lastSection = sections && sections.length > 0 ? sections[sections.length - 1] : null;
-            const hasResultCheck = lastSection === 'resultCheck';
+            const hasResultApproval = lastSection === 'resultApproval';
             
-            // resultCheckが最後にある場合のみ「結果確認」ボタンを表示
-            if (hasResultCheck) {
+            // resultApprovalが最後にある場合のみ「結果承認」ボタンを表示
+            if (hasResultApproval) {
               return (
                 <button 
                   type="button" 
                   className="btn matchFinished" 
                   onClick={onNextSection}
                 >
-                  {getLocalizedText('sections.resultCheck', getCurrentLanguage())}
+                  {getLocalizedText('sections.resultApproval', getCurrentLanguage())}
                 </button>
               );
             }
             
-            // resultCheckがない場合は何も表示しない
+            // resultApprovalがない場合は何も表示しない
             return null;
           })()}
         </div>

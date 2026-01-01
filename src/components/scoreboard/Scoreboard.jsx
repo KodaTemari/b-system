@@ -552,7 +552,7 @@ const Scoreboard = () => {
     setSelectedTeamColor(null);
   };
 
-  // 結果確認セクションの承認状態管理（gameDataから読み込み）
+  // 結果承認セクションの承認状態管理（gameDataから読み込み）
   const approvals = gameData?.match?.approvals || {
     red: false,
     referee: false,
@@ -653,13 +653,13 @@ const Scoreboard = () => {
     }, 0);
   }, []);
 
-  // matchFinishedセクションとresultCheckセクションの時に勝敗判定を行う
+  // matchFinishedセクションとresultApprovalセクションの時に勝敗判定を行う
   const prevScoresRef = useRef({ red: null, blue: null });
   const prevTieBreaksRef = useRef({ red: null, blue: null });
   const hasProcessedRef = useRef(false);
   
   useEffect(() => {
-    if (section === 'matchFinished' || section === 'resultCheck') {
+    if (section === 'matchFinished' || section === 'resultApproval') {
       const scoreboardElement = document.getElementById('scoreboard');
       if (!scoreboardElement) return;
 
@@ -724,7 +724,7 @@ const Scoreboard = () => {
       prevTieBreaksRef.current = { red: redTieBreak, blue: blueTieBreak };
       hasProcessedRef.current = true;
     } else {
-      // sectionがmatchFinishedまたはresultCheckでない場合はリセット
+      // sectionがmatchFinishedまたはresultApprovalでない場合はリセット
       hasProcessedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -815,17 +815,17 @@ const Scoreboard = () => {
         </div>
       )}
 
-      {/* 結果表 - resultCheckセクションの時のみ表示 */}
-      {section === 'resultCheck' && (
+      {/* 結果表 - resultApprovalセクションの時のみ表示 */}
+      {section === 'resultApproval' && (
         <ResultTable
           redScores={red?.scores || []}
           blueScores={blue?.scores || []}
         />
       )}
 
-      {/* resultCheckセクション（viewモードでも表示） */}
-      {section === 'resultCheck' && (
-        <div id="resultCheck">
+      {/* resultApprovalセクション（viewモードでも表示） */}
+      {section === 'resultApproval' && (
+        <div id="resultApproval">
           {/* 承認ボタンはviewモードでも表示 */}
           <div className="approvalButtons">
             <button
@@ -868,7 +868,10 @@ const Scoreboard = () => {
         matchName={matchName}
         classification={classification}
         warmup={warmup}
+        warmupEnabled={match?.warmup !== 'none'}
+        warmupMode={match?.warmup || 'simultaneous'}
         interval={interval}
+        intervalEnabled={match?.interval !== 'none'}
         isTie={isTie}
         warmupTimer={warmupTimer}
         intervalTimer={intervalTimer}
@@ -912,18 +915,109 @@ const Scoreboard = () => {
             onPenaltyClick={handlePenaltyClick}
             onTimeoutClick={handleTimeoutClick}
             gameData={gameData}
+            id={id}
             onUpdateField={(parent, child, value) => {
               if (child) {
                 // red.name や blue.name の場合
                 updateField(parent, child, value);
                 if (saveData) {
-                  const updatedGameData = {
+                  let updatedGameData = {
                     ...gameData,
                     [parent]: {
                       ...gameData[parent],
                       [child]: value
                     }
                   };
+                  
+                  // ウォームアップ設定を変更した場合、セクション配列も更新
+                  if (parent === 'match' && child === 'warmup' && gameData.match?.sections) {
+                    let updatedSections = [...gameData.match.sections];
+                    if (value === 'none') {
+                      // ウォームアップが「なし」の場合は、warmupとwarmup1、warmup2を削除
+                      updatedSections = updatedSections.filter(s => s !== 'warmup' && s !== 'warmup1' && s !== 'warmup2');
+                    } else if (value === 'simultaneous') {
+                      // ウォームアップが「同時」の場合は、warmup1とwarmup2を削除し、warmupを追加（存在しない場合）
+                      updatedSections = updatedSections.filter(s => s !== 'warmup1' && s !== 'warmup2');
+                      if (!updatedSections.includes('warmup')) {
+                        const standbyIndex = updatedSections.indexOf('standby');
+                        if (standbyIndex !== -1) {
+                          updatedSections.splice(standbyIndex + 1, 0, 'warmup');
+                        }
+                      }
+                    } else if (value === 'separate') {
+                      // ウォームアップが「別々」の場合は、warmupを削除し、warmup1とwarmup2を追加（存在しない場合）
+                      updatedSections = updatedSections.filter(s => s !== 'warmup');
+                      if (!updatedSections.includes('warmup1') || !updatedSections.includes('warmup2')) {
+                        const standbyIndex = updatedSections.indexOf('standby');
+                        if (standbyIndex !== -1) {
+                          // warmup1とwarmup2が存在しない場合のみ追加
+                          if (!updatedSections.includes('warmup1')) {
+                            updatedSections.splice(standbyIndex + 1, 0, 'warmup1');
+                          }
+                          if (!updatedSections.includes('warmup2')) {
+                            const warmup1Index = updatedSections.indexOf('warmup1');
+                            if (warmup1Index !== -1) {
+                              updatedSections.splice(warmup1Index + 1, 0, 'warmup2');
+                            }
+                          }
+                        }
+                      }
+                    }
+                    updatedGameData.match = {
+                      ...updatedGameData.match,
+                      sections: updatedSections
+                    };
+                  }
+                  
+                  // インターバル設定を変更した場合、セクション配列も更新
+                  if (parent === 'match' && child === 'interval' && gameData.match?.sections) {
+                    let updatedSections = [...gameData.match.sections];
+                    if (value === 'none') {
+                      // intervalを削除
+                      updatedSections = updatedSections.filter(s => s !== 'interval');
+                    } else {
+                      // intervalが存在しない場合は、エンドの後に追加
+                      // 各エンドの後にintervalを追加（最終エンドの後は除く）
+                      const totalEnds = gameData.match?.totalEnds || 0;
+                      for (let i = 1; i <= totalEnds; i++) {
+                        const endSection = `end${i}`;
+                        const endIndex = updatedSections.indexOf(endSection);
+                        if (endIndex !== -1 && i < totalEnds) {
+                          // 次のセクションがintervalでない場合、追加
+                          const nextSection = updatedSections[endIndex + 1];
+                          if (nextSection !== 'interval') {
+                            updatedSections.splice(endIndex + 1, 0, 'interval');
+                          }
+                        }
+                      }
+                    }
+                    updatedGameData.match = {
+                      ...updatedGameData.match,
+                      sections: updatedSections
+                    };
+                  }
+                  
+                  // 結果承認設定を変更した場合、セクション配列も更新
+                  if (parent === 'match' && child === 'resultApproval' && gameData.match?.sections) {
+                    let updatedSections = [...gameData.match.sections];
+                    if (value === 'none') {
+                      // resultApprovalを削除
+                      updatedSections = updatedSections.filter(s => s !== 'resultApproval');
+                    } else {
+                      // resultApprovalが存在しない場合は、matchFinishedの後に追加
+                      if (!updatedSections.includes('resultApproval')) {
+                        const matchFinishedIndex = updatedSections.indexOf('matchFinished');
+                        if (matchFinishedIndex !== -1) {
+                          updatedSections.splice(matchFinishedIndex + 1, 0, 'resultApproval');
+                        }
+                      }
+                    }
+                    updatedGameData.match = {
+                      ...updatedGameData.match,
+                      sections: updatedSections
+                    };
+                  }
+                  
                   saveData(updatedGameData);
                 }
               } else {

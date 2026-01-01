@@ -451,9 +451,61 @@ export const useScoreboardHandlers = ({
   const handleNextSection = useCallback(() => {
     const currentSectionID = gameData.match?.sectionID || 0;
     const currentSection = gameData.match?.section || 'standby';
-    const nextSectionID = currentSectionID + 1;
     const sections = gameData.match?.sections || GAME_SECTIONS;
-    const nextSection = sections[nextSectionID];
+    const totalEnds = gameData.match?.totalEnds || 0;
+    
+    // 最終エンド終了時に「試合終了」ボタンを押した場合、matchFinishedセクションに直接遷移
+    let nextSectionID = currentSectionID + 1;
+    let nextSection = sections[nextSectionID];
+    const intervalEnabled = gameData.match?.interval !== 'none';
+    
+    // 現在のセクションが最終エンドの場合
+    if (currentSection && currentSection.startsWith('end')) {
+      const currentEndNumber = parseInt(currentSection.replace('end', ''), 10);
+      if (currentEndNumber === totalEnds) {
+        // 最終エンド終了時は、matchFinishedセクションを探す
+        const matchFinishedIndex = sections.findIndex(s => s === 'matchFinished');
+        if (matchFinishedIndex !== -1) {
+          nextSectionID = matchFinishedIndex;
+          nextSection = 'matchFinished';
+        }
+      } else if (!intervalEnabled) {
+        // インターバルが「なし」の場合、インターバルをスキップして次のエンドに直接遷移
+        const nextEndNumber = currentEndNumber + 1;
+        const nextEndSection = `end${nextEndNumber}`;
+        const nextEndIndex = sections.findIndex(s => s === nextEndSection);
+        if (nextEndIndex !== -1) {
+          nextSectionID = nextEndIndex;
+          nextSection = nextEndSection;
+        }
+      }
+    }
+    
+    // タイブレークセクションの後は、必ずmatchFinishedに遷移
+    if (currentSection === 'tieBreak') {
+      const matchFinishedIndex = sections.findIndex(s => s === 'matchFinished');
+      if (matchFinishedIndex !== -1) {
+        nextSectionID = matchFinishedIndex;
+        nextSection = 'matchFinished';
+      }
+    }
+    
+    // インターバルが「なし」の場合、インターバルセクションをスキップ
+    if (!intervalEnabled && nextSection === 'interval') {
+      // 次のエンドセクションを探す
+      const nextEndIndex = sections.findIndex((s, idx) => idx > nextSectionID && s.startsWith('end'));
+      if (nextEndIndex !== -1) {
+        nextSectionID = nextEndIndex;
+        nextSection = sections[nextEndIndex];
+      } else {
+        // 次のエンドがない場合は、matchFinishedを探す
+        const matchFinishedIndex = sections.findIndex(s => s === 'matchFinished');
+        if (matchFinishedIndex !== -1) {
+          nextSectionID = matchFinishedIndex;
+          nextSection = 'matchFinished';
+        }
+      }
+    }
 
     if (nextSection) {
       // エンド番号を計算
@@ -466,8 +518,17 @@ export const useScoreboardHandlers = ({
       const endNumber = extractEndNumber(nextSection);
       
       // 現在のセクションがwarmupの場合、ウォームアップタイマーを停止し、limitにリセット
-      if (currentSection === 'warmup') {
+      if (currentSection === 'warmup' || currentSection === 'warmup1' || currentSection === 'warmup2') {
         updateTimer('warmup', gameData.warmup.limit, false);
+      }
+      
+      // warmup1の後はwarmup2に遷移（ウォームアップが「別々」の場合）
+      if (currentSection === 'warmup1' && nextSection !== 'warmup2') {
+        const warmup2Index = sections.findIndex(s => s === 'warmup2');
+        if (warmup2Index !== -1) {
+          nextSectionID = warmup2Index;
+          nextSection = 'warmup2';
+        }
       }
       
       // インターバルセクションに移行するとき、インターバルタイマーを1分に設定して開始
@@ -545,8 +606,8 @@ export const useScoreboardHandlers = ({
         }
       }
       
-      // 試合終了セクションまたは結果確認セクションに移行する場合、ペナルティボールを0にする
-      if (nextSection === 'matchFinished' || nextSection === 'resultCheck') {
+      // 試合終了セクションまたは結果承認セクションに移行する場合、ペナルティボールを0にする
+      if (nextSection === 'matchFinished' || nextSection === 'resultApproval') {
         updateField('red', 'penaltyBall', 0);
         updateField('blue', 'penaltyBall', 0);
         // penaltyThrow状態も解除
@@ -593,7 +654,7 @@ export const useScoreboardHandlers = ({
         };
         
         // warmupセクションから移行する場合、タイマーも停止状態で保存し、limitにリセット
-        if (currentSection === 'warmup') {
+        if (currentSection === 'warmup' || currentSection === 'warmup1' || currentSection === 'warmup2') {
           updatedGameData.warmup = {
             ...gameData.warmup,
             time: gameData.warmup.limit,
@@ -682,8 +743,8 @@ export const useScoreboardHandlers = ({
           };
         }
         
-        // 試合終了セクションまたは結果確認セクションの場合、ペナルティボールを0にする
-        if (nextSection === 'matchFinished' || nextSection === 'resultCheck') {
+        // 試合終了セクションまたは結果承認セクションの場合、ペナルティボールを0にする
+        if (nextSection === 'matchFinished' || nextSection === 'resultApproval') {
           updatedGameData.red = {
             ...gameData.red,
             penaltyBall: 0
@@ -739,30 +800,104 @@ export const useScoreboardHandlers = ({
 
   // ウォームアップ開始ハンドラー
   const handleStartWarmup = useCallback(() => {
-    updateSection('warmup', 1);
+    const warmupMode = gameData.match?.warmup || 'simultaneous';
+    const warmupEnabled = warmupMode !== 'none';
+    const sections = gameData.match?.sections || GAME_SECTIONS;
     
-    // ウォームアップタイマーを開始
-    const warmupTime = gameData.warmup.time !== undefined ? gameData.warmup.time : gameData.warmup.limit;
-    updateTimer('warmup', warmupTime, true);
-    
-    // ctrlモードの場合のみ保存
-    if (isCtrl && saveData) {
-      const updatedGameData = {
-        ...gameData,
-        match: {
-          ...gameData.match,
-          sectionID: 1,
-          section: 'warmup'
-        },
-        warmup: {
-          ...gameData.warmup,
-          isRun: true,
-          time: warmupTime
+    if (warmupEnabled) {
+      // ウォームアップありの場合
+      let warmupSection = 'warmup';
+      let warmupSectionID = 1;
+      
+      if (warmupMode === 'separate') {
+        // ウォームアップが「別々」の場合は、warmup1から開始
+        warmupSection = 'warmup1';
+        warmupSectionID = sections.indexOf('warmup1');
+        if (warmupSectionID === -1) {
+          warmupSectionID = 1;
         }
-      };
-      saveData(updatedGameData);
+      } else {
+        // ウォームアップが「同時」の場合は、warmupから開始
+        warmupSectionID = sections.indexOf('warmup');
+        if (warmupSectionID === -1) {
+          warmupSectionID = 1;
+        }
+      }
+      
+      updateSection(warmupSection, warmupSectionID);
+      
+      // ウォームアップタイマーを開始
+      const warmupTime = gameData.warmup.time !== undefined ? gameData.warmup.time : gameData.warmup.limit;
+      updateTimer('warmup', warmupTime, true);
+      
+      // ctrlモードの場合のみ保存
+      if (isCtrl && saveData) {
+        const updatedGameData = {
+          ...gameData,
+          match: {
+            ...gameData.match,
+            sectionID: warmupSectionID,
+            section: warmupSection
+          },
+          warmup: {
+            ...gameData.warmup,
+            isRun: true,
+            time: warmupTime
+          }
+        };
+        saveData(updatedGameData);
+      }
+    } else {
+      // ウォームアップなしの場合、最初のエンドに直接遷移
+      const firstEndSection = sections.find(s => s.startsWith('end'));
+      if (firstEndSection) {
+        const firstEndIndex = sections.indexOf(firstEndSection);
+        const endNumber = parseInt(firstEndSection.replace('end', ''), 10);
+        
+        // 最初のエンドのボール数とタイマーを設定
+        const redBalls = calculateBallCount(endNumber, 'red');
+        const blueBalls = calculateBallCount(endNumber, 'blue');
+        
+        updateBall('red', redBalls);
+        updateBall('blue', blueBalls);
+        updateTimer('red', TIMER_LIMITS.GAME, false);
+        updateTimer('blue', TIMER_LIMITS.GAME, false);
+        
+        updateSection(firstEndSection, firstEndIndex);
+        
+        // ctrlモードの場合のみ保存
+        if (isCtrl && saveData) {
+          const updatedGameData = {
+            ...gameData,
+            match: {
+              ...gameData.match,
+              sectionID: firstEndIndex,
+              section: firstEndSection,
+              end: endNumber
+            },
+            red: {
+              ...gameData.red,
+              time: TIMER_LIMITS.GAME,
+              isRun: false,
+              ball: redBalls
+            },
+            blue: {
+              ...gameData.blue,
+              time: TIMER_LIMITS.GAME,
+              isRun: false,
+              ball: blueBalls
+            },
+            screen: {
+              ...gameData.screen,
+              active: '',
+              scoreAdjusting: false
+            }
+          };
+          saveData(updatedGameData);
+        }
+      }
     }
-  }, [updateSection, updateTimer, gameData, isCtrl, saveData]);
+  }, [updateSection, updateTimer, updateBall, gameData, isCtrl, saveData, calculateBallCount]);
 
   // ウォームアップタイマー切り替えハンドラー（useScoreboardで上書きされる）
   const handleWarmupTimerToggle = useCallback(() => {
@@ -837,48 +972,112 @@ export const useScoreboardHandlers = ({
       parseInt(currentSection.replace('end', ''), 10) === (gameData.match?.totalEnds || 0);
     
     if (isLastEnd) {
-      // 最終エンドの後に、インターバルとタイブレークを追加
+      const intervalEnabled = gameData.match?.interval !== 'none';
       const newSections = [...sections];
       const insertIndex = currentSectionID + 1;
-      newSections.splice(insertIndex, 0, 'interval', 'tieBreak');
       
-      // インターバルセクションのインデックスを計算
-      const intervalSectionID = insertIndex;
-      
-      // インターバルタイマーを1分に設定して開始
-      updateTimer('interval', TIMER_LIMITS.INTERVAL, true);
-      
-      // scoreAdjustingフラグをリセット
-      if (isCtrl && updateScoreAdjusting) {
-        updateScoreAdjusting(false);
-      }
-      
-      // インターバルセクションに移行（sections配列も更新）
-      updateSection('interval', intervalSectionID, newSections);
-      
-      // 更新されたゲームデータを保存（sections配列も更新）
-      if (isCtrl && saveData) {
-        const updatedGameData = {
-          ...gameData,
-          match: {
-            ...gameData.match,
-            sectionID: intervalSectionID,
-            section: 'interval',
-            sections: newSections,
-            end: 0
-          },
-          interval: {
-            ...gameData.interval,
-            time: TIMER_LIMITS.INTERVAL,
-            isRun: true
-          },
-          screen: {
-            ...gameData.screen,
-            active: '',
-            scoreAdjusting: false
-          }
-        };
-        saveData(updatedGameData);
+      if (intervalEnabled) {
+        // インターバルありの場合、インターバルとタイブレークを追加
+        newSections.splice(insertIndex, 0, 'interval', 'tieBreak');
+        
+        // インターバルセクションのインデックスを計算
+        const intervalSectionID = insertIndex;
+        
+        // インターバルタイマーを1分に設定して開始
+        updateTimer('interval', TIMER_LIMITS.INTERVAL, true);
+        
+        // scoreAdjustingフラグをリセット
+        if (isCtrl && updateScoreAdjusting) {
+          updateScoreAdjusting(false);
+        }
+        
+        // インターバルセクションに移行（sections配列も更新）
+        updateSection('interval', intervalSectionID, newSections);
+        
+        // 更新されたゲームデータを保存（sections配列も更新）
+        if (isCtrl && saveData) {
+          const updatedGameData = {
+            ...gameData,
+            match: {
+              ...gameData.match,
+              sectionID: intervalSectionID,
+              section: 'interval',
+              sections: newSections,
+              end: 0
+            },
+            interval: {
+              ...gameData.interval,
+              time: TIMER_LIMITS.INTERVAL,
+              isRun: true
+            },
+            screen: {
+              ...gameData.screen,
+              active: '',
+              scoreAdjusting: false
+            }
+          };
+          saveData(updatedGameData);
+        }
+      } else {
+        // インターバルなしの場合、タイブレークのみを追加
+        newSections.splice(insertIndex, 0, 'tieBreak');
+        
+        // タイブレークセクションのインデックスを計算
+        const tieBreakSectionID = insertIndex;
+        const totalEnds = gameData.match?.totalEnds || 0;
+        const tieBreakEnd = totalEnds + 1;
+        
+        // タイブレークセクションの時は、tieBreakの値に応じてボール数とタイマーを設定
+        const tieBreakType = gameData.match?.tieBreak || 'extraEnd';
+        const redBalls = tieBreakType === 'finalShot' ? 1 : 6;
+        const blueBalls = tieBreakType === 'finalShot' ? 1 : 6;
+        const redTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : TIMER_LIMITS.GAME;
+        const blueTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : TIMER_LIMITS.GAME;
+        
+        updateBall('red', redBalls);
+        updateBall('blue', blueBalls);
+        updateTimer('red', redTime, false);
+        updateTimer('blue', blueTime, false);
+        
+        // scoreAdjustingフラグをリセット
+        if (isCtrl && updateScoreAdjusting) {
+          updateScoreAdjusting(false);
+        }
+        
+        // タイブレークセクションに移行（sections配列も更新）
+        updateSection('tieBreak', tieBreakSectionID, newSections);
+        
+        // 更新されたゲームデータを保存（sections配列も更新）
+        if (isCtrl && saveData) {
+          const updatedGameData = {
+            ...gameData,
+            match: {
+              ...gameData.match,
+              sectionID: tieBreakSectionID,
+              section: 'tieBreak',
+              sections: newSections,
+              end: tieBreakEnd
+            },
+            red: {
+              ...gameData.red,
+              time: redTime,
+              isRun: false,
+              ball: redBalls
+            },
+            blue: {
+              ...gameData.blue,
+              time: blueTime,
+              isRun: false,
+              ball: blueBalls
+            },
+            screen: {
+              ...gameData.screen,
+              active: '',
+              scoreAdjusting: false
+            }
+          };
+          saveData(updatedGameData);
+        }
       }
     }
   }, [updateSection, updateTimer, updateScoreAdjusting, gameData, isCtrl, saveData, updateBall]);
@@ -992,7 +1191,7 @@ export const useScoreboardHandlers = ({
     }
     
     // 試合終了セクションまたは結果確認セクションに移行する場合、ペナルティボールを0にする
-    if (section === 'matchFinished' || section === 'resultCheck') {
+    if (section === 'matchFinished' || section === 'resultApproval') {
       updateField('red', 'penaltyBall', 0);
       updateField('blue', 'penaltyBall', 0);
       // penaltyThrow状態も解除
@@ -1059,7 +1258,7 @@ export const useScoreboardHandlers = ({
       }
       
       // 試合終了セクションまたは結果確認セクションの場合、ペナルティボールを0にする
-      if (section === 'matchFinished' || section === 'resultCheck') {
+      if (section === 'matchFinished' || section === 'resultApproval') {
         updatedGameData.red = {
           ...gameData.red,
           penaltyBall: 0

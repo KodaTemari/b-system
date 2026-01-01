@@ -1,7 +1,63 @@
 {
   "gameName": "テスト大会",
   "classifications": [
-    "FRD"
+    {
+      "id": "BC1",
+      "gender": "M"
+    },
+    {
+      "id": "BC1",
+      "gender": "F"
+    },
+    {
+      "id": "BC2",
+      "gender": "M"
+    },
+    {
+      "id": "BC2",
+      "gender": "F"
+    },
+    {
+      "id": "BC3",
+      "gender": "M"
+    },
+    {
+      "id": "BC3",
+      "gender": "F"
+    },
+    {
+      "id": "BC4",
+      "gender": "M"
+    },
+    {
+      "id": "BC4",
+      "gender": "F"
+    },
+    {
+      "id": "OPStanding",
+      "gender": "M"
+    },
+    {
+      "id": "OPStanding",
+      "gender": "F"
+    },
+    {
+      "id": "OPSeated",
+      "gender": "M"
+    },
+    {
+      "id": "OPSeated",
+      "gender": "F"
+    },
+    {
+      "id": "TeamsBC1BC2"
+    },
+    {
+      "id": "PairBC3"
+    },
+    {
+      "id": "PairBC4"
+    }
   ],
   "courts": [
     "A",
@@ -30,7 +86,7 @@
       "interval",
       "end6",
       "matchFinished",
-      "resultCheck"
+      "resultApproval"
     ],
     "tieBreak": "finalShot"
   }

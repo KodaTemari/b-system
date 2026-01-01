@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * 結果表コンポーネント
- * resultCheckセクションで各エンドのスコアを表示
+ * resultApprovalセクションで各エンドのスコアを表示
  */
 const ResultTable = ({ redScores = [], blueScores = [] }) => {
   // 配列の長さを取得（行数）
