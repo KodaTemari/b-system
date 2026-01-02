@@ -89,6 +89,44 @@
     "category": "カテゴリー",
     "matchName": "試合名",
     "redName": "赤の名前",
-    "blueName": "青の名前"
+    "blueName": "青の名前",
+    "redTimer": "赤タイマー",
+    "blueTimer": "青タイマー",
+    "warmup": "ウォームアップ",
+    "interval": "インターバル",
+    "numberOfEnds": "エンド数",
+    "tieBreak": "タイブレーク",
+    "rules": "競技規則",
+    "resultApproval": "結果承認",
+    "gender": "性別"
+  },
+  "options": {
+    "warmup": {
+      "simultaneous": "2:00 同時",
+      "separate": "2:00 別々",
+      "none": "なし"
+    },
+    "interval": {
+      "enabled": "1:00",
+      "none": "なし"
+    },
+    "tieBreak": {
+      "extraEnd": "追加エンド",
+      "finalShot": "ファイナルショット",
+      "none": "なし"
+    },
+    "rules": {
+      "friendlyMatch": "フレンドリーマッチ",
+      "worldBoccia": "公式ルール",
+      "recreation": "レク（反則なし）"
+    },
+    "resultApproval": {
+      "enabled": "あり",
+      "none": "なし"
+    },
+    "gender": {
+      "male": "男子",
+      "female": "女子"
+    }
   }
 }

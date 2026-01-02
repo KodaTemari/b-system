@@ -50,13 +50,27 @@
       "gender": "F"
     },
     {
-      "id": "TeamsBC1BC2"
+      "id": "IndividualFriendly",
+      "gender": "M"
+    },
+    {
+      "id": "IndividualFriendly",
+      "gender": "F"
     },
     {
       "id": "PairBC3"
     },
     {
       "id": "PairBC4"
+    },
+    {
+      "id": "PairFriendly"
+    },
+    {
+      "id": "TeamsBC1BC2"
+    },
+    {
+      "id": "TeamFriendly"
     }
   ],
   "courts": [

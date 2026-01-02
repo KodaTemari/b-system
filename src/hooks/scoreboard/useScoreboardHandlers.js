@@ -551,8 +551,8 @@ export const useScoreboardHandlers = ({
         
         updateBall('red', redBalls);
         updateBall('blue', blueBalls);
-        updateTimer('red', TIMER_LIMITS.GAME, false);
-        updateTimer('blue', TIMER_LIMITS.GAME, false);
+        updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
+        updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
         
         // エンド開始時はすべてのタイマーを停止状態にし、時間をlimitにリセット
         updateField('warmup', 'isRun', false);
@@ -678,13 +678,13 @@ export const useScoreboardHandlers = ({
           
           updatedGameData.red = {
             ...gameData.red,
-            time: TIMER_LIMITS.GAME,
+            time: gameData.red.limit || TIMER_LIMITS.GAME,
             isRun: false,
             ball: redBalls
           };
           updatedGameData.blue = {
             ...gameData.blue,
-            time: TIMER_LIMITS.GAME,
+            time: gameData.blue.limit || TIMER_LIMITS.GAME,
             isRun: false,
             ball: blueBalls
           };
@@ -860,8 +860,8 @@ export const useScoreboardHandlers = ({
         
         updateBall('red', redBalls);
         updateBall('blue', blueBalls);
-        updateTimer('red', TIMER_LIMITS.GAME, false);
-        updateTimer('blue', TIMER_LIMITS.GAME, false);
+        updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
+        updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
         
         updateSection(firstEndSection, firstEndIndex);
         
@@ -877,13 +877,13 @@ export const useScoreboardHandlers = ({
             },
             red: {
               ...gameData.red,
-              time: TIMER_LIMITS.GAME,
+              time: gameData.red.limit || TIMER_LIMITS.GAME,
               isRun: false,
               ball: redBalls
             },
             blue: {
               ...gameData.blue,
-              time: TIMER_LIMITS.GAME,
+              time: gameData.blue.limit || TIMER_LIMITS.GAME,
               isRun: false,
               ball: blueBalls
             },
@@ -1180,8 +1180,8 @@ export const useScoreboardHandlers = ({
       
       updateBall('red', redBalls);
       updateBall('blue', blueBalls);
-      updateTimer('red', TIMER_LIMITS.GAME, false);
-      updateTimer('blue', TIMER_LIMITS.GAME, false);
+      updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
+      updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
       
       // エンド開始時はすべてのタイマーを停止状態にし、時間をlimitにリセット
       updateField('warmup', 'isRun', false);
@@ -1233,13 +1233,13 @@ export const useScoreboardHandlers = ({
         
         updatedGameData.red = {
           ...gameData.red,
-          time: TIMER_LIMITS.GAME,
+          time: gameData.red.limit || TIMER_LIMITS.GAME,
           isRun: false,
           ball: redBalls
         };
         updatedGameData.blue = {
           ...gameData.blue,
-          time: TIMER_LIMITS.GAME,
+          time: gameData.blue.limit || TIMER_LIMITS.GAME,
           isRun: false,
           ball: blueBalls
         };

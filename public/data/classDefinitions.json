@@ -42,25 +42,46 @@
       "timer": 210000,
       "hasGender": true
     },
-    "TeamsBC1BC2": {
-      "name": "Teams BC1/BC2",
-      "type": "team",
-      "ends": 6,
+    "IndividualFriendly": {
+      "name": "フレンドリー",
+      "type": "individual",
+      "ends": 4,
       "timer": 300000,
-      "hasGender": false
+      "hasGender": true
     },
     "PairBC3": {
-      "name": "Pair BC3",
+      "name": "BC3",
       "type": "pair",
       "ends": 4,
       "timer": 420000,
       "hasGender": false
     },
     "PairBC4": {
-      "name": "Pair BC4",
+      "name": "BC4",
       "type": "pair",
       "ends": 4,
       "timer": 240000,
+      "hasGender": false
+    },
+    "PairFriendly": {
+      "name": "フレンドリー",
+      "type": "pair",
+      "ends": 4,
+      "timer": 300000,
+      "hasGender": false
+    },
+    "TeamsBC1BC2": {
+      "name": "BC1/BC2",
+      "type": "team",
+      "ends": 6,
+      "timer": 300000,
+      "hasGender": false
+    },
+    "TeamFriendly": {
+      "name": "フレンドリー",
+      "type": "team",
+      "ends": 6,
+      "timer": 300000,
       "hasGender": false
     }
   }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getText as getLocalizedText, getCurrentLanguage } from '../../../locales';
+import { getText as getLocalizedText, getCurrentLanguage, setLanguage } from '../../../locales';
 import resetIcon from '../img/icon_reset.png';
 import setting2Icon from '../img/icon_setting_2.png';
+import languageIcon from '../img/icon_language.png';
 
 /**
  * 設定モーダルコンポーネント
@@ -34,6 +35,34 @@ const SettingModal = ({
   const [selectedInterval, setSelectedInterval] = useState(gameData?.match?.interval || 'enabled');
   const [selectedResultApproval, setSelectedResultApproval] = useState(gameData?.match?.resultApproval || 'none');
   const [selectedRules, setSelectedRules] = useState(gameData?.match?.rules || 'worldBoccia');
+  
+  // 赤・青タイマーのリミット時間（ミリ秒）
+  const [selectedRedLimit, setSelectedRedLimit] = useState(gameData?.red?.limit || 300000);
+  const [selectedBlueLimit, setSelectedBlueLimit] = useState(gameData?.blue?.limit || 300000);
+  
+  // 言語切り替えモーダルの表示状態
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
+
+  // 言語変更ハンドラー
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang);
+    setCurrentLang(lang);
+    setShowLanguageModal(false);
+    // 言語変更イベントを発火して再レンダリングをトリガー
+    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+  };
+
+  // 言語変更イベントをリッスン
+  useEffect(() => {
+    const handleLanguageChangeEvent = (event) => {
+      setCurrentLang(event.detail.language);
+    };
+    window.addEventListener('languageChanged', handleLanguageChangeEvent);
+    return () => {
+      window.removeEventListener('languageChanged', handleLanguageChangeEvent);
+    };
+  }, []);
 
   // totalEndsが変更されたときに状態を更新
   useEffect(() => {
@@ -57,70 +86,79 @@ const SettingModal = ({
     if (gameData?.match?.interval !== undefined) {
       setSelectedInterval(gameData.match.interval);
     }
-  }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval]);
+    if (gameData?.red?.limit !== undefined) {
+      setSelectedRedLimit(gameData.red.limit);
+    }
+    if (gameData?.blue?.limit !== undefined) {
+      setSelectedBlueLimit(gameData.blue.limit);
+    }
+  }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit]);
 
   // 現在のclassificationからクラスIDと性別を解析
   useEffect(() => {
     if (gameData?.classification) {
       const classification = gameData.classification;
-      // "BC1 男子" のような形式から解析
+      // "個人 BC1 男子" または "IND BC1 男子" のような形式から解析
       const parts = classification.split(' ');
+      
+      // プレフィックスを除去（個人、ペア、チーム、IND、PAIR、TEAM）
+      const prefixes = ['個人', 'ペア', 'チーム', 'IND', 'PAIR', 'TEAM'];
+      let classPart = '';
+      let genderPart = '';
+      
       if (parts.length >= 2) {
-        const genderPart = parts[parts.length - 1];
-        const classPart = parts.slice(0, -1).join(' ');
-        
-        // クラス名からクラスIDを逆引き
-        const findClassId = async () => {
-          try {
-            const apiUrl = 'http://localhost:3001';
-            const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
-            const classDefResponse = await fetch(classDefUrl);
-            if (classDefResponse.ok) {
-              const classDefData = await classDefResponse.json();
-              const classDefinitions = classDefData.classifications || {};
-              
-              for (const [id, def] of Object.entries(classDefinitions)) {
-                if (def.name === classPart) {
-                  setSelectedClassId(id);
-                  if (genderPart === '男子') {
-                    setSelectedGender('M');
-                  } else if (genderPart === '女子') {
-                    setSelectedGender('F');
-                  }
-                  break;
-                }
-              }
-            }
-          } catch (error) {
-            console.error('クラス解析エラー:', error);
+        // 最後の部分が性別かどうかを確認
+        const lastPart = parts[parts.length - 1];
+        if (lastPart === '男子' || lastPart === '女子') {
+          genderPart = lastPart;
+          // プレフィックスを除去
+          const withoutPrefix = parts.slice(0, -1);
+          if (prefixes.includes(withoutPrefix[0])) {
+            classPart = withoutPrefix.slice(1).join(' ');
+          } else {
+            classPart = withoutPrefix.join(' ');
           }
-        };
-        findClassId();
+        } else {
+          // 性別がない場合
+          if (prefixes.includes(parts[0])) {
+            classPart = parts.slice(1).join(' ');
+          } else {
+            classPart = parts.join(' ');
+          }
+        }
       } else {
-        // 性別がない場合（チーム戦など）
-        const findClassId = async () => {
-          try {
-            const apiUrl = 'http://localhost:3001';
-            const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
-            const classDefResponse = await fetch(classDefUrl);
-            if (classDefResponse.ok) {
-              const classDefData = await classDefResponse.json();
-              const classDefinitions = classDefData.classifications || {};
-              
-              for (const [id, def] of Object.entries(classDefinitions)) {
-                if (def.name === classification) {
-                  setSelectedClassId(id);
+        classPart = classification;
+      }
+      
+      // クラス名からクラスIDを逆引き
+      const findClassId = async () => {
+        try {
+          const apiUrl = 'http://localhost:3001';
+          const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+          const classDefResponse = await fetch(classDefUrl);
+          if (classDefResponse.ok) {
+            const classDefData = await classDefResponse.json();
+            const classDefinitions = classDefData.classifications || {};
+            
+            for (const [id, def] of Object.entries(classDefinitions)) {
+              if (def.name === classPart) {
+                setSelectedClassId(id);
+                if (genderPart === '男子') {
+                  setSelectedGender('M');
+                } else if (genderPart === '女子') {
+                  setSelectedGender('F');
+                } else {
                   setSelectedGender('');
-                  break;
                 }
+                break;
               }
             }
-          } catch (error) {
-            console.error('クラス解析エラー:', error);
           }
-        };
-        findClassId();
-      }
+        } catch (error) {
+          console.error('クラス解析エラー:', error);
+        }
+      };
+      findClassId();
     }
   }, [gameData?.classification]);
 
@@ -152,14 +190,37 @@ const SettingModal = ({
 
         // ユニークなクラスIDのリストを生成
         const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];
-        const options = uniqueClassIds.map(classId => {
+        const currentLang = getCurrentLanguage();
+        
+        // 指定された順序でクラスを並び替え
+        const classOrder = [
+          'BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'IndividualFriendly',
+          'PairBC3', 'PairBC4', 'PairFriendly',
+          'TeamsBC1BC2', 'TeamFriendly'
+        ];
+        
+        // 順序に従ってソート
+        const sortedClassIds = classOrder.filter(id => uniqueClassIds.includes(id));
+        
+        const options = sortedClassIds.map(classId => {
           const classDef = classDefinitions[classId];
           if (!classDef) return null;
 
+          // タイプに基づいてプレフィックスを追加
+          let prefix = '';
+          if (classDef.type === 'individual') {
+            prefix = currentLang === 'ja' ? '個人 ' : 'IND ';
+          } else if (classDef.type === 'pair') {
+            prefix = currentLang === 'ja' ? 'ペア ' : 'PAIR ';
+          } else if (classDef.type === 'team') {
+            prefix = currentLang === 'ja' ? 'チーム ' : 'TEAM ';
+          }
+
           return {
             value: classId,
-            label: classDef.name,
-            hasGender: classDef.hasGender || false
+            label: `${prefix}${classDef.name}`,
+            hasGender: classDef.hasGender || false,
+            type: classDef.type
           };
         }).filter(option => option !== null);
 
@@ -204,11 +265,22 @@ const SettingModal = ({
           const classDef = data.classifications?.[classId];
           if (!classDef) return;
 
-          let displayName = classDef.name;
+          // タイプに基づいてプレフィックスを追加
+          const currentLang = getCurrentLanguage();
+          let prefix = '';
+          if (classDef.type === 'individual') {
+            prefix = currentLang === 'ja' ? '個人 ' : 'IND ';
+          } else if (classDef.type === 'pair') {
+            prefix = currentLang === 'ja' ? 'ペア ' : 'PAIR ';
+          } else if (classDef.type === 'team') {
+            prefix = currentLang === 'ja' ? 'チーム ' : 'TEAM ';
+          }
+
+          let displayName = `${prefix}${classDef.name}`;
           if (gender === 'M') {
-            displayName = `${classDef.name} 男子`;
+            displayName = `${prefix}${classDef.name} 男子`;
           } else if (gender === 'F') {
-            displayName = `${classDef.name} 女子`;
+            displayName = `${prefix}${classDef.name} 女子`;
           }
 
           if (onUpdateField) {
@@ -247,6 +319,11 @@ const SettingModal = ({
     if (section === 'warmup' || section === 'warmup1' || section === 'warmup2') return false;
     if (section === 'matchFinished') return false;
     if (section === 'resultApproval') return false;
+    
+    // 競技規則が「レク」の場合、反則・タイムアウトボタンを表示しない
+    const rules = gameData?.match?.rules || 'worldBoccia';
+    if (rules === 'recreation') return false;
+    
     return true;
   };
 
@@ -256,6 +333,35 @@ const SettingModal = ({
         <button type="button" name="resetBtn" onClick={handleReset}>
           <img src={resetIcon} alt={getLocalizedText('buttons.reset', getCurrentLanguage())} />
         </button>
+        <button 
+          type="button" 
+          name="languageBtn" 
+          onClick={() => setShowLanguageModal(!showLanguageModal)}
+        >
+          <img src={languageIcon} alt="Language" />
+        </button>
+        
+        {/* 言語一覧モーダル */}
+        {showLanguageModal && (
+          <div id="languageModal" className="languageModal">
+            <div className="languageModalContent">
+              <button
+                type="button"
+                className={`languageOption ${currentLang === 'en' ? 'active' : ''}`}
+                onClick={() => handleLanguageChange('en')}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                className={`languageOption ${currentLang === 'ja' ? 'active' : ''}`}
+                onClick={() => handleLanguageChange('ja')}
+              >
+                日本語
+              </button>
+            </div>
+          </div>
+        )}
 
         <div 
           id="endsSetting" 
@@ -398,9 +504,9 @@ const SettingModal = ({
               onChange={(e) => handleGenderChange(e.target.value)}
               disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}
             >
-              <option value="">性別</option>
-              <option value="M">男子</option>
-              <option value="F">女子</option>
+              <option value="">{getLocalizedText('labels.gender', currentLang)}</option>
+              <option value="M">{getLocalizedText('options.gender.male', currentLang)}</option>
+              <option value="F">{getLocalizedText('options.gender.female', currentLang)}</option>
             </select>
             <input
               id="matchNameInput"
@@ -437,7 +543,120 @@ const SettingModal = ({
             />
             <div id="detailSettings">
               <div className="detailSettingItem">
-                <label htmlFor="endsInput" className="detailSettingLabel">エンド数</label>
+                <label htmlFor="redLimitInput" className="detailSettingLabel">{getLocalizedText('labels.redTimer', currentLang)}</label>
+                <select
+                  id="redLimitInput"
+                  className="detailSettingSelect"
+                  value={selectedRedLimit}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      setSelectedRedLimit(value);
+                      if (onUpdateField) {
+                        onUpdateField('red', 'limit', value);
+                      }
+                    }
+                  }}
+                >
+                  {(() => {
+                    const options = [];
+                    // 2:00～7:00の30秒ごと
+                    for (let minutes = 2; minutes <= 7; minutes++) {
+                      for (let seconds = 0; seconds < 60; seconds += 30) {
+                        // 7分の時は0秒のみ
+                        if (minutes === 7 && seconds === 30) {
+                          continue;
+                        }
+                        const totalMs = minutes * 60000 + seconds * 1000;
+                        const displayTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        options.push(
+                          <option key={totalMs} value={totalMs}>
+                            {displayTime}
+                          </option>
+                        );
+                      }
+                    }
+                    return options;
+                  })()}
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="blueLimitInput" className="detailSettingLabel">{getLocalizedText('labels.blueTimer', currentLang)}</label>
+                <select
+                  id="blueLimitInput"
+                  className="detailSettingSelect"
+                  value={selectedBlueLimit}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      setSelectedBlueLimit(value);
+                      if (onUpdateField) {
+                        onUpdateField('blue', 'limit', value);
+                      }
+                    }
+                  }}
+                >
+                  {(() => {
+                    const options = [];
+                    // 2:00～7:00の30秒ごと（7:30は除外）
+                    for (let minutes = 2; minutes <= 7; minutes++) {
+                      for (let seconds = 0; seconds < 60; seconds += 30) {
+                        // 7分の時は0秒のみ（7:30を除外）
+                        if (minutes === 7 && seconds === 30) {
+                          continue;
+                        }
+                        const totalMs = minutes * 60000 + seconds * 1000;
+                        const displayTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        options.push(
+                          <option key={totalMs} value={totalMs}>
+                            {displayTime}
+                          </option>
+                        );
+                      }
+                    }
+                    return options;
+                  })()}
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="warmupInput" className="detailSettingLabel">{getLocalizedText('labels.warmup', currentLang)}</label>
+                <select
+                  id="warmupInput"
+                  className="detailSettingSelect"
+                  value={selectedWarmup}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedWarmup(value);
+                    if (onUpdateField) {
+                      onUpdateField('match', 'warmup', value);
+                    }
+                  }}
+                >
+                  <option value="simultaneous">{getLocalizedText('options.warmup.simultaneous', currentLang)}</option>
+                  <option value="separate">{getLocalizedText('options.warmup.separate', currentLang)}</option>
+                  <option value="none">{getLocalizedText('options.warmup.none', currentLang)}</option>
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="intervalInput" className="detailSettingLabel">{getLocalizedText('labels.interval', currentLang)}</label>
+                <select
+                  id="intervalInput"
+                  className="detailSettingSelect"
+                  value={selectedInterval}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedInterval(value);
+                    if (onUpdateField) {
+                      onUpdateField('match', 'interval', value);
+                    }
+                  }}
+                >
+                  <option value="enabled">{getLocalizedText('options.interval.enabled', currentLang)}</option>
+                  <option value="none">{getLocalizedText('options.interval.none', currentLang)}</option>
+                </select>
+              </div>
+              <div className="detailSettingItem">
+                <label htmlFor="endsInput" className="detailSettingLabel">{getLocalizedText('labels.numberOfEnds', currentLang)}</label>
                 <select
                   id="endsInput"
                   className="detailSettingSelect"
@@ -466,7 +685,7 @@ const SettingModal = ({
                 </select>
               </div>
               <div className="detailSettingItem">
-                <label htmlFor="tieBreakInput" className="detailSettingLabel">タイブレーク</label>
+                <label htmlFor="tieBreakInput" className="detailSettingLabel">{getLocalizedText('labels.tieBreak', currentLang)}</label>
                 <select
                   id="tieBreakInput"
                   className="detailSettingSelect"
@@ -479,50 +698,13 @@ const SettingModal = ({
                     }
                   }}
                 >
-                  <option value="extraEnd">追加エンド</option>
-                  <option value="finalShot">ファイナルショット</option>
-                  <option value="none">なし</option>
+                  <option value="extraEnd">{getLocalizedText('options.tieBreak.extraEnd', currentLang)}</option>
+                  <option value="finalShot">{getLocalizedText('options.tieBreak.finalShot', currentLang)}</option>
+                  <option value="none">{getLocalizedText('options.tieBreak.none', currentLang)}</option>
                 </select>
               </div>
               <div className="detailSettingItem">
-                <label htmlFor="warmupInput" className="detailSettingLabel">ウォームアップ</label>
-                <select
-                  id="warmupInput"
-                  className="detailSettingSelect"
-                  value={selectedWarmup}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedWarmup(value);
-                    if (onUpdateField) {
-                      onUpdateField('match', 'warmup', value);
-                    }
-                  }}
-                >
-                  <option value="simultaneous">2分 同時</option>
-                  <option value="separate">2分 別々</option>
-                  <option value="none">なし</option>
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="intervalInput" className="detailSettingLabel">インターバル</label>
-                <select
-                  id="intervalInput"
-                  className="detailSettingSelect"
-                  value={selectedInterval}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedInterval(value);
-                    if (onUpdateField) {
-                      onUpdateField('match', 'interval', value);
-                    }
-                  }}
-                >
-                  <option value="enabled">あり</option>
-                  <option value="none">なし</option>
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="rulesInput" className="detailSettingLabel">競技規則</label>
+                <label htmlFor="rulesInput" className="detailSettingLabel">{getLocalizedText('labels.rules', currentLang)}</label>
                 <select
                   id="rulesInput"
                   className="detailSettingSelect"
@@ -535,13 +717,13 @@ const SettingModal = ({
                     }
                   }}
                 >
-                  <option value="worldBoccia">World Boccia Rules</option>
-                  <option value="friendlyMatch">フレンドリーマッチ</option>
-                  <option value="recreation">レク（反則なし）</option>
+                  <option value="worldBoccia">{getLocalizedText('options.rules.worldBoccia', currentLang)}</option>
+                  <option value="friendlyMatch">{getLocalizedText('options.rules.friendlyMatch', currentLang)}</option>
+                  <option value="recreation">{getLocalizedText('options.rules.recreation', currentLang)}</option>
                 </select>
               </div>
               <div className="detailSettingItem">
-                <label htmlFor="resultApprovalInput" className="detailSettingLabel">結果承認</label>
+                <label htmlFor="resultApprovalInput" className="detailSettingLabel">{getLocalizedText('labels.resultApproval', currentLang)}</label>
                 <select
                   id="resultApprovalInput"
                   className="detailSettingSelect"
@@ -554,8 +736,8 @@ const SettingModal = ({
                     }
                   }}
                 >
-                  <option value="enabled">あり</option>
-                  <option value="none">なし</option>
+                  <option value="enabled">{getLocalizedText('options.resultApproval.enabled', currentLang)}</option>
+                  <option value="none">{getLocalizedText('options.resultApproval.none', currentLang)}</option>
                 </select>
               </div>
             </div>

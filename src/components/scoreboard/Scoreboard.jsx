@@ -353,9 +353,9 @@ const Scoreboard = () => {
           updatedOpponentData.ball = blueBalls;
           
           // タイマーをリセット
-          updatedTeamData.time = TIMER_LIMITS.GAME;
+          updatedTeamData.time = gameData[teamColor].limit || TIMER_LIMITS.GAME;
           updatedTeamData.isRun = false;
-          updatedOpponentData.time = TIMER_LIMITS.GAME;
+          updatedOpponentData.time = gameData[opponentColor].limit || TIMER_LIMITS.GAME;
           updatedOpponentData.isRun = false;
         }
         break;
@@ -1042,6 +1042,7 @@ const Scoreboard = () => {
             onSelectPenalty={handlePenaltySelect}
             onClose={handlePenaltyModalClose}
             getText={getText}
+            gameData={gameData}
           />
         )}
 

@@ -280,7 +280,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         ...prevData.red,
         score: 0,
         scores: [],
-        time: TIMER_LIMITS.GAME,
+        time: prevData.red.limit || TIMER_LIMITS.GAME,
         isRun: false,
         ball: BALL_COUNTS.DEFAULT_RED,
         tieBreak: false
@@ -289,7 +289,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         ...prevData.blue,
         score: 0,
         scores: [],
-        time: TIMER_LIMITS.GAME,
+        time: prevData.blue.limit || TIMER_LIMITS.GAME,
         isRun: false,
         ball: BALL_COUNTS.DEFAULT_BLUE,
         tieBreak: false

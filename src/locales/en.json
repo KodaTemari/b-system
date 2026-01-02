@@ -81,6 +81,44 @@
     "category": "Category",
     "matchName": "Match Name",
     "redName": "Red Name",
-    "blueName": "Blue Name"
+    "blueName": "Blue Name",
+    "redTimer": "Red Timer",
+    "blueTimer": "Blue Timer",
+    "warmup": "Warmup",
+    "interval": "Interval",
+    "numberOfEnds": "Number of Ends",
+    "tieBreak": "Tie Break",
+    "rules": "Rules",
+    "resultApproval": "Result Approval",
+    "gender": "Gender"
+  },
+  "options": {
+    "warmup": {
+      "simultaneous": "2:00 Simultaneous",
+      "separate": "2:00 Separate",
+      "none": "None"
+    },
+    "interval": {
+      "enabled": "1:00",
+      "none": "None"
+    },
+    "tieBreak": {
+      "extraEnd": "Extra End",
+      "finalShot": "Final Shot",
+      "none": "None"
+    },
+    "rules": {
+      "friendlyMatch": "Friendly Match",
+      "worldBoccia": "World Boccia Rules",
+      "recreation": "Recreation (No Penalties)"
+    },
+    "resultApproval": {
+      "enabled": "Enabled",
+      "none": "None"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female"
+    }
   }
 }

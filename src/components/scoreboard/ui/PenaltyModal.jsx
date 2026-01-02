@@ -8,10 +8,11 @@ const PenaltyModal = ({
   teamColor, // 'red' or 'blue'
   onSelectPenalty,
   onClose,
-  getText
+  getText,
+  gameData = {}
 }) => {
   // 反則のリスト
-  const penalties = [
+  const allPenalties = [
     { id: 'retraction', name: getLocalizedText('penalties.retraction', getCurrentLanguage()) || 'リトラクション', fullWidth: false },
     { id: 'penaltyBall', name: getLocalizedText('penalties.penaltyBall', getCurrentLanguage()) || 'ペナルティボール', fullWidth: false },
     { id: 'retractionAndPenaltyBall', name: getLocalizedText('penalties.retractionAndPenaltyBall', getCurrentLanguage()) || 'リトラクション および ペナルティボール', fullWidth: true },
@@ -21,6 +22,25 @@ const PenaltyModal = ({
     { id: 'restartedEnd', name: getLocalizedText('penalties.restartedEnd', getCurrentLanguage()) || 'リスターテッドエンド', fullWidth: false },
     { id: 'forfeit', name: getLocalizedText('penalties.forfeit', getCurrentLanguage()) || '没収試合', fullWidth: false }
   ];
+
+  // 競技規則が「フレンドリーマッチ」の場合、特定の反則項目を非表示
+  const rules = gameData?.match?.rules || 'worldBoccia';
+  const isFriendlyMatch = rules === 'friendlyMatch';
+  
+  // 第1エンド以降のセクションかどうかを確認
+  const currentSection = gameData?.match?.section || '';
+  const isEndSection = currentSection.startsWith('end');
+  const endNumber = isEndSection ? parseInt(currentSection.replace('end', ''), 10) : 0;
+  const isAfterFirstEnd = endNumber >= 1;
+
+  // フレンドリーマッチかつ第1エンド以降の場合、特定の反則項目をフィルタリング
+  const penalties = isFriendlyMatch && isAfterFirstEnd
+    ? allPenalties.filter(penalty => {
+        // 以下の項目を非表示
+        const hiddenPenalties = ['penaltyBall', 'retractionAndPenaltyBall', 'penaltyBallAndYellowCard', 'yellowCard', 'redCard'];
+        return !hiddenPenalties.includes(penalty.id);
+      })
+    : allPenalties;
 
   const teamName = teamColor === 'red' 
     ? getLocalizedText('buttons.redPenalty', getCurrentLanguage()) || '赤の反則'
@@ -95,4 +115,3 @@ const PenaltyModal = ({
 };
 
 export default PenaltyModal;
-

@@ -158,8 +158,8 @@
 }
 
 #sectionNav #setColorBox [name="resetColorBtn"] {
-  margin-top: 12vh;
-  transform: scale(0.5);
+  margin-top: -15vh;
+  transform: scale(0.3);
   opacity: 0.5;
 }
 
@@ -167,7 +167,7 @@
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 7vh;
+  bottom: 22vh;
   white-space: nowrap;
   max-width: 90vw;
   word-wrap: break-word;
@@ -283,8 +283,8 @@
 }
 
 [data-section="standby"] #setting [name="settingBtn"] {
-  top: 30vh;
-  opacity: 0.2;
+  top: 84vh;
+  opacity: 1;
 }
 
 [data-section="matchFinished"] #setting [name="settingBtn"],
@@ -293,7 +293,7 @@
 }
 
 [data-section="standby"] .settingModalCloseBtn {
-  top: 30vh;
+  top: 84vh;
 }
 
 [data-section="warmup"] #setting [name="settingBtn"],
@@ -1563,10 +1563,10 @@
 
 #standbySetting #detailSettings {
   position: absolute;
-  top: 60vh;
+  top: 40vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2vw 4vw;
+  gap: 2vh 4vw;
   justify-items: center;
 }
 
@@ -1579,7 +1579,7 @@
 
 #standbySetting .detailSettingLabel {
   color: var(--color-white);
-  font-size: 4vmin;
+  font-size: 3.5vmin;
   font-family: var(--font-family-base);
   width: 14vw;
 }
@@ -1590,7 +1590,7 @@
 
 #standbySetting #redNameInput,
 #standbySetting #blueNameInput {
-  top: 42.2vh;
+  top: 25vh;
   font-size: 7vmin;
   text-align: center;
   left: 1vw;
@@ -1796,6 +1796,66 @@
 
 [name="resetBtn"]:hover {
 opacity: 0.8;
+}
+
+[name="languageBtn"] {
+  position: absolute;
+  top: 3vh;
+  width: 6vw;
+  right: 3vw;
+  filter: brightness(3);
+  opacity: 0.2;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+[name="languageBtn"]:hover {
+  opacity: 0.8;
+}
+
+[name="languageBtn"] img {
+  width: 100%;
+  height: auto;
+}
+
+/* 言語一覧モーダル */
+#languageModal {
+  position: absolute;
+  top: 10vh;
+  right: 3vw;
+  background-color: var(--color-black-darker);
+  border: 1px solid var(--color-white);
+  border-radius: 4px;
+  padding: 1vh 0;
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.languageModalContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.languageOption {
+  background: none;
+  border: none;
+  color: var(--color-white);
+  padding: 1.5vh 2vw;
+  cursor: pointer;
+  text-align: left;
+  font-size: 1.2rem;
+  transition: background-color 0.2s;
+}
+
+.languageOption:hover {
+  background-color: var(--color-black-light);
+}
+
+.languageOption.active {
+  background-color: var(--color-black-light);
+  font-weight: bold;
 }
 
 [name="settingDetailsBtn"] {

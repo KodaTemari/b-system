@@ -10,9 +10,9 @@
       "referee": true,
       "blue": true
     },
-    "rules": "friendlyMatch",
+    "rules": "worldBoccia",
     "resultApproval": "enabled",
-    "warmup": "separate",
+    "warmup": "simultaneous",
     "interval": "enabled"
   },
   "screen": {
@@ -45,8 +45,8 @@
     "limit": 360000,
     "ball": 7,
     "isRun": false,
-    "time": 300000,
-    "tieBreak": true,
+    "time": 360000,
+    "tieBreak": false,
     "result": "win",
     "playerID": "",
     "yellowCard": 0,
@@ -67,7 +67,7 @@
     "limit": 360000,
     "ball": 6,
     "isRun": false,
-    "time": 300000,
+    "time": 360000,
     "tieBreak": false,
     "result": "lose",
     "playerID": "",
@@ -76,7 +76,7 @@
     "yellowCard": 0
   },
   "courtId": "",
-  "classification": "BC1",
+  "classification": "個人 BC1",
   "category": "グループA",
   "matchName": "第1回戦",
   "lastUpdated": "2025-10-08T13:16:54.956Z"
