@@ -53,6 +53,7 @@
     "redTimeout": "赤のタイムアウト",
     "blueTimeout": "青のタイムアウト",
     "end": "終了",
+    "nextMatch": "次の試合へ",
     "ok": "OK",
     "cancel": "キャンセル"
   },
@@ -126,7 +127,23 @@
     },
     "gender": {
       "male": "男子",
-      "female": "女子"
+      "female": "女子",
+      "mixed": "混合"
     }
+  },
+  "classNames": {
+    "BC1": "BC1",
+    "BC2": "BC2",
+    "BC3": "BC3",
+    "BC4": "BC4",
+    "OPStanding": "OP 立位",
+    "OPSeated": "OP 座位",
+    "IndividualFriendly": "フレンドリー",
+    "PairBC3": "BC3",
+    "PairBC4": "BC4",
+    "PairFriendly": "フレンドリー",
+    "TeamsBC1BC2": "BC1/BC2",
+    "TeamFriendly": "フレンドリー",
+    "Recreation": "レクリエーション"
   }
 }

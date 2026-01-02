@@ -45,8 +45,8 @@
     "IndividualFriendly": {
       "name": "フレンドリー",
       "type": "individual",
-      "ends": 4,
-      "timer": 300000,
+      "ends": 2,
+      "timer": 240000,
       "hasGender": true
     },
     "PairBC3": {
@@ -66,7 +66,7 @@
     "PairFriendly": {
       "name": "フレンドリー",
       "type": "pair",
-      "ends": 4,
+      "ends": 2,
       "timer": 300000,
       "hasGender": false
     },
@@ -80,7 +80,14 @@
     "TeamFriendly": {
       "name": "フレンドリー",
       "type": "team",
-      "ends": 6,
+      "ends": 2,
+      "timer": 300000,
+      "hasGender": false
+    },
+    "Recreation": {
+      "name": "レクリエーション",
+      "type": "recreation",
+      "ends": 2,
       "timer": 300000,
       "hasGender": false
     }

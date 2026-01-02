@@ -26,15 +26,23 @@ const TimeoutTimerModal = ({
   
   // タイトルを取得
   const getTitle = () => {
+    const currentLang = getCurrentLanguage();
+    
+    // チーム名を取得（英語: "Red" / "Blue", 日本語: "赤" / "青"）
     const teamName = teamColor === 'red' 
-      ? '赤'
-      : '青';
+      ? (currentLang === 'en' ? 'Red' : '赤')
+      : (currentLang === 'en' ? 'Blue' : '青');
     
     const timeoutName = timeoutType === 'medical'
-      ? getLocalizedText('timeouts.medical', getCurrentLanguage()) || 'メディカルタイムアウト'
-      : getLocalizedText('timeouts.technical', getCurrentLanguage()) || 'テクニカルタイムアウト';
+      ? getLocalizedText('timeouts.medical', currentLang) || 'メディカルタイムアウト'
+      : getLocalizedText('timeouts.technical', currentLang) || 'テクニカルタイムアウト';
     
-    return `${teamName}の${timeoutName}`;
+    // 英語の場合は "Red Medical Timeout" 形式、日本語の場合は "赤のメディカルタイムアウト" 形式
+    if (currentLang === 'en') {
+      return `${teamName} ${timeoutName}`;
+    } else {
+      return `${teamName}の${timeoutName}`;
+    }
   };
   
   // 時間をフォーマット

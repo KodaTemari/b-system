@@ -13,6 +13,7 @@ const SettingModal = ({
   sections,
   totalEnds,
   handleReset,
+  handleResetDirect,
   handleEndsSelect,
   handleTimeAdjust,
   getText,
@@ -28,7 +29,7 @@ const SettingModal = ({
   // クラス選択肢と性別選択肢の状態
   const [classificationOptions, setClassificationOptions] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedGender, setSelectedGender] = useState('');
+  const [selectedGender, setSelectedGender] = useState('M');
   const [selectedEnds, setSelectedEnds] = useState(totalEnds || 4);
   const [selectedTieBreak, setSelectedTieBreak] = useState(gameData?.match?.tieBreak || 'none');
   const [selectedWarmup, setSelectedWarmup] = useState(gameData?.match?.warmup || 'simultaneous');
@@ -39,6 +40,10 @@ const SettingModal = ({
   // 赤・青タイマーのリミット時間（ミリ秒）
   const [selectedRedLimit, setSelectedRedLimit] = useState(gameData?.red?.limit || 300000);
   const [selectedBlueLimit, setSelectedBlueLimit] = useState(gameData?.blue?.limit || 300000);
+  
+  // クラス変更による自動更新を追跡するためのref
+  const lastClassChangeRef = React.useRef({ classId: null, timestamp: 0 });
+  const currentLimitsRef = React.useRef({ red: selectedRedLimit, blue: selectedBlueLimit });
   
   // 言語切り替えモーダルの表示状態
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -86,10 +91,19 @@ const SettingModal = ({
     if (gameData?.match?.interval !== undefined) {
       setSelectedInterval(gameData.match.interval);
     }
-    if (gameData?.red?.limit !== undefined) {
+    // クラス変更直後（1000ms以内）は更新しない
+    const now = Date.now();
+    if (now - lastClassChangeRef.current.timestamp < 1000) {
+      return;
+    }
+    
+    // 現在の値と異なる場合のみ更新
+    if (gameData?.red?.limit !== undefined && gameData.red.limit !== currentLimitsRef.current.red) {
+      currentLimitsRef.current.red = gameData.red.limit;
       setSelectedRedLimit(gameData.red.limit);
     }
-    if (gameData?.blue?.limit !== undefined) {
+    if (gameData?.blue?.limit !== undefined && gameData.blue.limit !== currentLimitsRef.current.blue) {
+      currentLimitsRef.current.blue = gameData.blue.limit;
       setSelectedBlueLimit(gameData.blue.limit);
     }
   }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit]);
@@ -98,18 +112,20 @@ const SettingModal = ({
   useEffect(() => {
     if (gameData?.classification) {
       const classification = gameData.classification;
-      // "個人 BC1 男子" または "IND BC1 男子" のような形式から解析
+      // "個人 BC1 男子" または "IND BC1 Male" のような形式から解析
       const parts = classification.split(' ');
       
       // プレフィックスを除去（個人、ペア、チーム、IND、PAIR、TEAM）
       const prefixes = ['個人', 'ペア', 'チーム', 'IND', 'PAIR', 'TEAM'];
+      // 性別のテキスト（日本語と英語）
+      const genderTexts = ['男子', '女子', 'Male', 'Female'];
       let classPart = '';
       let genderPart = '';
       
       if (parts.length >= 2) {
         // 最後の部分が性別かどうかを確認
         const lastPart = parts[parts.length - 1];
-        if (lastPart === '男子' || lastPart === '女子') {
+        if (genderTexts.includes(lastPart)) {
           genderPart = lastPart;
           // プレフィックスを除去
           const withoutPrefix = parts.slice(0, -1);
@@ -140,17 +156,41 @@ const SettingModal = ({
             const classDefData = await classDefResponse.json();
             const classDefinitions = classDefData.classifications || {};
             
+            // プレフィックスからタイプを判定
+            let expectedType = null;
+            if (parts.length >= 2) {
+              const firstPart = parts[0];
+              if (firstPart === '個人' || firstPart === 'IND') {
+                expectedType = 'individual';
+              } else if (firstPart === 'ペア' || firstPart === 'PAIR') {
+                expectedType = 'pair';
+              } else if (firstPart === 'チーム' || firstPart === 'TEAM') {
+                expectedType = 'team';
+              }
+            } else if (parts.length === 1 && (parts[0] === 'レクリエーション' || parts[0] === 'Recreation')) {
+              expectedType = 'recreation';
+            }
+            
+            // 現在の言語を取得
+            const currentLang = getCurrentLanguage();
+            
             for (const [id, def] of Object.entries(classDefinitions)) {
-              if (def.name === classPart) {
-                setSelectedClassId(id);
-                if (genderPart === '男子') {
-                  setSelectedGender('M');
-                } else if (genderPart === '女子') {
-                  setSelectedGender('F');
-                } else {
-                  setSelectedGender('');
+              // ローカライズされたクラス名を取得
+              const localizedName = getLocalizedText(`classNames.${id}`, currentLang) || def.name;
+              
+              // 名前が一致し、タイプも一致する場合（タイプが判定できた場合）
+              if (def.name === classPart || localizedName === classPart) {
+                if (expectedType === null || def.type === expectedType) {
+                  setSelectedClassId(id);
+                  if (genderPart === '男子' || genderPart === 'Male') {
+                    setSelectedGender('M');
+                  } else if (genderPart === '女子' || genderPart === 'Female') {
+                    setSelectedGender('F');
+                  } else {
+                    setSelectedGender('M'); // 性別がない場合は「男子」をデフォルト
+                  }
+                  break;
                 }
-                break;
               }
             }
           }
@@ -190,13 +230,13 @@ const SettingModal = ({
 
         // ユニークなクラスIDのリストを生成
         const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];
-        const currentLang = getCurrentLanguage();
         
         // 指定された順序でクラスを並び替え
         const classOrder = [
           'BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'IndividualFriendly',
           'PairBC3', 'PairBC4', 'PairFriendly',
-          'TeamsBC1BC2', 'TeamFriendly'
+          'TeamsBC1BC2', 'TeamFriendly',
+          'Recreation'
         ];
         
         // 順序に従ってソート
@@ -214,11 +254,16 @@ const SettingModal = ({
             prefix = currentLang === 'ja' ? 'ペア ' : 'PAIR ';
           } else if (classDef.type === 'team') {
             prefix = currentLang === 'ja' ? 'チーム ' : 'TEAM ';
+          } else if (classDef.type === 'recreation') {
+            prefix = ''; // レクリエーションはプレフィックスなし
           }
+
+          // クラス名をローカライズ
+          const className = getLocalizedText(`classNames.${classId}`, currentLang) || classDef.name;
 
           return {
             value: classId,
-            label: `${prefix}${classDef.name}`,
+            label: `${prefix}${className}`,
             hasGender: classDef.hasGender || false,
             type: classDef.type
           };
@@ -233,13 +278,144 @@ const SettingModal = ({
     if (section === 'standby') {
       loadClassifications();
     }
-  }, [id, section]);
+  }, [id, section, currentLang]);
+
+  // クラスに応じた設定値を取得
+  const getClassSettings = (classId) => {
+    const settings = {
+      // デフォルト値
+      redLimit: 270000, // 4:30
+      blueLimit: 270000, // 4:30
+      warmup: 'simultaneous', // 2:00 同時
+      interval: 'enabled', // 1:00
+      totalEnds: 4,
+      tieBreak: 'extraEnd', // 追加エンド
+      rules: 'worldBoccia', // 公式ルール
+      resultApproval: 'enabled' // あり
+    };
+
+    switch (classId) {
+      case 'BC1':
+        settings.redLimit = 270000; // 4:30
+        settings.blueLimit = 270000; // 4:30
+        break;
+      case 'BC2':
+        settings.redLimit = 210000; // 3:30
+        settings.blueLimit = 210000; // 3:30
+        break;
+      case 'BC3':
+        settings.redLimit = 360000; // 6:00
+        settings.blueLimit = 360000; // 6:00
+        break;
+      case 'BC4':
+        settings.redLimit = 210000; // 3:30
+        settings.blueLimit = 210000; // 3:30
+        break;
+      case 'OPStanding':
+        settings.redLimit = 210000; // 3:30
+        settings.blueLimit = 210000; // 3:30
+        break;
+      case 'OPSeated':
+        settings.redLimit = 210000; // 3:30
+        settings.blueLimit = 210000; // 3:30
+        break;
+      case 'IndividualFriendly':
+        settings.redLimit = 240000; // 4:00
+        settings.blueLimit = 240000; // 4:00
+        settings.totalEnds = 2;
+        settings.tieBreak = 'finalShot'; // ファイナルショット
+        settings.rules = 'friendlyMatch'; // フレンドリーマッチ
+        settings.resultApproval = 'none'; // なし
+        break;
+      case 'PairBC3':
+        settings.redLimit = 420000; // 7:00
+        settings.blueLimit = 420000; // 7:00
+        settings.warmup = 'separate'; // 2:00 別々
+        break;
+      case 'PairBC4':
+        settings.redLimit = 240000; // 4:00
+        settings.blueLimit = 240000; // 4:00
+        settings.warmup = 'separate'; // 2:00 別々
+        break;
+      case 'PairFriendly':
+        settings.redLimit = 300000; // 5:00
+        settings.blueLimit = 300000; // 5:00
+        settings.totalEnds = 2;
+        settings.tieBreak = 'finalShot'; // ファイナルショット
+        settings.rules = 'friendlyMatch'; // フレンドリーマッチ
+        settings.resultApproval = 'none'; // なし
+        break;
+      case 'TeamsBC1BC2':
+        settings.redLimit = 300000; // 5:00
+        settings.blueLimit = 300000; // 5:00
+        settings.warmup = 'separate'; // 2:00 別々
+        settings.totalEnds = 6;
+        break;
+      case 'TeamFriendly':
+        settings.redLimit = 300000; // 5:00
+        settings.blueLimit = 300000; // 5:00
+        settings.totalEnds = 2;
+        settings.tieBreak = 'finalShot'; // ファイナルショット
+        settings.rules = 'friendlyMatch'; // フレンドリーマッチ
+        settings.resultApproval = 'none'; // なし
+        break;
+      case 'Recreation':
+        settings.redLimit = 300000; // 5:00
+        settings.blueLimit = 300000; // 5:00
+        settings.warmup = 'none'; // なし
+        settings.interval = 'none'; // なし
+        settings.totalEnds = 2;
+        settings.tieBreak = 'none'; // なし
+        settings.rules = 'recreation'; // レク
+        settings.resultApproval = 'none'; // なし
+        break;
+      default:
+        break;
+    }
+
+    return settings;
+  };
 
   // クラスと性別の変更を処理
   const handleClassificationChange = (classId) => {
     setSelectedClassId(classId);
-    // クラスが変更されたら性別をリセット
-    setSelectedGender('');
+    // クラスが変更されたら性別を「男子」にリセット
+    setSelectedGender('M');
+    
+    // クラスに応じた設定値を適用
+    if (classId) {
+      // クラス変更のタイムスタンプを記録
+      lastClassChangeRef.current = {
+        classId: classId,
+        timestamp: Date.now()
+      };
+      
+      const settings = getClassSettings(classId);
+      
+      // 設定値を更新
+      currentLimitsRef.current.red = settings.redLimit;
+      currentLimitsRef.current.blue = settings.blueLimit;
+      setSelectedRedLimit(settings.redLimit);
+      setSelectedBlueLimit(settings.blueLimit);
+      setSelectedWarmup(settings.warmup);
+      setSelectedInterval(settings.interval);
+      setSelectedTieBreak(settings.tieBreak);
+      setSelectedRules(settings.rules);
+      setSelectedResultApproval(settings.resultApproval);
+      
+      // gameDataを更新
+      if (onUpdateField) {
+        onUpdateField('red', 'limit', settings.redLimit);
+        onUpdateField('blue', 'limit', settings.blueLimit);
+        onUpdateField('match', 'warmup', settings.warmup);
+        onUpdateField('match', 'interval', settings.interval);
+        onUpdateField('match', 'totalEnds', settings.totalEnds);
+        onUpdateField('match', 'tieBreak', settings.tieBreak);
+        onUpdateField('match', 'rules', settings.rules);
+        onUpdateField('match', 'resultApproval', settings.resultApproval);
+      }
+    }
+    
     updateClassificationValue(classId, '');
   };
 
@@ -274,13 +450,20 @@ const SettingModal = ({
             prefix = currentLang === 'ja' ? 'ペア ' : 'PAIR ';
           } else if (classDef.type === 'team') {
             prefix = currentLang === 'ja' ? 'チーム ' : 'TEAM ';
+          } else if (classDef.type === 'recreation') {
+            prefix = ''; // レクリエーションはプレフィックスなし
           }
 
-          let displayName = `${prefix}${classDef.name}`;
+          // クラス名をローカライズ
+          const className = getLocalizedText(`classNames.${classId}`, currentLang) || classDef.name;
+
+          let displayName = `${prefix}${className}`;
           if (gender === 'M') {
-            displayName = `${prefix}${classDef.name} 男子`;
+            const maleText = currentLang === 'ja' ? '男子' : 'Male';
+            displayName = `${prefix}${className} ${maleText}`;
           } else if (gender === 'F') {
-            displayName = `${prefix}${classDef.name} 女子`;
+            const femaleText = currentLang === 'ja' ? '女子' : 'Female';
+            displayName = `${prefix}${className} ${femaleText}`;
           }
 
           if (onUpdateField) {
@@ -363,6 +546,7 @@ const SettingModal = ({
           </div>
         )}
 
+        {section !== 'standby' && (
         <div 
           id="endsSetting" 
           role="progressbar" 
@@ -482,6 +666,7 @@ const SettingModal = ({
             })}
           </ol>
         </div>
+        )}
 
         {/* スタンバイセクションの入力欄 */}
         {section === 'standby' && (
@@ -504,9 +689,9 @@ const SettingModal = ({
               onChange={(e) => handleGenderChange(e.target.value)}
               disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}
             >
-              <option value="">{getLocalizedText('labels.gender', currentLang)}</option>
               <option value="M">{getLocalizedText('options.gender.male', currentLang)}</option>
               <option value="F">{getLocalizedText('options.gender.female', currentLang)}</option>
+              <option value="">{getLocalizedText('options.gender.mixed', currentLang)}</option>
             </select>
             <input
               id="matchNameInput"
@@ -889,6 +1074,19 @@ const SettingModal = ({
               </div>
             </div>
           )}
+          </div>
+        )}
+
+        {/* 試合終了セクションと結果承認セクションで「次の試合へ」ボタンを表示 */}
+        {(section === 'matchFinished' || section === 'resultApproval') && (
+          <div id="nextMatchContainer">
+            <button 
+              type="button" 
+              className="btn nextMatchBtn" 
+              onClick={handleResetDirect}
+            >
+              {getLocalizedText('buttons.nextMatch', getCurrentLanguage()) || '次の試合へ'}
+            </button>
           </div>
         )}
         

@@ -65,7 +65,6 @@ const Scoreboard = () => {
     
     // 判定
     isTie,
-    isLastEndSection,
     
     // ハンドラー
     handleSelect,
@@ -79,7 +78,6 @@ const Scoreboard = () => {
     handleTieBreak,
     handleTieBreakSelect,
     handleRestartEnd,
-    handleFinalShot,
     handleReset,
     handleEndsSelect,
     handleTimeAdjust,
@@ -456,6 +454,26 @@ const Scoreboard = () => {
         dialog.showModal();
       }
     }, 0);
+  };
+
+  // リセット直接実行（確認モーダルなし）
+  const handleResetDirect = () => {
+    handleReset();
+  };
+
+  // エンド選択ハンドラー（スタンバイボタンの場合は確認モーダルを表示）
+  const handleEndsSelectWithConfirm = (e) => {
+    const button = e.currentTarget;
+    const sectionID = parseInt(button.value);
+    const section = button.getAttribute('data-word');
+    
+    // スタンバイボタン（value="0"またはdata-word="standby"）の場合は確認モーダルを表示
+    if (sectionID === 0 || section === 'standby') {
+      handleResetClick();
+    } else {
+      // それ以外の場合は通常通りエンド選択を実行
+      handleEndsSelect(e);
+    }
   };
 
   // 確認モーダルのOKハンドラー
@@ -906,7 +924,8 @@ const Scoreboard = () => {
             sections={gameData.match?.sections}
             totalEnds={match?.totalEnds}
             handleReset={handleResetClick}
-            handleEndsSelect={handleEndsSelect}
+            handleResetDirect={handleResetDirect}
+            handleEndsSelect={handleEndsSelectWithConfirm}
             handleTimeAdjust={handleTimeAdjust}
             getText={getText}
             onClose={handleSettingModalClose}

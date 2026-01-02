@@ -49,6 +49,10 @@
     "timeout": "Timeout",
     "redPenalty": "Red Penalty",
     "bluePenalty": "Blue Penalty",
+    "redTimeout": "Red Timeout",
+    "blueTimeout": "Blue Timeout",
+    "end": "End",
+    "nextMatch": "Next Match",
     "ok": "OK",
     "cancel": "Cancel"
   },
@@ -75,6 +79,10 @@
   "errors": {
     "loading": "Loading data...",
     "errorOccurred": "An error occurred"
+  },
+  "timeouts": {
+    "medical": "Medical Timeout",
+    "technical": "Technical Timeout"
   },
   "labels": {
     "classification": "Classification",
@@ -118,7 +126,23 @@
     },
     "gender": {
       "male": "Male",
-      "female": "Female"
+      "female": "Female",
+      "mixed": "Mixed"
     }
+  },
+  "classNames": {
+    "BC1": "BC1",
+    "BC2": "BC2",
+    "BC3": "BC3",
+    "BC4": "BC4",
+    "OPStanding": "OP Standing",
+    "OPSeated": "OP Seated",
+    "IndividualFriendly": "Friendly",
+    "PairBC3": "BC3",
+    "PairBC4": "BC4",
+    "PairFriendly": "Friendly",
+    "TeamsBC1BC2": "BC1/BC2",
+    "TeamFriendly": "Friendly",
+    "Recreation": "Recreation"
   }
 }
