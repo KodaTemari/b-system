@@ -4,7 +4,7 @@ export const TIMER_LIMITS = {
   WARMUP: 120000,    // 2分
   INTERVAL: 60000,   // 1分
   GAME: 300000,      // 5分
-  FINAL_SHOT: 300000 // 5分
+  FINAL_SHOT: 60000, // 1分
 };
 
 export const GAME_SECTIONS = [
@@ -13,18 +13,10 @@ export const GAME_SECTIONS = [
   'end1',
   'interval',
   'end2',
-  'finalShot',
   'matchFinished'
 ];
 
-export const COLORS = {
-  RED: 'red',
-  BLUE: 'blue'
-};
-
 export const BALL_COUNTS = {
-  DEFAULT_RED: 7,
-  DEFAULT_BLUE: 6,
   FINAL_SHOT: 1
 };
 
@@ -45,6 +37,5 @@ export const TIMER_WARNINGS = {
 };
 
 export const UI_CONSTANTS = {
-  TIME_MODAL_DISPLAY_DURATION: 3000,
-  TIE_BREAK_DEFAULT_COLOR: 'red'
+  TIME_MODAL_DISPLAY_DURATION: 3000
 };

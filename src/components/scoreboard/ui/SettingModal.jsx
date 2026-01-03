@@ -45,6 +45,9 @@ const SettingModal = ({
   const lastClassChangeRef = React.useRef({ classId: null, timestamp: 0 });
   const currentLimitsRef = React.useRef({ red: selectedRedLimit, blue: selectedBlueLimit });
   
+  // 変更を追跡するためのstate（OKボタン押下時にまとめて保存）
+  const [pendingChanges, setPendingChanges] = useState({});
+  
   // 言語切り替えモーダルの表示状態
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
@@ -73,6 +76,11 @@ const SettingModal = ({
   useEffect(() => {
     setSelectedEnds(totalEnds || 4);
   }, [totalEnds]);
+  
+  // モーダルが開かれたときにpendingChangesをリセット
+  useEffect(() => {
+    setPendingChanges({});
+  }, [section]);
 
   // gameDataの変更に合わせて詳細設定の状態を更新
   useEffect(() => {
@@ -392,7 +400,7 @@ const SettingModal = ({
       
       const settings = getClassSettings(classId);
       
-      // 設定値を更新
+      // 設定値を更新（UI表示用）
       currentLimitsRef.current.red = settings.redLimit;
       currentLimitsRef.current.blue = settings.blueLimit;
       setSelectedRedLimit(settings.redLimit);
@@ -403,31 +411,39 @@ const SettingModal = ({
       setSelectedRules(settings.rules);
       setSelectedResultApproval(settings.resultApproval);
       
-      // gameDataを更新
-      if (onUpdateField) {
-        onUpdateField('red', 'limit', settings.redLimit);
-        onUpdateField('blue', 'limit', settings.blueLimit);
-        onUpdateField('match', 'warmup', settings.warmup);
-        onUpdateField('match', 'interval', settings.interval);
-        onUpdateField('match', 'totalEnds', settings.totalEnds);
-        onUpdateField('match', 'tieBreak', settings.tieBreak);
-        onUpdateField('match', 'rules', settings.rules);
-        onUpdateField('match', 'resultApproval', settings.resultApproval);
-      }
+      // 変更をpendingChangesに記録（保存はOKボタン押下時）
+      setPendingChanges(prev => ({
+        ...prev,
+        'red.limit': settings.redLimit,
+        'blue.limit': settings.blueLimit,
+        'match.warmup': settings.warmup,
+        'match.interval': settings.interval,
+        'match.totalEnds': settings.totalEnds,
+        'match.tieBreak': settings.tieBreak,
+        'match.rules': settings.rules,
+        'match.resultApproval': settings.resultApproval
+      }));
     }
     
-    updateClassificationValue(classId, '');
+    // classificationの表示値を更新（保存はOKボタン押下時）
+    updateClassificationValue(classId, '', true);
   };
 
   const handleGenderChange = (gender) => {
     setSelectedGender(gender);
-    updateClassificationValue(selectedClassId, gender);
+    updateClassificationValue(selectedClassId, gender, true);
   };
 
-  const updateClassificationValue = (classId, gender) => {
+  const updateClassificationValue = (classId, gender, skipSave = false) => {
     if (!classId) {
-      if (onUpdateField) {
+      if (!skipSave && onUpdateField) {
         onUpdateField('classification', null, '');
+      } else {
+        // 変更をpendingChangesに記録
+        setPendingChanges(prev => ({
+          ...prev,
+          'classification': ''
+        }));
       }
       return;
     }
@@ -466,8 +482,14 @@ const SettingModal = ({
             displayName = `${prefix}${className} ${femaleText}`;
           }
 
-          if (onUpdateField) {
+          if (!skipSave && onUpdateField) {
             onUpdateField('classification', null, displayName);
+          } else {
+            // 変更をpendingChangesに記録
+            setPendingChanges(prev => ({
+              ...prev,
+              'classification': displayName
+            }));
           }
         })
         .catch(error => {
@@ -476,6 +498,24 @@ const SettingModal = ({
     } catch (error) {
       console.error('エラー:', error);
     }
+  };
+  
+  // OKボタン押下時に変更をまとめて保存
+  const handleSaveChanges = () => {
+    if (!onUpdateField) return;
+    
+    // pendingChangesの各変更を適用
+    Object.entries(pendingChanges).forEach(([key, value]) => {
+      const [parent, child] = key.split('.');
+      if (child) {
+        onUpdateField(parent, child, value);
+      } else {
+        onUpdateField(parent, null, value);
+      }
+    });
+    
+    // pendingChangesをクリア
+    setPendingChanges({});
   };
   // セクションごとの表示制御
   const shouldShowRedBlueTimers = () => {
@@ -697,33 +737,39 @@ const SettingModal = ({
               id="matchNameInput"
               type="text"
               placeholder={getLocalizedText('labels.matchName', getCurrentLanguage()) || '試合名'}
-              value={gameData?.matchName || ''}
+              value={pendingChanges['matchName'] !== undefined ? pendingChanges['matchName'] : (gameData?.matchName || '')}
               onChange={(e) => {
-                if (onUpdateField) {
-                  onUpdateField('matchName', null, e.target.value);
-                }
+                // 変更をpendingChangesに記録
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'matchName': e.target.value
+                }));
               }}
             />
             <input
               id="redNameInput"
               type="text"
               placeholder={getLocalizedText('labels.redName', getCurrentLanguage()) || '赤の名前'}
-              value={gameData?.red?.name || ''}
+              value={pendingChanges['red.name'] !== undefined ? pendingChanges['red.name'] : (gameData?.red?.name || '')}
               onChange={(e) => {
-                if (onUpdateField) {
-                  onUpdateField('red', 'name', e.target.value);
-                }
+                // 変更をpendingChangesに記録
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'red.name': e.target.value
+                }));
               }}
             />
             <input
               id="blueNameInput"
               type="text"
               placeholder={getLocalizedText('labels.blueName', getCurrentLanguage()) || '青の名前'}
-              value={gameData?.blue?.name || ''}
+              value={pendingChanges['blue.name'] !== undefined ? pendingChanges['blue.name'] : (gameData?.blue?.name || '')}
               onChange={(e) => {
-                if (onUpdateField) {
-                  onUpdateField('blue', 'name', e.target.value);
-                }
+                // 変更をpendingChangesに記録
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'blue.name': e.target.value
+                }));
               }}
             />
             <div id="detailSettings">
@@ -737,9 +783,11 @@ const SettingModal = ({
                     const value = parseInt(e.target.value, 10);
                     if (!isNaN(value)) {
                       setSelectedRedLimit(value);
-                      if (onUpdateField) {
-                        onUpdateField('red', 'limit', value);
-                      }
+                      // 変更をpendingChangesに記録
+                      setPendingChanges(prev => ({
+                        ...prev,
+                        'red.limit': value
+                      }));
                     }
                   }}
                 >
@@ -775,9 +823,11 @@ const SettingModal = ({
                     const value = parseInt(e.target.value, 10);
                     if (!isNaN(value)) {
                       setSelectedBlueLimit(value);
-                      if (onUpdateField) {
-                        onUpdateField('blue', 'limit', value);
-                      }
+                      // 変更をpendingChangesに記録
+                      setPendingChanges(prev => ({
+                        ...prev,
+                        'blue.limit': value
+                      }));
                     }
                   }}
                 >
@@ -812,9 +862,11 @@ const SettingModal = ({
                   onChange={(e) => {
                     const value = e.target.value;
                     setSelectedWarmup(value);
-                    if (onUpdateField) {
-                      onUpdateField('match', 'warmup', value);
-                    }
+                    // 変更をpendingChangesに記録
+                    setPendingChanges(prev => ({
+                      ...prev,
+                      'match.warmup': value
+                    }));
                   }}
                 >
                   <option value="simultaneous">{getLocalizedText('options.warmup.simultaneous', currentLang)}</option>
@@ -831,9 +883,11 @@ const SettingModal = ({
                   onChange={(e) => {
                     const value = e.target.value;
                     setSelectedInterval(value);
-                    if (onUpdateField) {
-                      onUpdateField('match', 'interval', value);
-                    }
+                    // 変更をpendingChangesに記録
+                    setPendingChanges(prev => ({
+                      ...prev,
+                      'match.interval': value
+                    }));
                   }}
                 >
                   <option value="enabled">{getLocalizedText('options.interval.enabled', currentLang)}</option>
@@ -855,9 +909,11 @@ const SettingModal = ({
                     const newEnds = parseInt(value, 10);
                     if (!isNaN(newEnds)) {
                       setSelectedEnds(newEnds);
-                      if (onUpdateField) {
-                        onUpdateField('match', 'totalEnds', newEnds);
-                      }
+                      // 変更をpendingChangesに記録
+                      setPendingChanges(prev => ({
+                        ...prev,
+                        'match.totalEnds': newEnds
+                      }));
                     }
                   }}
                 >
@@ -878,9 +934,11 @@ const SettingModal = ({
                   onChange={(e) => {
                     const value = e.target.value;
                     setSelectedTieBreak(value);
-                    if (onUpdateField) {
-                      onUpdateField('match', 'tieBreak', value);
-                    }
+                    // 変更をpendingChangesに記録
+                    setPendingChanges(prev => ({
+                      ...prev,
+                      'match.tieBreak': value
+                    }));
                   }}
                 >
                   <option value="extraEnd">{getLocalizedText('options.tieBreak.extraEnd', currentLang)}</option>
@@ -897,9 +955,11 @@ const SettingModal = ({
                   onChange={(e) => {
                     const value = e.target.value;
                     setSelectedRules(value);
-                    if (onUpdateField) {
-                      onUpdateField('match', 'rules', value);
-                    }
+                    // 変更をpendingChangesに記録
+                    setPendingChanges(prev => ({
+                      ...prev,
+                      'match.rules': value
+                    }));
                   }}
                 >
                   <option value="worldBoccia">{getLocalizedText('options.rules.worldBoccia', currentLang)}</option>
@@ -916,9 +976,11 @@ const SettingModal = ({
                   onChange={(e) => {
                     const value = e.target.value;
                     setSelectedResultApproval(value);
-                    if (onUpdateField) {
-                      onUpdateField('match', 'resultApproval', value);
-                    }
+                    // 変更をpendingChangesに記録
+                    setPendingChanges(prev => ({
+                      ...prev,
+                      'match.resultApproval': value
+                    }));
                   }}
                 >
                   <option value="enabled">{getLocalizedText('options.resultApproval.enabled', currentLang)}</option>
@@ -1091,7 +1153,15 @@ const SettingModal = ({
         )}
         
         <form method="dialog">
-          <button className="settingModalCloseBtn">
+          <button 
+            className="settingModalCloseBtn"
+            onClick={() => {
+              // OKボタン押下時に変更をまとめて保存
+              if (section === 'standby') {
+                handleSaveChanges();
+              }
+            }}
+          >
             <img src={setting2Icon} alt={getLocalizedText('sections.ok', getCurrentLanguage())} />
           </button>
         </form>
