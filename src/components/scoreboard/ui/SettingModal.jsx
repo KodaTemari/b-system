@@ -24,6 +24,7 @@ const SettingModal = ({
   onTimeoutClick,
   gameData,
   onUpdateField,
+  saveData,
   id
 }) => {
   // クラス選択肢と性別選択肢の状態
@@ -111,15 +112,25 @@ const SettingModal = ({
     const hasPendingBlueLimit = pendingChanges['blue.limit'] !== undefined;
     
     // 現在の値と異なる場合のみ更新（pendingChangesがない場合のみ）
-    if (!hasPendingRedLimit && gameData?.red?.limit !== undefined && gameData.red.limit !== currentLimitsRef.current.red) {
-      currentLimitsRef.current.red = gameData.red.limit;
-      setSelectedRedLimit(gameData.red.limit);
+    // また、selectedRedLimit/selectedBlueLimitが既に正しい値の場合は更新しない
+    // currentLimitsRefとselectedRedLimitの両方をチェックして、保存直後の上書きを防ぐ
+    if (!hasPendingRedLimit && gameData?.red?.limit !== undefined) {
+      // currentLimitsRefとselectedRedLimitの両方が異なる場合のみ更新
+      // これにより、handleSaveChangesで設定した値が上書きされることを防ぐ
+      if (gameData.red.limit !== currentLimitsRef.current.red && selectedRedLimit !== gameData.red.limit) {
+        currentLimitsRef.current.red = gameData.red.limit;
+        setSelectedRedLimit(gameData.red.limit);
+      }
     }
-    if (!hasPendingBlueLimit && gameData?.blue?.limit !== undefined && gameData.blue.limit !== currentLimitsRef.current.blue) {
-      currentLimitsRef.current.blue = gameData.blue.limit;
-      setSelectedBlueLimit(gameData.blue.limit);
+    if (!hasPendingBlueLimit && gameData?.blue?.limit !== undefined) {
+      // currentLimitsRefとselectedBlueLimitの両方が異なる場合のみ更新
+      // これにより、handleSaveChangesで設定した値が上書きされることを防ぐ
+      if (gameData.blue.limit !== currentLimitsRef.current.blue && selectedBlueLimit !== gameData.blue.limit) {
+        currentLimitsRef.current.blue = gameData.blue.limit;
+        setSelectedBlueLimit(gameData.blue.limit);
+      }
     }
-  }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit, pendingChanges]);
+  }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit, pendingChanges, selectedRedLimit, selectedBlueLimit]);
 
   // 現在のclassificationからクラスIDと性別を解析
   useEffect(() => {
@@ -575,26 +586,66 @@ const SettingModal = ({
       finalChanges['match.sections'] = newSections;
     }
     
-    // red.limitとblue.limitが変更された場合、currentLimitsRefを更新
+    // red.limitとblue.limitが変更された場合、currentLimitsRefとstateを更新
+    // ただし、onUpdateFieldを呼び出す前に更新する（保存処理の前にUIを更新）
     if (finalChanges['red.limit'] !== undefined) {
-      currentLimitsRef.current.red = finalChanges['red.limit'];
+      const redLimitValue = finalChanges['red.limit'];
+      currentLimitsRef.current.red = redLimitValue;
+      setSelectedRedLimit(redLimitValue);
     }
     if (finalChanges['blue.limit'] !== undefined) {
-      currentLimitsRef.current.blue = finalChanges['blue.limit'];
+      const blueLimitValue = finalChanges['blue.limit'];
+      currentLimitsRef.current.blue = blueLimitValue;
+      setSelectedBlueLimit(blueLimitValue);
     }
     
-    // 最終的な変更を適用
-    Object.entries(finalChanges).forEach(([key, value]) => {
-      const [parent, child] = key.split('.');
-      if (child) {
-        onUpdateField(parent, child, value);
-      } else {
-        onUpdateField(parent, null, value);
-      }
-    });
+    // すべての変更を一度に適用するため、gameDataを直接更新してsaveDataを呼び出す
+    // これにより、複数のonUpdateField呼び出しによる競合を防ぐ
+    if (saveData && gameData) {
+      let updatedGameData = { ...gameData };
+      
+      // 各変更を適用
+      Object.entries(finalChanges).forEach(([key, value]) => {
+        const [parent, child] = key.split('.');
+        if (child) {
+          // ネストされたプロパティ（red.limit, blue.limit, match.warmupなど）
+          if (parent === 'match') {
+            // matchオブジェクトのプロパティ
+            updatedGameData.match = {
+              ...updatedGameData.match,
+              [child]: value
+            };
+          } else {
+            // red, blueなどのオブジェクトのプロパティ
+            updatedGameData[parent] = {
+              ...updatedGameData[parent],
+              [child]: value
+            };
+          }
+        } else {
+          // 直接プロパティ（classification, category, matchNameなど）
+          updatedGameData[parent] = value;
+        }
+      });
+      
+      // 一度に保存
+      saveData(updatedGameData);
+    } else {
+      // saveDataが利用できない場合は、従来の方法でonUpdateFieldを呼び出す
+      Object.entries(finalChanges).forEach(([key, value]) => {
+        const [parent, child] = key.split('.');
+        if (child) {
+          onUpdateField(parent, child, value);
+        } else {
+          onUpdateField(parent, null, value);
+        }
+      });
+    }
     
-    // pendingChangesをクリア
-    setPendingChanges({});
+    // pendingChangesをクリア（少し遅延させて、gameDataの更新を待つ）
+    setTimeout(() => {
+      setPendingChanges({});
+    }, 100);
   };
   // セクションごとの表示制御
   const shouldShowRedBlueTimers = () => {

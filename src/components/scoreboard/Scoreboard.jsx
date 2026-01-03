@@ -935,6 +935,7 @@ const Scoreboard = () => {
             onTimeoutClick={handleTimeoutClick}
             gameData={gameData}
             id={id}
+            saveData={saveData}
             onUpdateField={(parent, child, value) => {
               if (child) {
                 // red.name や blue.name の場合

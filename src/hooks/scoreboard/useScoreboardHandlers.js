@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { TIMER_LIMITS, UI_CONSTANTS, GAME_SECTIONS } from '../../utils/scoreboard/constants';
+import { TIMER_LIMITS, UI_CONSTANTS, GAME_SECTIONS, DEFAULT_GAME_DATA } from '../../utils/scoreboard/constants';
 import { getText as getLocalizedText } from '../../locales';
 import { calculateBallCount } from '../../utils/scoreboard/gameLogic';
 
@@ -1099,18 +1099,33 @@ export const useScoreboardHandlers = ({
 
   // リセットハンドラー（次の試合のためのリセット）
   const handleReset = useCallback(async () => {
-    // reset/game.jsonを読み込んでリセット
+    // constants.jsからデフォルト値を生成してリセット
     if (!id || !court || !saveData) return;
     
     try {
       const apiUrl = 'http://localhost:3001';
-      const resetUrl = `${apiUrl}/data/${id}/reset/game.json`;
-      const response = await fetch(resetUrl);
       
-      if (response.ok) {
-        const resetData = await response.json();
-        
-        // 現在のgameDataから設定を維持（ユーザー設定）
+      // デフォルトデータを生成
+      const resetData = JSON.parse(JSON.stringify(DEFAULT_GAME_DATA));
+      
+      // init.jsonからsectionsとtieBreakを取得（存在する場合）
+      try {
+        const initUrl = `${apiUrl}/data/${id}/init.json`;
+        const initResponse = await fetch(initUrl);
+        if (initResponse.ok) {
+          const initData = await initResponse.json();
+          if (initData.match?.sections) {
+            resetData.match.sections = initData.match.sections;
+          }
+          if (initData.match?.tieBreak || initData.tieBreak) {
+            resetData.match.tieBreak = initData.match?.tieBreak || initData.tieBreak;
+          }
+        }
+      } catch (initError) {
+        console.warn('init.jsonの読み込みに失敗しました（デフォルト値を使用）:', initError);
+      }
+      
+      // 現在のgameDataから設定を維持（ユーザー設定）
         const preservedSettings = {
           classification: gameData?.classification || '',
           category: gameData?.category || '',
@@ -1134,22 +1149,12 @@ export const useScoreboardHandlers = ({
           }
         };
         
-        // reset/game.jsonにsectionsとtieBreakがない場合、init.jsonからフォールバック
-        if (!preservedSettings.match.sections || !preservedSettings.match.tieBreak) {
-          const initUrl = `${apiUrl}/data/${id}/init.json`;
-          const initResponse = await fetch(initUrl);
-          if (initResponse.ok) {
-            const initData = await initResponse.json();
-            const sectionsData = initData.match?.sections || null;
-            const tieBreakData = initData.match?.tieBreak || initData.tieBreak || null;
-            
-            if (sectionsData) {
-              preservedSettings.match.sections = sectionsData;
-            }
-            if (tieBreakData) {
-              preservedSettings.match.tieBreak = tieBreakData;
-            }
-          }
+        // preservedSettingsにsectionsとtieBreakがない場合、resetDataから取得
+        if (!preservedSettings.match.sections) {
+          preservedSettings.match.sections = resetData.match?.sections;
+        }
+        if (!preservedSettings.match.tieBreak) {
+          preservedSettings.match.tieBreak = resetData.match?.tieBreak || 'extraEnd';
         }
         
         // リセットデータに設定を適用
@@ -1216,9 +1221,6 @@ export const useScoreboardHandlers = ({
         };
         
         saveData(resetGameData);
-      } else {
-        console.error('リセットデータの読み込みに失敗しました');
-      }
     } catch (error) {
       console.error('リセット処理エラー:', error);
     }

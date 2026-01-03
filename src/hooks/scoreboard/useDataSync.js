@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { DEFAULT_GAME_DATA } from '../../utils/scoreboard/constants';
 
 /**
  * データ同期のカスタムフック
@@ -23,14 +24,15 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       let url = `${apiUrl}/api/game/${id}/court/${court}`;
       let response = await fetch(url);
       
-      // courtのgame.jsonが存在しない場合はreset/game.jsonを使用
-      if (!response.ok) {
-        url = `${apiUrl}/data/${id}/reset/game.json`;
-        response = await fetch(url);
+      let gameData;
+      if (response.ok) {
+        gameData = await response.json();
+      } else {
+        // courtのgame.jsonが存在しない場合はconstants.jsからデフォルト値を生成
+        gameData = JSON.parse(JSON.stringify(DEFAULT_GAME_DATA));
       }
       
-      if (response.ok) {
-        const gameData = await response.json();
+      if (gameData) {
         
         // game.jsonにsectionsとtieBreakがない場合、init.jsonからフォールバック
         if (!gameData.match?.sections || !gameData.match?.tieBreak) {

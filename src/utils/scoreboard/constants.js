@@ -39,3 +39,88 @@ export const TIMER_WARNINGS = {
 export const UI_CONSTANTS = {
   TIME_MODAL_DISPLAY_DURATION: 3000
 };
+
+// デフォルトゲームデータ構造
+export const DEFAULT_GAME_DATA = {
+  matchID: '',
+  match: {
+    totalEnds: 6,
+    sectionID: 0,
+    section: 'standby',
+    end: 0,
+    sections: [
+      'standby',
+      'warmup',
+      'end1',
+      'interval',
+      'end2',
+      'interval',
+      'end3',
+      'interval',
+      'end4',
+      'interval',
+      'end5',
+      'interval',
+      'end6',
+      'matchFinished',
+      'resultApproval'
+    ],
+    tieBreak: 'finalShot',
+    approvals: {
+      red: false,
+      referee: false,
+      blue: false
+    }
+  },
+  screen: {
+    active: '',
+    setColor: false,
+    scoreAdjusting: false,
+    penaltyThrow: false
+  },
+  warmup: {
+    limit: TIMER_LIMITS.WARMUP,
+    time: TIMER_LIMITS.WARMUP,
+    isRun: false
+  },
+  interval: {
+    limit: TIMER_LIMITS.INTERVAL,
+    time: TIMER_LIMITS.INTERVAL,
+    isRun: false
+  },
+  red: {
+    name: 'Red',
+    score: 0,
+    scores: [],
+    limit: TIMER_LIMITS.GAME,
+    ball: 6,
+    isRun: false,
+    time: TIMER_LIMITS.GAME,
+    tieBreak: false,
+    result: '',
+    playerID: '',
+    yellowCard: 0,
+    penaltyBall: 0,
+    redCard: 0
+  },
+  blue: {
+    name: 'Blue',
+    score: 0,
+    scores: [],
+    limit: TIMER_LIMITS.GAME,
+    ball: 6,
+    isRun: false,
+    time: TIMER_LIMITS.GAME,
+    tieBreak: false,
+    result: '',
+    playerID: '',
+    yellowCard: 0,
+    penaltyBall: 0,
+    redCard: 0
+  },
+  courtId: '',
+  classification: '',
+  category: '',
+  matchName: '',
+  lastUpdated: ''
+};

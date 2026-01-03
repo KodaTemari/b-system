@@ -7,7 +7,8 @@
     "end": 0,
     "sections": [
       "standby",
-      "warmup",
+      "warmup1",
+      "warmup2",
       "end1",
       "interval",
       "end2",
@@ -18,7 +19,7 @@
       "matchFinished",
       "resultApproval"
     ],
-    "tieBreak": "extraEnd",
+    "tieBreak": "finalShot",
     "approvals": {
       "red": false,
       "referee": false,
@@ -49,10 +50,10 @@
     "name": "Red",
     "score": 0,
     "scores": [],
-    "limit": 360000,
+    "limit": 240000,
     "ball": 6,
     "isRun": false,
-    "time": 360000,
+    "time": 240000,
     "tieBreak": false,
     "result": "",
     "playerID": "",
@@ -64,10 +65,10 @@
     "name": "Blue",
     "score": 0,
     "scores": [],
-    "limit": 360000,
+    "limit": 240000,
     "ball": 6,
     "isRun": false,
-    "time": 360000,
+    "time": 240000,
     "tieBreak": false,
     "result": "",
     "playerID": "",
@@ -79,5 +80,5 @@
   "classification": "個人 BC1",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-03T12:41:43.011Z"
+  "lastUpdated": "2026-01-03T13:00:03.637Z"
 }
