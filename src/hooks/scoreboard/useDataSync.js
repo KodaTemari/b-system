@@ -19,17 +19,6 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     try {
       const apiUrl = 'http://localhost:3001';
       
-      // init.jsonからsectionsとtieBreakを読み込む
-      const initUrl = `${apiUrl}/data/${id}/init.json`;
-      const initResponse = await fetch(initUrl);
-      let sectionsData = null;
-      let tieBreakData = null;
-      if (initResponse.ok) {
-        const initData = await initResponse.json();
-        sectionsData = initData.match?.sections || null;
-        tieBreakData = initData.match?.tieBreak || initData.tieBreak || null;
-      }
-      
       // まずcourtのgame.jsonを読み込む
       let url = `${apiUrl}/api/game/${id}/court/${court}`;
       let response = await fetch(url);
@@ -43,17 +32,79 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       if (response.ok) {
         const gameData = await response.json();
         
-        // sectionsとtieBreakをinit.jsonから取得したデータで置き換え
-        if (sectionsData || tieBreakData) {
-          let processedSections = sectionsData;
+        // game.jsonにsectionsとtieBreakがない場合、init.jsonからフォールバック
+        if (!gameData.match?.sections || !gameData.match?.tieBreak) {
+          const initUrl = `${apiUrl}/data/${id}/init.json`;
+          const initResponse = await fetch(initUrl);
+          if (initResponse.ok) {
+            const initData = await initResponse.json();
+            const sectionsData = initData.match?.sections || null;
+            const tieBreakData = initData.match?.tieBreak || initData.tieBreak || null;
+            
+            if (sectionsData || tieBreakData) {
+              let processedSections = sectionsData || gameData.match?.sections;
+              
+              // ウォームアップの設定に応じてセクション配列を更新
+              if (processedSections) {
+                if (gameData.match?.warmup === 'none') {
+                  // ウォームアップが「なし」の場合は、warmupとwarmup1、warmup2を削除
+                  processedSections = processedSections.filter(s => s !== 'warmup' && s !== 'warmup1' && s !== 'warmup2');
+                } else if (gameData.match?.warmup === 'simultaneous') {
+                  // ウォームアップが「同時」の場合は、warmup1とwarmup2を削除し、warmupを追加（存在しない場合）
+                  processedSections = processedSections.filter(s => s !== 'warmup1' && s !== 'warmup2');
+                  if (!processedSections.includes('warmup')) {
+                    const standbyIndex = processedSections.indexOf('standby');
+                    if (standbyIndex !== -1) {
+                      processedSections.splice(standbyIndex + 1, 0, 'warmup');
+                    }
+                  }
+                } else if (gameData.match?.warmup === 'separate') {
+                  // ウォームアップが「別々」の場合は、warmupを削除し、warmup1とwarmup2を追加（存在しない場合）
+                  processedSections = processedSections.filter(s => s !== 'warmup');
+                  if (!processedSections.includes('warmup1') || !processedSections.includes('warmup2')) {
+                    const standbyIndex = processedSections.indexOf('standby');
+                    if (standbyIndex !== -1) {
+                      // warmup1とwarmup2が存在しない場合のみ追加
+                      if (!processedSections.includes('warmup1')) {
+                        processedSections.splice(standbyIndex + 1, 0, 'warmup1');
+                      }
+                      if (!processedSections.includes('warmup2')) {
+                        const warmup1Index = processedSections.indexOf('warmup1');
+                        if (warmup1Index !== -1) {
+                          processedSections.splice(warmup1Index + 1, 0, 'warmup2');
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              
+              // インターバルが「なし」の場合は、セクション配列からintervalを削除
+              if (gameData.match?.interval === 'none' && processedSections) {
+                processedSections = processedSections.filter(s => s !== 'interval');
+              }
+              
+              // 結果承認が「なし」の場合は、セクション配列からresultApprovalを削除
+              if (gameData.match?.resultApproval === 'none' && processedSections) {
+                processedSections = processedSections.filter(s => s !== 'resultApproval');
+              }
+              
+              gameData.match = {
+                ...gameData.match,
+                ...(processedSections && { sections: processedSections }),
+                ...(tieBreakData && { tieBreak: tieBreakData })
+              };
+            }
+          }
+        } else {
+          // game.jsonにsectionsがある場合でも、ウォームアップ・インターバル・結果承認の設定に応じて調整
+          let processedSections = gameData.match.sections;
           
           // ウォームアップの設定に応じてセクション配列を更新
           if (processedSections) {
             if (gameData.match?.warmup === 'none') {
-              // ウォームアップが「なし」の場合は、warmupとwarmup1、warmup2を削除
               processedSections = processedSections.filter(s => s !== 'warmup' && s !== 'warmup1' && s !== 'warmup2');
             } else if (gameData.match?.warmup === 'simultaneous') {
-              // ウォームアップが「同時」の場合は、warmup1とwarmup2を削除し、warmupを追加（存在しない場合）
               processedSections = processedSections.filter(s => s !== 'warmup1' && s !== 'warmup2');
               if (!processedSections.includes('warmup')) {
                 const standbyIndex = processedSections.indexOf('standby');
@@ -62,12 +113,10 @@ export const useDataSync = (id, cls, court, isCtrl) => {
                 }
               }
             } else if (gameData.match?.warmup === 'separate') {
-              // ウォームアップが「別々」の場合は、warmupを削除し、warmup1とwarmup2を追加（存在しない場合）
               processedSections = processedSections.filter(s => s !== 'warmup');
               if (!processedSections.includes('warmup1') || !processedSections.includes('warmup2')) {
                 const standbyIndex = processedSections.indexOf('standby');
                 if (standbyIndex !== -1) {
-                  // warmup1とwarmup2が存在しない場合のみ追加
                   if (!processedSections.includes('warmup1')) {
                     processedSections.splice(standbyIndex + 1, 0, 'warmup1');
                   }
@@ -94,8 +143,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
           
           gameData.match = {
             ...gameData.match,
-            ...(processedSections && { sections: processedSections }),
-            ...(tieBreakData && { tieBreak: tieBreakData })
+            sections: processedSections
           };
         }
         
@@ -157,8 +205,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       const apiUrl = 'http://localhost:3001';
       const url = `${apiUrl}/api/game/${id}/court/${court}`;
       
-      // sectionsとtieBreakを除外して保存（init.jsonから取得するため）
-      // タイムアウト関連の項目も除外（ローカルのみで管理）
+      // タイムアウト関連の項目を除外（ローカルのみで管理）
+      // sectionsとtieBreakはgame.jsonで管理するため保存対象に含める
       const cleanRed = data.red ? { ...data.red } : {};
       const cleanBlue = data.blue ? { ...data.blue } : {};
       
@@ -179,14 +227,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       
       const dataToSave = {
         ...data,
-        match: data.match ? {
-          ...data.match,
-          sections: undefined, // sectionsを除外
-          tieBreak: undefined  // tieBreakを除外
-        } : {
-          sectionID: 0,
-          sections: undefined,
-          tieBreak: undefined
+        match: data.match || {
+          sectionID: 0
         },
         red: cleanRed,
         blue: cleanBlue

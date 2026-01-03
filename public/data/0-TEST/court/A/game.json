@@ -1,15 +1,33 @@
 {
   "matchID": "",
   "match": {
-    "totalEnds": 6,
+    "totalEnds": 4,
     "sectionID": 0,
     "section": "standby",
     "end": 0,
+    "sections": [
+      "standby",
+      "warmup",
+      "end1",
+      "interval",
+      "end2",
+      "interval",
+      "end3",
+      "interval",
+      "end4",
+      "matchFinished",
+      "resultApproval"
+    ],
+    "tieBreak": "extraEnd",
     "approvals": {
       "red": false,
       "referee": false,
       "blue": false
-    }
+    },
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "worldBoccia",
+    "resultApproval": "enabled"
   },
   "screen": {
     "active": "",
@@ -58,8 +76,8 @@
     "redCard": 0
   },
   "courtId": "",
-  "classification": "",
+  "classification": "個人 BC1",
   "category": "",
-  "matchName": "",
-  "lastUpdated": "2026-01-03T11:09:41.006Z"
+  "matchName": "第1回戦",
+  "lastUpdated": "2026-01-03T12:41:43.011Z"
 }

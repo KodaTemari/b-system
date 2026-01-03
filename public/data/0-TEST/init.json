@@ -87,7 +87,6 @@
     "H"
   ],
   "match": {
-    "totalEnds": 6,
     "sections": [
       "standby",
       "warmup",

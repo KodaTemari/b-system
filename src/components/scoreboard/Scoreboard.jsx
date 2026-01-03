@@ -1037,6 +1037,55 @@ const Scoreboard = () => {
                     };
                   }
                   
+                  // totalEndsが変更された場合、セクション配列を完全に再計算
+                  if (parent === 'match' && child === 'totalEnds') {
+                    const recalculateSections = (totalEnds, warmup, interval, resultApproval) => {
+                      const newSections = ['standby'];
+                      
+                      // ウォームアップの追加
+                      if (warmup === 'simultaneous') {
+                        newSections.push('warmup');
+                      } else if (warmup === 'separate') {
+                        newSections.push('warmup1', 'warmup2');
+                      }
+                      
+                      // エンドとインターバルの追加
+                      for (let i = 1; i <= totalEnds; i++) {
+                        newSections.push(`end${i}`);
+                        // 最後のエンド以外で、インターバルが有効な場合はintervalを追加
+                        if (i < totalEnds && interval !== 'none') {
+                          newSections.push('interval');
+                        }
+                      }
+                      
+                      // 試合終了
+                      newSections.push('matchFinished');
+                      
+                      // 結果承認の追加
+                      if (resultApproval !== 'none') {
+                        newSections.push('resultApproval');
+                      }
+                      
+                      return newSections;
+                    };
+                    
+                    const currentWarmup = updatedGameData.match?.warmup || gameData.match?.warmup || 'simultaneous';
+                    const currentInterval = updatedGameData.match?.interval || gameData.match?.interval || 'enabled';
+                    const currentResultApproval = updatedGameData.match?.resultApproval || gameData.match?.resultApproval || 'enabled';
+                    
+                    const newSections = recalculateSections(
+                      value,
+                      currentWarmup,
+                      currentInterval,
+                      currentResultApproval
+                    );
+                    
+                    updatedGameData.match = {
+                      ...updatedGameData.match,
+                      sections: newSections
+                    };
+                  }
+                  
                   saveData(updatedGameData);
                 }
               } else {

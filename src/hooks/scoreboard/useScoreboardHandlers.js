@@ -447,6 +447,7 @@ export const useScoreboardHandlers = ({
     return winner;
   }, []);
 
+
   // セクション進行ハンドラー
   const handleNextSection = useCallback(() => {
     const currentSectionID = gameData.match?.sectionID || 0;
@@ -544,36 +545,44 @@ export const useScoreboardHandlers = ({
         }
       }
       
-      // エンドセクションの場合、タイマーとボール数をリセット（データ保存の前に実行）
+      // セクション変更時のリセット処理（すべてのセクション変更時に適用）
+      // エンドセクションの場合はボール数をエンド番号に応じて設定
       if (nextSection.startsWith('end')) {
         const redBalls = calculateBallCount(endNumber, 'red');
         const blueBalls = calculateBallCount(endNumber, 'blue');
-        
         updateBall('red', redBalls);
         updateBall('blue', blueBalls);
-        updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
-        updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
-        
-        // エンド開始時はすべてのタイマーを停止状態にし、時間をlimitにリセット
-        updateField('warmup', 'isRun', false);
-        updateField('warmup', 'time', gameData.warmup.limit);
-        updateField('interval', 'isRun', false);
-        updateField('interval', 'time', gameData.interval.limit);
-        
-        // エンド開始時はdata-tieBreak属性を空にする
-        const scoreboardElement = document.getElementById('scoreboard');
-        if (scoreboardElement) {
-          scoreboardElement.removeAttribute('data-tieBreak');
+      } else {
+        // エンドセクション以外はボール数を6にリセット
+        updateBall('red', 6);
+        updateBall('blue', 6);
+      }
+      
+      // タイマーをリセット
+      updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
+      updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
+      updateField('warmup', 'isRun', false);
+      updateField('warmup', 'time', gameData.warmup.limit);
+      updateField('interval', 'isRun', false);
+      updateField('interval', 'time', gameData.interval.limit);
+      
+      // スクリーン表示をリセット
+      if (isCtrl) {
+        updateScreenActive('');
+        if (updateScoreAdjusting) {
+          updateScoreAdjusting(false);
         }
-        
-        // エンド開始時はsectionNavを非表示にするため、screen.activeを空にする
-        if (isCtrl) {
-          updateScreenActive('');
-          // エンド開始時はscoreAdjustingフラグもリセット
-          if (updateScoreAdjusting) {
-            updateScoreAdjusting(false);
-          }
-        }
+      }
+      
+      // ペナルティボールをリセット
+      updateField('red', 'penaltyBall', 0);
+      updateField('blue', 'penaltyBall', 0);
+      updateField('screen', 'penaltyThrow', false);
+      
+      // data-tieBreak属性を空にする
+      const scoreboardElement = document.getElementById('scoreboard');
+      if (scoreboardElement) {
+        scoreboardElement.removeAttribute('data-tieBreak');
       }
       
       // タイブレークセクションの場合、tieBreakの値に応じてボール数とタイマーを設定
@@ -582,36 +591,13 @@ export const useScoreboardHandlers = ({
         const tieBreakType = gameData.match?.tieBreak || 'extraEnd';
         const redBalls = tieBreakType === 'finalShot' ? 1 : 6;
         const blueBalls = tieBreakType === 'finalShot' ? 1 : 6;
-        const redTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : TIMER_LIMITS.GAME;
-        const blueTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : TIMER_LIMITS.GAME;
+        const redTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : (gameData.red?.limit || TIMER_LIMITS.GAME);
+        const blueTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : (gameData.blue?.limit || TIMER_LIMITS.GAME);
         
         updateBall('red', redBalls);
         updateBall('blue', blueBalls);
         updateTimer('red', redTime, false);
         updateTimer('blue', blueTime, false);
-        
-        // エンド開始時はすべてのタイマーを停止状態にし、時間をlimitにリセット
-        updateField('warmup', 'isRun', false);
-        updateField('warmup', 'time', gameData.warmup.limit);
-        updateField('interval', 'isRun', false);
-        updateField('interval', 'time', gameData.interval.limit);
-        
-        // エンド開始時はsectionNavを非表示にするため、screen.activeを空にする
-        if (isCtrl) {
-          updateScreenActive('');
-          // エンド開始時はscoreAdjustingフラグもリセット
-          if (updateScoreAdjusting) {
-            updateScoreAdjusting(false);
-          }
-        }
-      }
-      
-      // 試合終了セクションまたは結果承認セクションに移行する場合、ペナルティボールを0にする
-      if (nextSection === 'matchFinished' || nextSection === 'resultApproval') {
-        updateField('red', 'penaltyBall', 0);
-        updateField('blue', 'penaltyBall', 0);
-        // penaltyThrow状態も解除
-        updateField('screen', 'penaltyThrow', false);
       }
       
       // 試合終了セクションに移行する場合、勝敗判定を行う
@@ -647,9 +633,10 @@ export const useScoreboardHandlers = ({
           },
           screen: {
             ...gameData.screen,
-            active: nextSection.startsWith('end') ? '' : gameData.screen?.active || '',
-            // インターバルセクションに移行するとき、scoreAdjustingをfalseにリセット
-            scoreAdjusting: nextSection === 'interval' ? false : (nextSection.startsWith('end') ? false : gameData.screen?.scoreAdjusting || false)
+            active: '',
+            setColor: false,
+            scoreAdjusting: false,
+            penaltyThrow: false
           }
         };
         
@@ -662,6 +649,14 @@ export const useScoreboardHandlers = ({
           };
         }
         
+        // セクション変更時のリセット処理を適用（すべてのセクション変更時に適用）
+        // タイマー、スクリーン表示、ボールのリセット
+        updatedGameData.warmup = {
+          ...gameData.warmup,
+          time: gameData.warmup?.limit || TIMER_LIMITS.WARMUP,
+          isRun: false
+        };
+        
         // インターバルセクションに移行する場合、インターバルタイマーを開始状態で保存
         if (nextSection === 'interval') {
           updatedGameData.interval = {
@@ -669,36 +664,38 @@ export const useScoreboardHandlers = ({
             time: TIMER_LIMITS.INTERVAL,
             isRun: true
           };
+        } else {
+          updatedGameData.interval = {
+            ...gameData.interval,
+            time: gameData.interval?.limit || TIMER_LIMITS.INTERVAL,
+            isRun: false
+          };
         }
+        updatedGameData.screen = {
+          ...gameData.screen,
+          active: '',
+          setColor: false,
+          scoreAdjusting: false,
+          penaltyThrow: false
+        };
         
-        // エンドセクションの場合、タイマーとボール数のリセット状態も保存
+        // エンドセクションの場合、ボール数をエンド番号に応じて設定
         if (nextSection.startsWith('end')) {
           const redBalls = calculateBallCount(endNumber, 'red');
           const blueBalls = calculateBallCount(endNumber, 'blue');
-          
           updatedGameData.red = {
             ...gameData.red,
-            time: gameData.red.limit || TIMER_LIMITS.GAME,
+            ball: redBalls,
             isRun: false,
-            ball: redBalls
+            time: gameData.red?.limit || TIMER_LIMITS.GAME,
+            penaltyBall: 0
           };
           updatedGameData.blue = {
             ...gameData.blue,
-            time: gameData.blue.limit || TIMER_LIMITS.GAME,
+            ball: blueBalls,
             isRun: false,
-            ball: blueBalls
-          };
-          
-          // エンド開始時はすべてのタイマーを停止状態で保存し、時間をlimitにリセット
-          updatedGameData.warmup = {
-            ...gameData.warmup,
-            time: gameData.warmup.limit,
-            isRun: false
-          };
-          updatedGameData.interval = {
-            ...gameData.interval,
-            time: gameData.interval.limit,
-            isRun: false
+            time: gameData.blue?.limit || TIMER_LIMITS.GAME,
+            penaltyBall: 0
           };
           
           // エンド開始時はtieBreakをfalseにリセット
@@ -706,57 +703,43 @@ export const useScoreboardHandlers = ({
             ...updatedGameData.match,
             tieBreak: false
           };
-        }
-        
-        // タイブレークセクションの場合、tieBreakの値に応じてボール数とタイマーを設定
-        if (nextSection === 'tieBreak') {
-          // "finalShot"の場合はボール1、タイマー1分、それ以外（"extraEnd"など）の場合はボール6、タイマー通常
+        } else if (nextSection === 'tieBreak') {
+          // タイブレークセクションの場合、tieBreakの値に応じてボール数とタイマーを設定
           const tieBreakType = gameData.match?.tieBreak || 'extraEnd';
           const redBalls = tieBreakType === 'finalShot' ? 1 : 6;
           const blueBalls = tieBreakType === 'finalShot' ? 1 : 6;
-          const redTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : TIMER_LIMITS.GAME;
-          const blueTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : TIMER_LIMITS.GAME;
+          const redTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : (gameData.red?.limit || TIMER_LIMITS.GAME);
+          const blueTime = tieBreakType === 'finalShot' ? TIMER_LIMITS.INTERVAL : (gameData.blue?.limit || TIMER_LIMITS.GAME);
           
           updatedGameData.red = {
             ...gameData.red,
+            ball: redBalls,
+            isRun: false,
             time: redTime,
-            isRun: false,
-            ball: redBalls
+            penaltyBall: 0
           };
           updatedGameData.blue = {
             ...gameData.blue,
-            time: blueTime,
+            ball: blueBalls,
             isRun: false,
-            ball: blueBalls
+            time: blueTime,
+            penaltyBall: 0
           };
-          
-          // エンド開始時はすべてのタイマーを停止状態で保存し、時間をlimitにリセット
-          updatedGameData.warmup = {
-            ...gameData.warmup,
-            time: gameData.warmup.limit,
-            isRun: false
-          };
-          updatedGameData.interval = {
-            ...gameData.interval,
-            time: gameData.interval.limit,
-            isRun: false
-          };
-        }
-        
-        // 試合終了セクションまたは結果承認セクションの場合、ペナルティボールを0にする
-        if (nextSection === 'matchFinished' || nextSection === 'resultApproval') {
+        } else {
+          // その他のセクションの場合、ボール数を6にリセット
           updatedGameData.red = {
             ...gameData.red,
+            ball: 6,
+            isRun: false,
+            time: gameData.red?.limit || TIMER_LIMITS.GAME,
             penaltyBall: 0
           };
           updatedGameData.blue = {
             ...gameData.blue,
+            ball: 6,
+            isRun: false,
+            time: gameData.blue?.limit || TIMER_LIMITS.GAME,
             penaltyBall: 0
-          };
-          // penaltyThrow状態も解除
-          updatedGameData.screen = {
-            ...updatedGameData.screen,
-            penaltyThrow: false
           };
         }
         
@@ -1114,7 +1097,7 @@ export const useScoreboardHandlers = ({
     setTimeout(() => setShowTimeModal(false), UI_CONSTANTS.TIME_MODAL_DISPLAY_DURATION);
   }, [setShowTimeModal]);
 
-  // リセットハンドラー
+  // リセットハンドラー（次の試合のためのリセット）
   const handleReset = useCallback(async () => {
     // reset/game.jsonを読み込んでリセット
     if (!id || !court || !saveData) return;
@@ -1126,32 +1109,120 @@ export const useScoreboardHandlers = ({
       
       if (response.ok) {
         const resetData = await response.json();
-        // init.jsonからsectionsとtieBreakを読み込む
-        const initUrl = `${apiUrl}/data/${id}/init.json`;
-        const initResponse = await fetch(initUrl);
-        if (initResponse.ok) {
-          const initData = await initResponse.json();
-          const sectionsData = initData.match?.sections || null;
-          const tieBreakData = initData.match?.tieBreak || initData.tieBreak || null;
-          
-          if (sectionsData || tieBreakData) {
-            resetData.match = {
-              ...resetData.match,
-              ...(sectionsData && { sections: sectionsData }),
-              ...(tieBreakData && { tieBreak: tieBreakData })
-            };
+        
+        // 現在のgameDataから設定を維持（ユーザー設定）
+        const preservedSettings = {
+          classification: gameData?.classification || '',
+          category: gameData?.category || '',
+          matchName: gameData?.matchName || '',
+          red: {
+            name: gameData?.red?.name || '',
+            limit: gameData?.red?.limit || TIMER_LIMITS.GAME
+          },
+          blue: {
+            name: gameData?.blue?.name || '',
+            limit: gameData?.blue?.limit || TIMER_LIMITS.GAME
+          },
+          match: {
+            warmup: gameData?.match?.warmup || 'simultaneous',
+            interval: gameData?.match?.interval || 'enabled',
+            totalEnds: gameData?.match?.totalEnds || 4,
+            rules: gameData?.match?.rules || 'worldBoccia',
+            resultApproval: gameData?.match?.resultApproval || 'enabled',
+            sections: gameData?.match?.sections || resetData.match?.sections,
+            tieBreak: gameData?.match?.tieBreak || resetData.match?.tieBreak || 'extraEnd'
+          }
+        };
+        
+        // reset/game.jsonにsectionsとtieBreakがない場合、init.jsonからフォールバック
+        if (!preservedSettings.match.sections || !preservedSettings.match.tieBreak) {
+          const initUrl = `${apiUrl}/data/${id}/init.json`;
+          const initResponse = await fetch(initUrl);
+          if (initResponse.ok) {
+            const initData = await initResponse.json();
+            const sectionsData = initData.match?.sections || null;
+            const tieBreakData = initData.match?.tieBreak || initData.tieBreak || null;
+            
+            if (sectionsData) {
+              preservedSettings.match.sections = sectionsData;
+            }
+            if (tieBreakData) {
+              preservedSettings.match.tieBreak = tieBreakData;
+            }
           }
         }
-        // lastUpdatedを現在時刻に更新
-        resetData.lastUpdated = new Date().toISOString();
-        saveData(resetData);
+        
+        // リセットデータに設定を適用
+        const resetGameData = {
+          ...resetData,
+          ...preservedSettings,
+          match: {
+            ...resetData.match,
+            sectionID: 0,
+            section: 'standby',
+            end: 0,
+            ...preservedSettings.match,
+            approvals: {
+              red: false,
+              referee: false,
+              blue: false
+            }
+          },
+          red: {
+            ...resetData.red,
+            score: 0,
+            scores: [],
+            tieBreak: false,
+            result: '',
+            yellowCard: 0,
+            redCard: 0,
+            ...preservedSettings.red,
+            ball: 6,
+            isRun: false,
+            time: preservedSettings.red.limit,
+            penaltyBall: 0
+          },
+          blue: {
+            ...resetData.blue,
+            score: 0,
+            scores: [],
+            tieBreak: false,
+            result: '',
+            yellowCard: 0,
+            redCard: 0,
+            ...preservedSettings.blue,
+            ball: 6,
+            isRun: false,
+            time: preservedSettings.blue.limit,
+            penaltyBall: 0
+          },
+          warmup: {
+            ...resetData.warmup,
+            time: resetData.warmup?.limit || TIMER_LIMITS.WARMUP,
+            isRun: false
+          },
+          interval: {
+            ...resetData.interval,
+            time: resetData.interval?.limit || TIMER_LIMITS.INTERVAL,
+            isRun: false
+          },
+          screen: {
+            active: '',
+            setColor: false,
+            scoreAdjusting: false,
+            penaltyThrow: false
+          },
+          lastUpdated: new Date().toISOString()
+        };
+        
+        saveData(resetGameData);
       } else {
         console.error('リセットデータの読み込みに失敗しました');
       }
     } catch (error) {
       console.error('リセット処理エラー:', error);
     }
-  }, [id, court, saveData]);
+  }, [id, court, saveData, gameData]);
 
   // エンド選択ハンドラー
   const handleEndsSelect = useCallback((e) => {
@@ -1173,41 +1244,43 @@ export const useScoreboardHandlers = ({
     };
     const endNumber = extractEndNumber(section);
     
-    // エンドセクションに切り替える場合、タイマーとボールをリセット（インターバル終了時と同じ処理）
-    if (section.startsWith('end')) {
-      const redBalls = calculateBallCount(endNumber, 'red');
-      const blueBalls = calculateBallCount(endNumber, 'blue');
+      // セクション変更時のリセット処理（すべてのセクション変更時に適用）
+      // エンドセクションの場合、ボール数をエンド番号に応じて設定
+      if (section.startsWith('end')) {
+        const redBalls = calculateBallCount(endNumber, 'red');
+        const blueBalls = calculateBallCount(endNumber, 'blue');
+        updateBall('red', redBalls);
+        updateBall('blue', blueBalls);
+      } else {
+        // エンドセクション以外はボール数を6にリセット
+        updateBall('red', 6);
+        updateBall('blue', 6);
+      }
       
-      updateBall('red', redBalls);
-      updateBall('blue', blueBalls);
+      // タイマーをリセット
       updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
       updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
-      
-      // エンド開始時はすべてのタイマーを停止状態にし、時間をlimitにリセット
       updateField('warmup', 'isRun', false);
       updateField('warmup', 'time', gameData.warmup.limit);
       updateField('interval', 'isRun', false);
       updateField('interval', 'time', gameData.interval.limit);
-    }
-    
-    // 試合終了セクションまたは結果確認セクションに移行する場合、ペナルティボールを0にする
-    if (section === 'matchFinished' || section === 'resultApproval') {
+      
+      // スクリーン表示をリセット
+      if (isCtrl) {
+        updateScreenActive('');
+        if (updateScoreAdjusting) {
+          updateScoreAdjusting(false);
+        }
+      }
+      updateField('screen', 'setColor', false);
+      updateField('screen', 'penaltyThrow', false);
+      
+      // ペナルティボールをリセット
       updateField('red', 'penaltyBall', 0);
       updateField('blue', 'penaltyBall', 0);
-      // penaltyThrow状態も解除
-      updateField('screen', 'penaltyThrow', false);
-    }
-    
-    // セクション情報を更新
-    updateSection(section, sectionID);
-    
-    // エンド切り替え時はsectionNavの中身を消すため、activeとscoreAdjustingをリセット
-    if (isCtrl) {
-      updateScreenActive('');
-      if (updateScoreAdjusting) {
-        updateScoreAdjusting(false);
-      }
-    }
+      
+      // セクション情報を更新
+      updateSection(section, sectionID);
     
     // 更新されたゲームデータを保存
     if (isCtrl && saveData) {
@@ -1219,58 +1292,60 @@ export const useScoreboardHandlers = ({
           section: section,
           end: endNumber
         },
+        // セクション変更時のリセット処理を適用（すべてのセクション変更時に適用）
+        // タイマー、スクリーン表示、ボールのリセット
+        warmup: {
+          ...gameData.warmup,
+          time: gameData.warmup?.limit || TIMER_LIMITS.WARMUP,
+          isRun: false
+        },
+        interval: {
+          ...gameData.interval,
+          time: gameData.interval?.limit || TIMER_LIMITS.INTERVAL,
+          isRun: false
+        },
         screen: {
           ...gameData.screen,
           active: '',
-          scoreAdjusting: false
+          setColor: false,
+          scoreAdjusting: false,
+          penaltyThrow: false
         }
       };
       
-      // エンドセクションの場合、タイマーとボール数のリセット状態も保存
+      // エンドセクションの場合、ボール数をエンド番号に応じて設定
       if (section.startsWith('end')) {
         const redBalls = calculateBallCount(endNumber, 'red');
         const blueBalls = calculateBallCount(endNumber, 'blue');
-        
         updatedGameData.red = {
           ...gameData.red,
-          time: gameData.red.limit || TIMER_LIMITS.GAME,
+          ball: redBalls,
           isRun: false,
-          ball: redBalls
-        };
-        updatedGameData.blue = {
-          ...gameData.blue,
-          time: gameData.blue.limit || TIMER_LIMITS.GAME,
-          isRun: false,
-          ball: blueBalls
-        };
-        
-        // エンド開始時はすべてのタイマーを停止状態で保存し、時間をlimitにリセット
-        updatedGameData.warmup = {
-          ...gameData.warmup,
-          time: gameData.warmup.limit,
-          isRun: false
-        };
-        updatedGameData.interval = {
-          ...gameData.interval,
-          time: gameData.interval.limit,
-          isRun: false
-        };
-      }
-      
-      // 試合終了セクションまたは結果確認セクションの場合、ペナルティボールを0にする
-      if (section === 'matchFinished' || section === 'resultApproval') {
-        updatedGameData.red = {
-          ...gameData.red,
+          time: gameData.red?.limit || TIMER_LIMITS.GAME,
           penaltyBall: 0
         };
         updatedGameData.blue = {
           ...gameData.blue,
+          ball: blueBalls,
+          isRun: false,
+          time: gameData.blue?.limit || TIMER_LIMITS.GAME,
           penaltyBall: 0
         };
-        // penaltyThrow状態も解除
-        updatedGameData.screen = {
-          ...updatedGameData.screen,
-          penaltyThrow: false
+      } else {
+        // エンドセクション以外はボール数を6にリセット
+        updatedGameData.red = {
+          ...gameData.red,
+          ball: 6,
+          isRun: false,
+          time: gameData.red?.limit || TIMER_LIMITS.GAME,
+          penaltyBall: 0
+        };
+        updatedGameData.blue = {
+          ...gameData.blue,
+          ball: 6,
+          isRun: false,
+          time: gameData.blue?.limit || TIMER_LIMITS.GAME,
+          penaltyBall: 0
         };
       }
       

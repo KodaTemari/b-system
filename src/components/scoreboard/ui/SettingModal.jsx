@@ -105,16 +105,21 @@ const SettingModal = ({
       return;
     }
     
-    // 現在の値と異なる場合のみ更新
-    if (gameData?.red?.limit !== undefined && gameData.red.limit !== currentLimitsRef.current.red) {
+    // pendingChangesにred.limitまたはblue.limitがある場合は、gameDataの更新を無視
+    // （ユーザーが手動で変更した値を優先）
+    const hasPendingRedLimit = pendingChanges['red.limit'] !== undefined;
+    const hasPendingBlueLimit = pendingChanges['blue.limit'] !== undefined;
+    
+    // 現在の値と異なる場合のみ更新（pendingChangesがない場合のみ）
+    if (!hasPendingRedLimit && gameData?.red?.limit !== undefined && gameData.red.limit !== currentLimitsRef.current.red) {
       currentLimitsRef.current.red = gameData.red.limit;
       setSelectedRedLimit(gameData.red.limit);
     }
-    if (gameData?.blue?.limit !== undefined && gameData.blue.limit !== currentLimitsRef.current.blue) {
+    if (!hasPendingBlueLimit && gameData?.blue?.limit !== undefined && gameData.blue.limit !== currentLimitsRef.current.blue) {
       currentLimitsRef.current.blue = gameData.blue.limit;
       setSelectedBlueLimit(gameData.blue.limit);
     }
-  }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit]);
+  }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit, pendingChanges]);
 
   // 現在のclassificationからクラスIDと性別を解析
   useEffect(() => {
@@ -410,6 +415,7 @@ const SettingModal = ({
       setSelectedTieBreak(settings.tieBreak);
       setSelectedRules(settings.rules);
       setSelectedResultApproval(settings.resultApproval);
+      setSelectedEnds(settings.totalEnds); // エンド数も更新
       
       // 変更をpendingChangesに記録（保存はOKボタン押下時）
       setPendingChanges(prev => ({
@@ -500,12 +506,85 @@ const SettingModal = ({
     }
   };
   
+  // sections配列を再計算する関数
+  const recalculateSections = (totalEnds, warmup, interval, resultApproval) => {
+    const newSections = ['standby'];
+    
+    // ウォームアップの追加
+    if (warmup === 'simultaneous') {
+      newSections.push('warmup');
+    } else if (warmup === 'separate') {
+      newSections.push('warmup1', 'warmup2');
+    }
+    // warmup === 'none' の場合は何も追加しない
+    
+    // エンドとインターバルの追加
+    for (let i = 1; i <= totalEnds; i++) {
+      newSections.push(`end${i}`);
+      // 最後のエンド以外で、インターバルが有効な場合はintervalを追加
+      if (i < totalEnds && interval !== 'none') {
+        newSections.push('interval');
+      }
+    }
+    
+    // 試合終了
+    newSections.push('matchFinished');
+    
+    // 結果承認の追加
+    if (resultApproval !== 'none') {
+      newSections.push('resultApproval');
+    }
+    
+    return newSections;
+  };
+  
   // OKボタン押下時に変更をまとめて保存
   const handleSaveChanges = () => {
     if (!onUpdateField) return;
     
-    // pendingChangesの各変更を適用
-    Object.entries(pendingChanges).forEach(([key, value]) => {
+    // 現在の設定値を取得（pendingChangesがあれば優先）
+    const currentTotalEnds = pendingChanges['match.totalEnds'] !== undefined 
+      ? pendingChanges['match.totalEnds'] 
+      : (gameData?.match?.totalEnds || 4);
+    const currentWarmup = pendingChanges['match.warmup'] !== undefined 
+      ? pendingChanges['match.warmup'] 
+      : (gameData?.match?.warmup || 'simultaneous');
+    const currentInterval = pendingChanges['match.interval'] !== undefined 
+      ? pendingChanges['match.interval'] 
+      : (gameData?.match?.interval || 'enabled');
+    const currentResultApproval = pendingChanges['match.resultApproval'] !== undefined 
+      ? pendingChanges['match.resultApproval'] 
+      : (gameData?.match?.resultApproval || 'enabled');
+    
+    // totalEnds、warmup、interval、resultApprovalのいずれかが変更された場合、sectionsを再計算
+    const shouldRecalculateSections = 
+      pendingChanges['match.totalEnds'] !== undefined ||
+      pendingChanges['match.warmup'] !== undefined ||
+      pendingChanges['match.interval'] !== undefined ||
+      pendingChanges['match.resultApproval'] !== undefined;
+    
+    // 再計算したsectionsを含む最終的な変更オブジェクトを作成
+    const finalChanges = { ...pendingChanges };
+    if (shouldRecalculateSections) {
+      const newSections = recalculateSections(
+        currentTotalEnds,
+        currentWarmup,
+        currentInterval,
+        currentResultApproval
+      );
+      finalChanges['match.sections'] = newSections;
+    }
+    
+    // red.limitとblue.limitが変更された場合、currentLimitsRefを更新
+    if (finalChanges['red.limit'] !== undefined) {
+      currentLimitsRef.current.red = finalChanges['red.limit'];
+    }
+    if (finalChanges['blue.limit'] !== undefined) {
+      currentLimitsRef.current.blue = finalChanges['blue.limit'];
+    }
+    
+    // 最終的な変更を適用
+    Object.entries(finalChanges).forEach(([key, value]) => {
       const [parent, child] = key.split('.');
       if (child) {
         onUpdateField(parent, child, value);
