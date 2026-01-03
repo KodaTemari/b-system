@@ -74,9 +74,13 @@ const SettingModal = ({
   }, []);
 
   // totalEndsが変更されたときに状態を更新
+  // pendingChangesにmatch.totalEndsがある場合は、gameDataの更新を無視（ユーザーが手動で変更した値を優先）
   useEffect(() => {
-    setSelectedEnds(totalEnds || 4);
-  }, [totalEnds]);
+    const hasPendingTotalEnds = pendingChanges['match.totalEnds'] !== undefined;
+    if (!hasPendingTotalEnds) {
+      setSelectedEnds(totalEnds || 4);
+    }
+  }, [totalEnds, pendingChanges]);
   
   // モーダルが開かれたときにpendingChangesをリセット
   useEffect(() => {
@@ -85,25 +89,33 @@ const SettingModal = ({
 
   // gameDataの変更に合わせて詳細設定の状態を更新
   useEffect(() => {
-    if (gameData?.match?.tieBreak !== undefined) {
-      setSelectedTieBreak(gameData.match.tieBreak);
-    }
-    if (gameData?.match?.resultApproval !== undefined) {
-      setSelectedResultApproval(gameData.match.resultApproval);
-    }
-    if (gameData?.match?.rules !== undefined) {
-      setSelectedRules(gameData.match.rules);
-    }
-    if (gameData?.match?.warmup !== undefined) {
-      setSelectedWarmup(gameData.match.warmup);
-    }
-    if (gameData?.match?.interval !== undefined) {
-      setSelectedInterval(gameData.match.interval);
-    }
     // クラス変更直後（1000ms以内）は更新しない
     const now = Date.now();
     if (now - lastClassChangeRef.current.timestamp < 1000) {
       return;
+    }
+    
+    // pendingChangesに値がある場合は、gameDataの更新を無視（ユーザーが手動で変更した値を優先）
+    const hasPendingTieBreak = pendingChanges['match.tieBreak'] !== undefined;
+    const hasPendingResultApproval = pendingChanges['match.resultApproval'] !== undefined;
+    const hasPendingRules = pendingChanges['match.rules'] !== undefined;
+    const hasPendingWarmup = pendingChanges['match.warmup'] !== undefined;
+    const hasPendingInterval = pendingChanges['match.interval'] !== undefined;
+    
+    if (!hasPendingTieBreak && gameData?.match?.tieBreak !== undefined) {
+      setSelectedTieBreak(gameData.match.tieBreak);
+    }
+    if (!hasPendingResultApproval && gameData?.match?.resultApproval !== undefined) {
+      setSelectedResultApproval(gameData.match.resultApproval);
+    }
+    if (!hasPendingRules && gameData?.match?.rules !== undefined) {
+      setSelectedRules(gameData.match.rules);
+    }
+    if (!hasPendingWarmup && gameData?.match?.warmup !== undefined) {
+      setSelectedWarmup(gameData.match.warmup);
+    }
+    if (!hasPendingInterval && gameData?.match?.interval !== undefined) {
+      setSelectedInterval(gameData.match.interval);
     }
     
     // pendingChangesにred.limitまたはblue.limitがある場合は、gameDataの更新を無視
@@ -112,20 +124,19 @@ const SettingModal = ({
     const hasPendingBlueLimit = pendingChanges['blue.limit'] !== undefined;
     
     // 現在の値と異なる場合のみ更新（pendingChangesがない場合のみ）
-    // また、selectedRedLimit/selectedBlueLimitが既に正しい値の場合は更新しない
-    // currentLimitsRefとselectedRedLimitの両方をチェックして、保存直後の上書きを防ぐ
+    // selectedRedLimit/selectedBlueLimitが既に正しい値の場合は更新しない（保存直後の上書きを防ぐ）
     if (!hasPendingRedLimit && gameData?.red?.limit !== undefined) {
-      // currentLimitsRefとselectedRedLimitの両方が異なる場合のみ更新
-      // これにより、handleSaveChangesで設定した値が上書きされることを防ぐ
-      if (gameData.red.limit !== currentLimitsRef.current.red && selectedRedLimit !== gameData.red.limit) {
+      const shouldUpdate = gameData.red.limit !== currentLimitsRef.current.red && 
+                          selectedRedLimit !== gameData.red.limit;
+      if (shouldUpdate) {
         currentLimitsRef.current.red = gameData.red.limit;
         setSelectedRedLimit(gameData.red.limit);
       }
     }
     if (!hasPendingBlueLimit && gameData?.blue?.limit !== undefined) {
-      // currentLimitsRefとselectedBlueLimitの両方が異なる場合のみ更新
-      // これにより、handleSaveChangesで設定した値が上書きされることを防ぐ
-      if (gameData.blue.limit !== currentLimitsRef.current.blue && selectedBlueLimit !== gameData.blue.limit) {
+      const shouldUpdate = gameData.blue.limit !== currentLimitsRef.current.blue && 
+                          selectedBlueLimit !== gameData.blue.limit;
+      if (shouldUpdate) {
         currentLimitsRef.current.blue = gameData.blue.limit;
         setSelectedBlueLimit(gameData.blue.limit);
       }
@@ -601,46 +612,37 @@ const SettingModal = ({
     
     // すべての変更を一度に適用するため、gameDataを直接更新してsaveDataを呼び出す
     // これにより、複数のonUpdateField呼び出しによる競合を防ぐ
-    if (saveData && gameData) {
-      let updatedGameData = { ...gameData };
-      
-      // 各変更を適用
-      Object.entries(finalChanges).forEach(([key, value]) => {
-        const [parent, child] = key.split('.');
-        if (child) {
-          // ネストされたプロパティ（red.limit, blue.limit, match.warmupなど）
-          if (parent === 'match') {
-            // matchオブジェクトのプロパティ
-            updatedGameData.match = {
-              ...updatedGameData.match,
-              [child]: value
-            };
-          } else {
-            // red, blueなどのオブジェクトのプロパティ
-            updatedGameData[parent] = {
-              ...updatedGameData[parent],
-              [child]: value
-            };
-          }
-        } else {
-          // 直接プロパティ（classification, category, matchNameなど）
-          updatedGameData[parent] = value;
-        }
-      });
-      
-      // 一度に保存
-      saveData(updatedGameData);
-    } else {
-      // saveDataが利用できない場合は、従来の方法でonUpdateFieldを呼び出す
-      Object.entries(finalChanges).forEach(([key, value]) => {
-        const [parent, child] = key.split('.');
-        if (child) {
-          onUpdateField(parent, child, value);
-        } else {
-          onUpdateField(parent, null, value);
-        }
-      });
+    if (!saveData || !gameData) {
+      console.error('saveDataまたはgameDataが利用できません');
+      return;
     }
+    
+    const updatedGameData = { ...gameData };
+    
+    // 各変更を適用
+    Object.entries(finalChanges).forEach(([key, value]) => {
+      const [parent, child] = key.split('.');
+      if (child) {
+        // ネストされたプロパティ（red.limit, blue.limit, match.warmupなど）
+        if (parent === 'match') {
+          updatedGameData.match = {
+            ...updatedGameData.match,
+            [child]: value
+          };
+        } else {
+          updatedGameData[parent] = {
+            ...updatedGameData[parent],
+            [child]: value
+          };
+        }
+      } else {
+        // 直接プロパティ（classification, category, matchNameなど）
+        updatedGameData[parent] = value;
+      }
+    });
+    
+    // 一度に保存
+    saveData(updatedGameData);
     
     // pendingChangesをクリア（少し遅延させて、gameDataの更新を待つ）
     setTimeout(() => {
@@ -681,7 +683,7 @@ const SettingModal = ({
   };
 
   return (
-    <dialog id="settingModal" onClose={onClose}>
+    <dialog id="settingModal" data-section={section} onClose={onClose}>
       <div id="indexModal" className="modalBox">
         <button type="button" name="resetBtn" onClick={handleReset}>
           <img src={resetIcon} alt={getLocalizedText('buttons.reset', getCurrentLanguage())} />

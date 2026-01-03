@@ -1814,6 +1814,11 @@
   opacity: 0.2;
 }
 
+/* スタンバイセクションではリセットボタンを非表示 */
+#settingModal[data-section="standby"] [name="resetBtn"] {
+  display: none;
+}
+
 [name="resetBtn"]:hover {
 opacity: 0.8;
 }

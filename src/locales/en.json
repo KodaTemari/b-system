@@ -62,7 +62,7 @@
     "blueForfeit": "Blue team will forfeit.",
     "redSecondYellowCard": "Red team will forfeit due to second yellow card.",
     "blueSecondYellowCard": "Blue team will forfeit due to second yellow card.",
-    "reset": "Reset all data. Are you sure?"
+    "reset": "Reset match data"
   },
   "penalties": {
     "lineCross": "Line Cross",

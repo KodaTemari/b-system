@@ -498,7 +498,7 @@ const Scoreboard = () => {
   // 確認モーダルのメッセージを取得
   const getConfirmMessage = () => {
     if (pendingReset) {
-      return getLocalizedText('confirm.reset', getCurrentLanguage()) || 'すべてのデータをリセットします。よろしいですか？';
+      return getLocalizedText('confirm.reset', getCurrentLanguage()) || '試合データをリセットします';
     }
     
     if (!pendingPenalty) return '';

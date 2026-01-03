@@ -820,7 +820,8 @@ export const useScoreboardHandlers = ({
           match: {
             ...gameData.match,
             sectionID: warmupSectionID,
-            section: warmupSection
+            section: warmupSection,
+            totalEnds: gameData.match?.totalEnds // totalEndsを明示的に保持
           },
           warmup: {
             ...gameData.warmup,
