@@ -26,12 +26,14 @@ const SettingModal = ({
   onUpdateField,
   saveData,
   id,
-  setSearchParams
+  setSearchParams,
+  classParam,
+  genderParam
 }) => {
   // クラス選択肢と性別選択肢の状態
   const [classificationOptions, setClassificationOptions] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedGender, setSelectedGender] = useState('M');
+  const [selectedGender, setSelectedGender] = useState('');
   const [selectedEnds, setSelectedEnds] = useState(totalEnds || 4);
   const [selectedTieBreak, setSelectedTieBreak] = useState(gameData?.match?.tieBreak || 'none');
   const [selectedWarmup, setSelectedWarmup] = useState(gameData?.match?.warmup || 'simultaneous');
@@ -108,6 +110,16 @@ const SettingModal = ({
     setPendingChanges({});
   }, [section]);
 
+  // 選択されたクラスが性別を必要としない場合、性別を混合（''）に保証
+  useEffect(() => {
+    if (selectedClassId) {
+      const classOption = classificationOptions.find(opt => opt.value === selectedClassId);
+      if (classOption && !classOption.hasGender && selectedGender !== '') {
+        setSelectedGender('');
+      }
+    }
+  }, [selectedClassId, classificationOptions, selectedGender]);
+
   // gameDataの変更に合わせて詳細設定の状態を更新
   useEffect(() => {
     // クラス変更直後（1000ms以内）は更新しない
@@ -164,8 +176,57 @@ const SettingModal = ({
     }
   }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit, pendingChanges, selectedRedLimit, selectedBlueLimit]);
 
+  // URLパラメータからクラスと性別を設定
+  useEffect(() => {
+    if (section === 'standby' && classParam) {
+      // URLパラメータにクラスが指定されている場合、それを設定
+      setSelectedClassId(classParam);
+      
+      // 性別パラメータがある場合、それを設定（'m' -> 'M', 'f' -> 'F'）
+      // パラメータがない場合は混合（''）を保持
+      const genderValue = genderParam ? (genderParam.toUpperCase() === 'M' ? 'M' : genderParam.toUpperCase() === 'F' ? 'F' : '') : '';
+      setSelectedGender(genderValue);
+      
+      // クラスに応じた設定値を適用
+      const settings = getClassSettings(classParam);
+      currentLimitsRef.current.red = settings.redLimit;
+      currentLimitsRef.current.blue = settings.blueLimit;
+      setSelectedRedLimit(settings.redLimit);
+      setSelectedBlueLimit(settings.blueLimit);
+      setSelectedWarmup(settings.warmup);
+      setSelectedInterval(settings.interval);
+      setSelectedTieBreak(settings.tieBreak);
+      setSelectedRules(settings.rules);
+      setSelectedResultApproval(settings.resultApproval);
+      setSelectedEnds(settings.totalEnds);
+      
+      // 変更をpendingChangesに記録
+      setPendingChanges(prev => ({
+        ...prev,
+        'red.limit': settings.redLimit,
+        'blue.limit': settings.blueLimit,
+        'match.warmup': settings.warmup,
+        'match.interval': settings.interval,
+        'match.totalEnds': settings.totalEnds,
+        'match.tieBreak': settings.tieBreak,
+        'match.rules': settings.rules,
+        'match.resultApproval': settings.resultApproval
+      }));
+      
+      // classificationの表示値を更新（少し遅延させて、selectedClassIdが更新されるのを待つ）
+      setTimeout(() => {
+        updateClassificationValue(classParam, genderValue, true);
+      }, 0);
+    }
+  }, [classParam, genderParam, section]);
+
   // 現在のclassificationからクラスIDと性別を解析
   useEffect(() => {
+    // URLパラメータがある場合は、gameDataのclassificationを無視
+    if (classParam) {
+      return;
+    }
+    
     if (gameData?.classification) {
       const classification = gameData.classification;
       // "個人 BC1 男子" または "IND BC1 Male" のような形式から解析
@@ -243,7 +304,8 @@ const SettingModal = ({
                   } else if (genderPart === '女子' || genderPart === 'Female') {
                     setSelectedGender('F');
                   } else {
-                    setSelectedGender('M'); // 性別がない場合は「男子」をデフォルト
+                    // 性別がない場合は混合（''）を保持
+                    setSelectedGender('');
                   }
                   break;
                 }
@@ -289,7 +351,7 @@ const SettingModal = ({
         
         // 指定された順序でクラスを並び替え
         const classOrder = [
-          'BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'IndividualFriendly',
+          'BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'Friendly',
           'PairBC3', 'PairBC4', 'PairFriendly',
           'TeamsBC1BC2', 'TeamFriendly',
           'Recreation'
@@ -375,7 +437,7 @@ const SettingModal = ({
         settings.redLimit = 210000; // 3:30
         settings.blueLimit = 210000; // 3:30
         break;
-      case 'IndividualFriendly':
+      case 'Friendly':
         settings.redLimit = 240000; // 4:00
         settings.blueLimit = 240000; // 4:00
         settings.totalEnds = 2;
@@ -435,8 +497,32 @@ const SettingModal = ({
   // クラスと性別の変更を処理
   const handleClassificationChange = (classId) => {
     setSelectedClassId(classId);
-    // クラスが変更されたら性別を「男子」にリセット
-    setSelectedGender('M');
+    
+    // クラスが変更されたら性別をリセット
+    // hasGenderがtrueの場合は「男子」、falseの場合は「混合」をデフォルトに
+    const classOption = classificationOptions.find(opt => opt.value === classId);
+    const defaultGender = classOption?.hasGender ? 'M' : '';
+    setSelectedGender(defaultGender);
+    
+    // URLパラメータを更新
+    if (setSearchParams) {
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        if (classId) {
+          newParams.set('c', classId);
+          // 性別はリセット（hasGenderがtrueの場合は'm'、falseの場合は削除）
+          if (classOption?.hasGender) {
+            newParams.set('g', 'm');
+          } else {
+            newParams.delete('g');
+          }
+        } else {
+          newParams.delete('c');
+          newParams.delete('g');
+        }
+        return newParams;
+      });
+    }
     
     // クラスに応じた設定値を適用
     if (classId) {
@@ -475,11 +561,27 @@ const SettingModal = ({
     }
     
     // classificationの表示値を更新（保存はOKボタン押下時）
-    updateClassificationValue(classId, '', true);
+    updateClassificationValue(classId, defaultGender, true);
   };
 
   const handleGenderChange = (gender) => {
     setSelectedGender(gender);
+    
+    // URLパラメータを更新
+    if (setSearchParams && selectedClassId) {
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        if (gender === 'M') {
+          newParams.set('g', 'm');
+        } else if (gender === 'F') {
+          newParams.set('g', 'f');
+        } else {
+          newParams.delete('g');
+        }
+        return newParams;
+      });
+    }
+    
     updateClassificationValue(selectedClassId, gender, true);
   };
 

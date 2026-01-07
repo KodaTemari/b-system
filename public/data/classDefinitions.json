@@ -42,7 +42,7 @@
       "timer": 210000,
       "hasGender": true
     },
-    "IndividualFriendly": {
+    "Friendly": {
       "name": "フレンドリー",
       "type": "individual",
       "ends": 2,

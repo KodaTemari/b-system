@@ -17,6 +17,8 @@ export const useScoreboard = () => {
   const mode = searchParams.get('p'); // 'ctrl' または 'view'
   const isCtrl = mode === 'ctrl';
   const langParam = searchParams.get('l'); // 言語パラメータ ('en' または 'ja')
+  const classParam = searchParams.get('c'); // クラスパラメータ (例: 'BC1')
+  const genderParam = searchParams.get('g'); // 性別パラメータ (例: 'm', 'f', または空)
 
   // 状態管理
   const [showTimeModal, setShowTimeModal] = useState(false);
@@ -525,6 +527,8 @@ export const useScoreboard = () => {
     court,
     isCtrl,
     setSearchParams,
+    classParam,
+    genderParam,
     
     // 状態
     active,

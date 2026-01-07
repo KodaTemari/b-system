@@ -11,16 +11,7 @@
       "end1",
       "interval",
       "end2",
-      "interval",
-      "end3",
-      "interval",
-      "end4",
-      "interval",
-      "end5",
-      "interval",
-      "end6",
-      "matchFinished",
-      "resultApproval"
+      "matchFinished"
     ],
     "tieBreak": "finalShot",
     "approvals": {
@@ -30,8 +21,8 @@
     },
     "warmup": "simultaneous",
     "interval": "enabled",
-    "rules": "worldBoccia",
-    "resultApproval": "enabled"
+    "rules": "friendlyMatch",
+    "resultApproval": "none"
   },
   "screen": {
     "active": "",
@@ -80,8 +71,8 @@
     "redCard": 0
   },
   "courtId": "",
-  "classification": "個人 BC1",
+  "classification": "個人 OP 立位 男子",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-07T07:23:19.137Z"
+  "lastUpdated": "2026-01-07T08:33:25.880Z"
 }

@@ -401,11 +401,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           },
           match: {
             ...prevData.match,
-            sectionID: initialData.match?.sectionID ?? prevData.match?.sectionID,
-            section: initialData.match?.section ?? prevData.match?.section,
-            sections: initialData.match?.sections ?? prevData.match?.sections,
-            approvals: initialData.match?.approvals ?? prevData.match?.approvals,
-            totalEnds: initialData.match?.totalEnds ?? prevData.match?.totalEnds, // totalEndsを明示的に保持
+            ...(initialData.match || {}),
+            // endはsectionから計算する必要があるため、個別に処理
             end: (() => {
               const extractEndNumber = (sectionName) => {
                 if (sectionName && sectionName.startsWith('end')) {
