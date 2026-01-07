@@ -8,8 +8,7 @@
     "tieBreak": "extraEnd",
     "sections": [
       "standby",
-      "warmup1",
-      "warmup2",
+      "warmup",
       "end1",
       "interval",
       "end2",
@@ -25,60 +24,84 @@
       "referee": false,
       "blue": false
     },
-    "warmup": "separate",
+    "warmup": "simultaneous",
     "interval": "enabled",
     "rules": "worldBoccia",
     "resultApproval": "enabled"
   },
   "screen": {
     "active": "",
-    "setColor": true,
-    "scoreAdjusting": false,
-    "penaltyThrow": false
+    "isColorSet": false,
+    "isScoreAdjusting": false,
+    "isPenaltyThrow": false
   },
   "warmup": {
     "limit": 120000,
     "time": 120000,
-    "isRun": false
+    "isRunning": false
   },
   "interval": {
     "limit": 60000,
     "time": 60000,
-    "isRun": false
+    "isRunning": false
   },
   "red": {
     "name": "Red",
     "score": 0,
-    "scores": [],
-    "limit": 240000,
+    "scores": [
+      {
+        "end": 1,
+        "score": 0,
+        "penalties": []
+      },
+      {
+        "end": 2,
+        "score": 0,
+        "penalties": []
+      }
+    ],
+    "limit": 210000,
     "ball": 6,
-    "isRun": false,
-    "time": 240000,
-    "tieBreak": false,
+    "isRunning": false,
+    "time": 300000,
+    "isTieBreak": false,
     "result": "",
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
-    "redCard": 0
+    "redCard": 0,
+    "tieBreak": false
   },
   "blue": {
     "name": "Blue",
     "score": 0,
-    "scores": [],
-    "limit": 240000,
+    "scores": [
+      {
+        "end": 1,
+        "score": 0,
+        "penalties": []
+      },
+      {
+        "end": 2,
+        "score": 0,
+        "penalties": []
+      }
+    ],
+    "limit": 210000,
     "ball": 6,
-    "isRun": false,
-    "time": 240000,
-    "tieBreak": false,
+    "isRunning": false,
+    "time": 300000,
+    "isTieBreak": false,
     "result": "",
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
-    "redCard": 0
+    "redCard": 0,
+    "tieBreak": false
   },
   "courtId": "",
-  "classification": "個人 OP 立位 男子",
+  "classification": "個人 BC4 男子",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-07T10:21:56.543Z"
+  "lastUpdated": "2026-01-07T13:18:06.203Z"
 }

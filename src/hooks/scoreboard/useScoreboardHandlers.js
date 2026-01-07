@@ -48,16 +48,16 @@ export const useScoreboardHandlers = ({
             },
             red: {
               ...gameData.red,
-              isRun: false
+              isRunning: false
             },
             blue: {
               ...gameData.blue,
-              isRun: false
+              isRunning: false
             },
             screen: {
               ...gameData.screen,
               active: activeValue,
-              scoreAdjusting: gameData.screen?.scoreAdjusting ?? false
+              isScoreAdjusting: gameData.screen?.isScoreAdjusting ?? false
             }
           };
           saveData(updatedGameData);
@@ -76,12 +76,12 @@ export const useScoreboardHandlers = ({
     const newScore = Math.max(0, currentScore + delta);
     updateScore(color, newScore);
     
-    // エンドスコアも更新
+    // エンドスコアも更新（red.scoreの加減算と連動）
     const currentSection = gameData.match?.section || '';
     const sectionID = gameData.match?.sectionID || 0;
     const sections = gameData.match?.sections || [];
     
-    let endIndex = -1;
+    let endNumber = 0;
     
     if (currentSection === 'interval') {
       // インターバルセクションの場合、1つ前のエンドセクションを取得
@@ -90,31 +90,61 @@ export const useScoreboardHandlers = ({
       
       if (prevSection && prevSection.startsWith('end')) {
         // 前のセクションがエンドの場合、そのエンド番号を取得
-        const prevEndNumber = parseInt(prevSection.replace('end', ''), 10);
-        endIndex = prevEndNumber - 1; // エンド番号からインデックスに変換（エンド1 → インデックス0）
+        endNumber = parseInt(prevSection.replace('end', ''), 10);
       }
     } else {
       // エンドセクションまたはタイブレークセクションの場合
-      const end = gameData.match?.end || 0;
-      if (end > 0) {
-        endIndex = end - 1;
-      }
+      endNumber = gameData.match?.end || 0;
     }
     
-    if (endIndex >= 0) {
+    if (endNumber > 0) {
       const currentScores = gameData[color].scores || [];
       const newScores = [...currentScores];
       
-      // 配列の長さを確保
-      while (newScores.length <= endIndex) {
-        newScores.push(0);
-      }
+      // 既存のエンドエントリを探す
+      let endEntryIndex = newScores.findIndex(s => {
+        // 後方互換性: 数値の場合は変換
+        if (typeof s === 'number') {
+          return false; // 数値の場合は見つからないとして扱う
+        }
+        return s.end === endNumber;
+      });
       
-      // endIndexのインデックスに加算
-      newScores[endIndex] = Math.max(0, (newScores[endIndex] || 0) + delta);
+      if (endEntryIndex === -1) {
+        // エンドエントリが存在しない場合、新規作成（scoreは現在のred.scoreの値）
+        newScores.push({ 
+          end: endNumber, 
+          score: newScore
+        });
+      } else {
+        // エンドエントリが存在する場合、スコアを更新（delta分だけ加減算）
+        const currentEndScore = newScores[endEntryIndex].score || 0;
+        newScores[endEntryIndex] = {
+          ...newScores[endEntryIndex],
+          score: Math.max(0, currentEndScore + delta)
+        };
+      }
       
       // スコア配列を更新
       updateField(color, 'scores', newScores);
+      
+      // スコア調整後、データを保存（scores配列も含める）
+      if (isCtrl && saveData) {
+        const updatedGameData = {
+          ...gameData,
+          [color]: {
+            ...gameData[color],
+            score: newScore,
+            scores: newScores
+          },
+          screen: {
+            ...gameData.screen,
+            active: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? `${color}-score` : (gameData.screen?.active || ''),
+            isScoreAdjusting: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? true : (gameData.screen?.isScoreAdjusting || false)
+          }
+        };
+        saveData(updatedGameData);
+      }
     }
     
     // エンドセクションまたはタイブレークセクションの場合、点数加算ボタンが押されたらsectionNavを表示
@@ -135,47 +165,6 @@ export const useScoreboardHandlers = ({
         updateScreenActive('score');
       }
     }
-    
-    // スコア調整後、データを保存（更新されたgameDataを渡す）
-    if (isCtrl) {
-      // エンドスコアを含む更新データを準備
-      const currentScores = gameData[color].scores || [];
-      const newScores = [...currentScores];
-      
-      // endIndexが計算されている場合はそれを使用、そうでない場合は従来のロジック
-      if (endIndex >= 0) {
-        // 配列の長さを確保
-        while (newScores.length <= endIndex) {
-          newScores.push(0);
-        }
-        newScores[endIndex] = Math.max(0, (newScores[endIndex] || 0) + delta);
-      } else {
-        // フォールバック（既存のロジック）
-        const end = gameData.match?.end || 0;
-        if (end > 0) {
-          const fallbackEndIndex = end - 1;
-          while (newScores.length <= fallbackEndIndex) {
-            newScores.push(0);
-          }
-          newScores[fallbackEndIndex] = Math.max(0, (newScores[fallbackEndIndex] || 0) + delta);
-        }
-      }
-      
-      const updatedGameData = {
-        ...gameData,
-        [color]: {
-          ...gameData[color],
-          score: newScore,
-          scores: newScores
-        },
-        screen: {
-          ...gameData.screen,
-          active: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? `${color}-score` : (gameData.screen?.active || ''),
-          scoreAdjusting: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? true : (gameData.screen?.scoreAdjusting || false)
-        }
-      };
-      saveData(updatedGameData);
-    }
   }, [gameData, updateScore, updateField, updateScreenActive, updateScoreAdjusting, saveData, isCtrl]);
 
   // タイマー切り替えハンドラー
@@ -184,9 +173,9 @@ export const useScoreboardHandlers = ({
     
     if (isRunning) {
       // 他のタイマーが動いている場合は停止
-      if (color === 'red' && gameData.blue.isRun) {
+      if (color === 'red' && gameData.blue.isRunning) {
         updateTimer('blue', gameData.blue.time, false);
-      } else if (color === 'blue' && gameData.red.isRun) {
+      } else if (color === 'blue' && gameData.red.isRunning) {
         updateTimer('red', gameData.red.time, false);
       }
       
@@ -200,11 +189,11 @@ export const useScoreboardHandlers = ({
         if (saveData) {
           const updatedGameData = {
             ...gameData,
-            [color]: {
-              ...gameData[color],
-              isRun: true,
-              time: currentTime
-            },
+              [color]: {
+                ...gameData[color],
+                isRunning: true,
+                time: currentTime
+              },
             screen: {
               ...gameData.screen,
               active: `${color}-time`
@@ -218,10 +207,10 @@ export const useScoreboardHandlers = ({
       updateTimer(color, currentTime, false);
       
       // penaltyThrow中かどうかを判定
-      // gameData.screen.penaltyThrowの状態を使用
+      // gameData.screen.isPenaltyThrowの状態を使用
       // 開始条件：すべてのボールが0で、ペナルティボールが1以上
       // 終了条件：ボールを投げきる（すべてのボールが0になる）
-      const isPenaltyThrow = gameData.screen?.penaltyThrow || false;
+      const isPenaltyThrow = gameData.screen?.isPenaltyThrow || false;
       
       // penaltyThrow中の場合、ペナルティボールを-1
       if (isPenaltyThrow && gameData[color].penaltyBall > 0) {
@@ -247,7 +236,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               [color]: {
                 ...gameData[color],
-                isRun: false,
+                isRunning: false,
                 time: timerTime,
                 ball: newBallCount,
                 penaltyBall: newPenaltyBall
@@ -266,7 +255,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               [color]: {
                 ...gameData[color],
-                isRun: false,
+                isRunning: false,
                 time: timerTime,
                 penaltyBall: newPenaltyBall
               },
@@ -291,7 +280,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               [color]: {
                 ...gameData[color],
-                isRun: false,
+                isRunning: false,
                 time: currentTime,
                 ball: newBallCount
               },
@@ -309,7 +298,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               [color]: {
                 ...gameData[color],
-                isRun: false,
+                isRunning: false,
                 time: currentTime
               },
               screen: {
@@ -393,16 +382,16 @@ export const useScoreboardHandlers = ({
           ...gameData,
           [color]: {
             ...gameData[color],
-            tieBreak: true
+            isTieBreak: true
           },
           [otherColor]: {
             ...gameData[otherColor],
-            tieBreak: false
+            isTieBreak: false
           },
           screen: {
             ...gameData.screen,
             active: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? `${color}-score` : (gameData.screen?.active || ''),
-            scoreAdjusting: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? true : (gameData.screen?.scoreAdjusting || false)
+            isScoreAdjusting: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? true : (gameData.screen?.isScoreAdjusting || false)
           }
         };
         saveData(updatedGameData);
@@ -438,9 +427,9 @@ export const useScoreboardHandlers = ({
         winner = 'blue';
       } else {
         // data-tieBreak属性がない場合、gameDataのtieBreakフィールドを確認
-        if (gameData.red?.tieBreak === true) {
+        if (gameData.red?.isTieBreak === true) {
           winner = 'red';
-        } else if (gameData.blue?.tieBreak === true) {
+        } else if (gameData.blue?.isTieBreak === true) {
           winner = 'blue';
         }
         // タイブレークもない場合は引き分け（winner = null）
@@ -564,9 +553,9 @@ export const useScoreboardHandlers = ({
       // タイマーをリセット
       updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
       updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
-      updateField('warmup', 'isRun', false);
+      updateField('warmup', 'isRunning', false);
       updateField('warmup', 'time', gameData.warmup.limit);
-      updateField('interval', 'isRun', false);
+      updateField('interval', 'isRunning', false);
       updateField('interval', 'time', gameData.interval.limit);
       
       // スクリーン表示をリセット
@@ -626,6 +615,7 @@ export const useScoreboardHandlers = ({
       
       // 更新されたゲームデータを保存
       if (isCtrl && saveData) {
+        
         const updatedGameData = {
           ...gameData,
           match: {
@@ -634,12 +624,18 @@ export const useScoreboardHandlers = ({
             section: nextSection,
             end: endNumber
           },
+          red: {
+            ...gameData.red
+          },
+          blue: {
+            ...gameData.blue
+          },
           screen: {
             ...gameData.screen,
             active: '',
-            setColor: false,
-            scoreAdjusting: false,
-            penaltyThrow: false
+            isColorSet: false,
+            isScoreAdjusting: false,
+            isPenaltyThrow: false
           }
         };
         
@@ -648,7 +644,7 @@ export const useScoreboardHandlers = ({
           updatedGameData.warmup = {
             ...gameData.warmup,
             time: gameData.warmup.limit,
-            isRun: false
+            isRunning: false
           };
         }
         
@@ -657,7 +653,7 @@ export const useScoreboardHandlers = ({
         updatedGameData.warmup = {
           ...gameData.warmup,
           time: gameData.warmup?.limit || TIMER_LIMITS.WARMUP,
-          isRun: false
+          isRunning: false
         };
         
         // インターバルセクションに移行する場合、インターバルタイマーを開始状態で保存
@@ -665,21 +661,21 @@ export const useScoreboardHandlers = ({
           updatedGameData.interval = {
             ...gameData.interval,
             time: TIMER_LIMITS.INTERVAL,
-            isRun: true
+            isRunning: true
           };
         } else {
           updatedGameData.interval = {
             ...gameData.interval,
             time: gameData.interval?.limit || TIMER_LIMITS.INTERVAL,
-            isRun: false
+            isRunning: false
           };
         }
         updatedGameData.screen = {
           ...gameData.screen,
           active: '',
-          setColor: false,
-          scoreAdjusting: false,
-          penaltyThrow: false
+          isColorSet: false,
+          isScoreAdjusting: false,
+          isPenaltyThrow: false
         };
         
         // エンドセクションの場合、ボール数をエンド番号に応じて設定
@@ -689,22 +685,26 @@ export const useScoreboardHandlers = ({
           updatedGameData.red = {
             ...gameData.red,
             ball: redBalls,
-            isRun: false,
+            isRunning: false,
             time: gameData.red?.limit || TIMER_LIMITS.GAME,
             penaltyBall: 0
           };
           updatedGameData.blue = {
             ...gameData.blue,
             ball: blueBalls,
-            isRun: false,
+            isRunning: false,
             time: gameData.blue?.limit || TIMER_LIMITS.GAME,
             penaltyBall: 0
           };
           
-          // エンド開始時はtieBreakをfalseにリセット
-          updatedGameData.match = {
-            ...updatedGameData.match,
-            tieBreak: false
+          // エンド開始時はisTieBreakをfalseにリセット
+          updatedGameData.red = {
+            ...updatedGameData.red,
+            isTieBreak: false
+          };
+          updatedGameData.blue = {
+            ...updatedGameData.blue,
+            isTieBreak: false
           };
         } else if (nextSection === 'tieBreak') {
           // タイブレークセクションの場合、tieBreakの値に応じてボール数とタイマーを設定
@@ -717,14 +717,14 @@ export const useScoreboardHandlers = ({
           updatedGameData.red = {
             ...gameData.red,
             ball: redBalls,
-            isRun: false,
+            isRunning: false,
             time: redTime,
             penaltyBall: 0
           };
           updatedGameData.blue = {
             ...gameData.blue,
             ball: blueBalls,
-            isRun: false,
+            isRunning: false,
             time: blueTime,
             penaltyBall: 0
           };
@@ -733,14 +733,14 @@ export const useScoreboardHandlers = ({
           updatedGameData.red = {
             ...gameData.red,
             ball: 6,
-            isRun: false,
+            isRunning: false,
             time: gameData.red?.limit || TIMER_LIMITS.GAME,
             penaltyBall: 0
           };
           updatedGameData.blue = {
             ...gameData.blue,
             ball: 6,
-            isRun: false,
+            isRunning: false,
             time: gameData.blue?.limit || TIMER_LIMITS.GAME,
             penaltyBall: 0
           };
@@ -758,12 +758,12 @@ export const useScoreboardHandlers = ({
             // スコアに差がある場合、タイブレーク関連をリセット
             updatedGameData.red = {
               ...updatedGameData.red,
-              tieBreak: false,
+              isTieBreak: false,
               result: winner === 'red' ? 'win' : 'lose'
             };
             updatedGameData.blue = {
               ...updatedGameData.blue,
-              tieBreak: false,
+              isTieBreak: false,
               result: winner === 'blue' ? 'win' : 'lose'
             };
           } else {
@@ -827,7 +827,7 @@ export const useScoreboardHandlers = ({
           },
           warmup: {
             ...gameData.warmup,
-            isRun: true,
+            isRunning: true,
             time: warmupTime
           }
         };
@@ -864,19 +864,19 @@ export const useScoreboardHandlers = ({
             red: {
               ...gameData.red,
               time: gameData.red.limit || TIMER_LIMITS.GAME,
-              isRun: false,
+              isRunning: false,
               ball: redBalls
             },
             blue: {
               ...gameData.blue,
               time: gameData.blue.limit || TIMER_LIMITS.GAME,
-              isRun: false,
+              isRunning: false,
               ball: blueBalls
             },
             screen: {
               ...gameData.screen,
               active: '',
-              scoreAdjusting: false
+              isScoreAdjusting: false
             }
           };
           saveData(updatedGameData);
@@ -933,13 +933,13 @@ export const useScoreboardHandlers = ({
           red: {
             ...gameData.red,
             time: redTime,
-            isRun: false,
+            isRunning: false,
             ball: redBalls
           },
           blue: {
             ...gameData.blue,
             time: blueTime,
-            isRun: false,
+            isRunning: false,
             ball: blueBalls
           },
           screen: {
@@ -994,12 +994,12 @@ export const useScoreboardHandlers = ({
             interval: {
               ...gameData.interval,
               time: TIMER_LIMITS.INTERVAL,
-              isRun: true
+              isRunning: true
             },
             screen: {
               ...gameData.screen,
               active: '',
-              scoreAdjusting: false
+              isScoreAdjusting: false
             }
           };
           saveData(updatedGameData);
@@ -1047,19 +1047,19 @@ export const useScoreboardHandlers = ({
             red: {
               ...gameData.red,
               time: redTime,
-              isRun: false,
+              isRunning: false,
               ball: redBalls
             },
             blue: {
               ...gameData.blue,
               time: blueTime,
-              isRun: false,
+              isRunning: false,
               ball: blueBalls
             },
             screen: {
               ...gameData.screen,
               active: '',
-              scoreAdjusting: false
+              isScoreAdjusting: false
             }
           };
           saveData(updatedGameData);
@@ -1186,7 +1186,7 @@ export const useScoreboardHandlers = ({
             redCard: 0,
             ...preservedSettings.red,
             ball: 6,
-            isRun: false,
+            isRunning: false,
             time: preservedSettings.red.limit,
             penaltyBall: 0
           },
@@ -1200,25 +1200,25 @@ export const useScoreboardHandlers = ({
             redCard: 0,
             ...preservedSettings.blue,
             ball: 6,
-            isRun: false,
+            isRunning: false,
             time: preservedSettings.blue.limit,
             penaltyBall: 0
           },
           warmup: {
             ...resetData.warmup,
             time: resetData.warmup?.limit || TIMER_LIMITS.WARMUP,
-            isRun: false
+            isRunning: false
           },
           interval: {
             ...resetData.interval,
             time: resetData.interval?.limit || TIMER_LIMITS.INTERVAL,
-            isRun: false
+            isRunning: false
           },
           screen: {
             active: '',
-            setColor: false,
-            scoreAdjusting: false,
-            penaltyThrow: false
+            isColorSet: false,
+            isScoreAdjusting: false,
+            isPenaltyThrow: false
           },
           lastUpdated: new Date().toISOString()
         };
@@ -1273,9 +1273,9 @@ export const useScoreboardHandlers = ({
       // タイマーをリセット
       updateTimer('red', gameData.red.limit || TIMER_LIMITS.GAME, false);
       updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
-      updateField('warmup', 'isRun', false);
+      updateField('warmup', 'isRunning', false);
       updateField('warmup', 'time', gameData.warmup.limit);
-      updateField('interval', 'isRun', false);
+      updateField('interval', 'isRunning', false);
       updateField('interval', 'time', gameData.interval.limit);
       
       // スクリーン表示をリセット
@@ -1285,8 +1285,8 @@ export const useScoreboardHandlers = ({
           updateScoreAdjusting(false);
         }
       }
-      updateField('screen', 'setColor', false);
-      updateField('screen', 'penaltyThrow', false);
+      updateField('screen', 'isColorSet', false);
+      updateField('screen', 'isPenaltyThrow', false);
       
       // ペナルティボールをリセット
       updateField('red', 'penaltyBall', 0);
@@ -1310,19 +1310,19 @@ export const useScoreboardHandlers = ({
         warmup: {
           ...gameData.warmup,
           time: gameData.warmup?.limit || TIMER_LIMITS.WARMUP,
-          isRun: false
+          isRunning: false
         },
         interval: {
           ...gameData.interval,
           time: gameData.interval?.limit || TIMER_LIMITS.INTERVAL,
-          isRun: false
+          isRunning: false
         },
         screen: {
           ...gameData.screen,
           active: '',
-          setColor: false,
-          scoreAdjusting: false,
-          penaltyThrow: false
+          isColorSet: false,
+          isScoreAdjusting: false,
+          isPenaltyThrow: false
         }
       };
       
@@ -1333,14 +1333,14 @@ export const useScoreboardHandlers = ({
         updatedGameData.red = {
           ...gameData.red,
           ball: redBalls,
-          isRun: false,
+          isRunning: false,
           time: gameData.red?.limit || TIMER_LIMITS.GAME,
           penaltyBall: 0
         };
         updatedGameData.blue = {
           ...gameData.blue,
           ball: blueBalls,
-          isRun: false,
+          isRunning: false,
           time: gameData.blue?.limit || TIMER_LIMITS.GAME,
           penaltyBall: 0
         };
@@ -1349,14 +1349,14 @@ export const useScoreboardHandlers = ({
         updatedGameData.red = {
           ...gameData.red,
           ball: 6,
-          isRun: false,
+          isRunning: false,
           time: gameData.red?.limit || TIMER_LIMITS.GAME,
           penaltyBall: 0
         };
         updatedGameData.blue = {
           ...gameData.blue,
           ball: 6,
-          isRun: false,
+          isRunning: false,
           time: gameData.blue?.limit || TIMER_LIMITS.GAME,
           penaltyBall: 0
         };
@@ -1386,8 +1386,8 @@ export const useScoreboardHandlers = ({
       updateField(timerType, 'time', newTime);
     } else {
       // red と blue の場合は updateTimer を使用（isRun は現在の状態を維持）
-      const isRun = gameData[timerType]?.isRun || false;
-      updateTimer(timerType, newTime, isRun);
+      const isRunning = gameData[timerType]?.isRunning || false;
+      updateTimer(timerType, newTime, isRunning);
     }
     
     // ゲームデータを保存
@@ -1420,7 +1420,7 @@ export const useScoreboardHandlers = ({
         screen: {
           ...gameData.screen,
           active: '',
-          scoreAdjusting: false
+          isScoreAdjusting: false
         }
       };
       saveData(updatedGameData);

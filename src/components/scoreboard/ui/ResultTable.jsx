@@ -5,13 +5,54 @@ import React from 'react';
  * resultApprovalセクションで各エンドのスコアを表示
  */
 const ResultTable = ({ redScores = [], blueScores = [] }) => {
-  // 配列の長さを取得（行数）
-  const rowCount = Math.max(redScores.length, blueScores.length);
+  // エンド番号の最大値を取得
+  const getMaxEnd = () => {
+    let maxEnd = 0;
+    
+    // 新しい構造（オブジェクト配列）の場合
+    [...redScores, ...blueScores].forEach(score => {
+      if (typeof score === 'object' && score.end) {
+        maxEnd = Math.max(maxEnd, score.end);
+      }
+    });
+    
+    // 後方互換性: 数値配列の場合、配列の長さから最大エンド番号を取得
+    if (maxEnd === 0) {
+      maxEnd = Math.max(redScores.length, blueScores.length);
+    }
+    
+    return maxEnd;
+  };
+
+  const maxEnd = getMaxEnd();
 
   // 行がない場合は何も表示しない
-  if (rowCount === 0) {
+  if (maxEnd === 0) {
     return null;
   }
+
+  // エンドごとのスコアと反則を取得するヘルパー関数
+  const getScoreData = (scores, endNumber) => {
+    // 後方互換性: 数値配列の場合
+    if (scores.length > 0 && typeof scores[0] === 'number') {
+      const index = endNumber - 1;
+      return {
+        score: scores[index] ?? 0,
+        penalties: []
+      };
+    }
+    
+    // 新しい構造: オブジェクト配列の場合
+    const endEntry = scores.find(s => typeof s === 'object' && s.end === endNumber);
+    if (endEntry) {
+      return {
+        score: endEntry.score ?? 0,
+        penalties: endEntry.penalties || []
+      };
+    }
+    
+    return { score: 0, penalties: [] };
+  };
 
   return (
     <div id="resultTable">
@@ -24,14 +65,34 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: rowCount }, (_, index) => {
-            const redScore = redScores[index] ?? 0;
-            const blueScore = blueScores[index] ?? 0;
+          {Array.from({ length: maxEnd }, (_, index) => {
+            const endNumber = index + 1;
+            const redData = getScoreData(redScores, endNumber);
+            const blueData = getScoreData(blueScores, endNumber);
+            
             return (
-              <tr key={index}>
-                <td className={redScore >= 1 ? 'has-score' : ''}>{redScore}</td>
-                <td>{index + 1}</td>
-                <td className={blueScore >= 1 ? 'has-score' : ''}>{blueScore}</td>
+              <tr key={endNumber}>
+                <td className={redData.score >= 1 ? 'has-score' : ''}>
+                  {redData.score}
+                  {redData.penalties.length > 0 && (
+                    <div className="penalties">
+                      {redData.penalties.map((penalty, i) => (
+                        <span key={i} className="penalty-badge">{penalty}</span>
+                      ))}
+                    </div>
+                  )}
+                </td>
+                <td>{endNumber}</td>
+                <td className={blueData.score >= 1 ? 'has-score' : ''}>
+                  {blueData.score}
+                  {blueData.penalties.length > 0 && (
+                    <div className="penalties">
+                      {blueData.penalties.map((penalty, i) => (
+                        <span key={i} className="penalty-badge">{penalty}</span>
+                      ))}
+                    </div>
+                  )}
+                </td>
               </tr>
             );
           })}

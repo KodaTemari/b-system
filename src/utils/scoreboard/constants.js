@@ -74,29 +74,29 @@ export const DEFAULT_GAME_DATA = {
   },
   screen: {
     active: '',
-    setColor: false,
-    scoreAdjusting: false,
-    penaltyThrow: false
+    isColorSet: false,
+    isScoreAdjusting: false,
+    isPenaltyThrow: false
   },
   warmup: {
     limit: TIMER_LIMITS.WARMUP,
     time: TIMER_LIMITS.WARMUP,
-    isRun: false
+    isRunning: false
   },
   interval: {
     limit: TIMER_LIMITS.INTERVAL,
     time: TIMER_LIMITS.INTERVAL,
-    isRun: false
+    isRunning: false
   },
   red: {
     name: 'Red',
     score: 0,
-    scores: [],
+    scores: [], // [{ end: number, score: number, penalties?: string[] }]
     limit: TIMER_LIMITS.GAME,
     ball: 6,
-    isRun: false,
+    isRunning: false,
     time: TIMER_LIMITS.GAME,
-    tieBreak: false,
+    isTieBreak: false,
     result: '',
     playerID: '',
     yellowCard: 0,
@@ -106,12 +106,12 @@ export const DEFAULT_GAME_DATA = {
   blue: {
     name: 'Blue',
     score: 0,
-    scores: [],
+    scores: [], // [{ end: number, score: number, penalties?: string[] }]
     limit: TIMER_LIMITS.GAME,
     ball: 6,
-    isRun: false,
+    isRunning: false,
     time: TIMER_LIMITS.GAME,
-    tieBreak: false,
+    isTieBreak: false,
     result: '',
     playerID: '',
     yellowCard: 0,

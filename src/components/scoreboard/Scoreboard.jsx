@@ -28,7 +28,7 @@ const Scoreboard = () => {
     
     // 状態
     active,
-    scoreAdjusting,
+    isScoreAdjusting,
     showTimeModal,
     settingOpen,
     setSettingOpen,
@@ -53,7 +53,7 @@ const Scoreboard = () => {
     interval,
     red,
     blue,
-    setColor,
+    isColorSet,
     redName,
     blueName,
     category,
@@ -119,8 +119,8 @@ const Scoreboard = () => {
   const [pendingReset, setPendingReset] = useState(false); // リセット確認用
   
   // penaltyThrow中かどうかを判定
-  // gameData.screen.penaltyThrowの状態を使用
-  const isPenaltyThrow = gameData?.screen?.penaltyThrow || false;
+  // gameData.screen.isPenaltyThrowの状態を使用
+  const isPenaltyThrow = gameData?.screen?.isPenaltyThrow || false;
 
   // 反則ボタンクリックハンドラー
   const handlePenaltyClick = (teamColor) => {
@@ -355,9 +355,9 @@ const Scoreboard = () => {
           
           // タイマーをリセット
           updatedTeamData.time = gameData[teamColor].limit || TIMER_LIMITS.GAME;
-          updatedTeamData.isRun = false;
+          updatedTeamData.isRunning = false;
           updatedOpponentData.time = gameData[opponentColor].limit || TIMER_LIMITS.GAME;
-          updatedOpponentData.isRun = false;
+          updatedOpponentData.isRunning = false;
         }
         break;
       }
@@ -372,6 +372,73 @@ const Scoreboard = () => {
     if (isForfeit) {
       updatedTeamData.score = 0;
       updatedOpponentData.score = 6;
+    }
+    
+    // 現在のエンドに反則を記録
+    const currentEnd = gameData.match?.end || 0;
+    if (currentEnd > 0) {
+      // 反則名を取得（ローカライズされたテキスト）
+      const penaltyText = getText(`penalties.${penaltyId}`, currentLang) || penaltyId;
+      
+      // 反則を記録する必要がある反則IDのリスト（restartedEndとforfeitは除く）
+      const recordablePenalties = ['lineCross', 'throwBeforeInstruction', 'retraction', 'penaltyBall', 
+                                   'retractionAndPenaltyBall', 'penaltyBallAndYellowCard', 'yellowCard', 'redCard'];
+      
+      if (recordablePenalties.includes(penaltyId)) {
+        // 反則したチームのscores配列を更新
+        const teamScores = [...(updatedTeamData.scores || [])];
+        let teamEndEntryIndex = teamScores.findIndex(s => {
+          if (typeof s === 'number') return false; // 後方互換性
+          return s.end === currentEnd;
+        });
+        
+        if (teamEndEntryIndex === -1) {
+          // エンドエントリが存在しない場合、新規作成
+          teamScores.push({ 
+            end: currentEnd, 
+            score: updatedTeamData.score || 0,
+            penalties: [penaltyText]
+          });
+        } else {
+          // エンドエントリが存在する場合、penalties配列に追加
+          const existingPenalties = teamScores[teamEndEntryIndex].penalties || [];
+          if (!existingPenalties.includes(penaltyText)) {
+            teamScores[teamEndEntryIndex] = {
+              ...teamScores[teamEndEntryIndex],
+              penalties: [...existingPenalties, penaltyText]
+            };
+          }
+        }
+        updatedTeamData.scores = teamScores;
+        
+        // ペナルティーボールが相手チームに追加される場合、相手チームのscores配列も更新
+        if (penaltyId === 'penaltyBall' || penaltyId === 'retractionAndPenaltyBall' || penaltyId === 'penaltyBallAndYellowCard') {
+          const opponentScores = [...(updatedOpponentData.scores || [])];
+          let opponentEndEntryIndex = opponentScores.findIndex(s => {
+            if (typeof s === 'number') return false; // 後方互換性
+            return s.end === currentEnd;
+          });
+          
+          if (opponentEndEntryIndex === -1) {
+            // エンドエントリが存在しない場合、新規作成
+            opponentScores.push({ 
+              end: currentEnd, 
+              score: updatedOpponentData.score || 0,
+              penalties: [penaltyText]
+            });
+          } else {
+            // エンドエントリが存在する場合、penalties配列に追加
+            const existingPenalties = opponentScores[opponentEndEntryIndex].penalties || [];
+            if (!existingPenalties.includes(penaltyText)) {
+              opponentScores[opponentEndEntryIndex] = {
+                ...opponentScores[opponentEndEntryIndex],
+                penalties: [...existingPenalties, penaltyText]
+              };
+            }
+          }
+          updatedOpponentData.scores = opponentScores;
+        }
+      }
     }
     
     // gameDataを更新して保存
@@ -556,10 +623,10 @@ const Scoreboard = () => {
       const bluePenaltyBall = updatedGameData.blue?.penaltyBall || 0;
       
       // 赤・青両方のペナルティボールが0になった場合、penaltyThrow中を終了
-      if (redPenaltyBall === 0 && bluePenaltyBall === 0 && updatedGameData.screen?.penaltyThrow) {
+      if (redPenaltyBall === 0 && bluePenaltyBall === 0 && updatedGameData.screen?.isPenaltyThrow) {
         updatedGameData.screen = {
           ...updatedGameData.screen,
-          penaltyThrow: false
+          isPenaltyThrow: false
         };
       }
     }
@@ -606,13 +673,13 @@ const Scoreboard = () => {
 
   const allApproved = approvals.red && approvals.referee && approvals.blue;
 
-  // data-tieBreak属性をred?.tieBreakとblue?.tieBreakの値から設定（すべてのセクションで）
+  // data-tieBreak属性をred?.isTieBreakとblue?.isTieBreakの値から設定（すべてのセクションで）
   useEffect(() => {
     const scoreboardElement = document.getElementById('scoreboard');
     if (!scoreboardElement) return;
 
-    const redTieBreak = red?.tieBreak || false;
-    const blueTieBreak = blue?.tieBreak || false;
+    const redTieBreak = red?.isTieBreak || false;
+    const blueTieBreak = blue?.isTieBreak || false;
     const redScore = red?.score || 0;
     const blueScore = blue?.score || 0;
 
@@ -636,7 +703,7 @@ const Scoreboard = () => {
         }
       }
     }
-  }, [red?.tieBreak, blue?.tieBreak, red?.score, blue?.score]);
+  }, [red?.isTieBreak, blue?.isTieBreak, red?.score, blue?.score]);
 
   // タイブレークリセット処理のヘルパー関数
   const resetTieBreakData = useCallback((scoreboardElement, isCtrl, saveData, id, court, scoresChanged) => {
@@ -686,8 +753,8 @@ const Scoreboard = () => {
 
       const redScore = red?.score || 0;
       const blueScore = blue?.score || 0;
-      const redTieBreak = red?.tieBreak || false;
-      const blueTieBreak = blue?.tieBreak || false;
+      const redTieBreak = red?.isTieBreak || false;
+      const blueTieBreak = blue?.isTieBreak || false;
       
       // スコアまたはタイブレークが変更された場合のみ処理
       const scoresChanged = prevScoresRef.current.red !== redScore || prevScoresRef.current.blue !== blueScore;
@@ -749,7 +816,7 @@ const Scoreboard = () => {
       hasProcessedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section, red?.score, blue?.score, red?.tieBreak, blue?.tieBreak, isCtrl, id, court, resetTieBreakData]);
+  }, [section, red?.score, blue?.score, red?.isTieBreak, blue?.isTieBreak, isCtrl, id, court, resetTieBreakData]);
 
   // ローディング表示
   if (isLoading) {
@@ -770,7 +837,7 @@ const Scoreboard = () => {
   }
 
   return (
-    <div id="scoreboard" data-section={section} data-setcolor={setColor} data-active={active} data-scoreadjust={scoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} className={settingOpen ? 'settingOpen' : ''}>
+    <div id="scoreboard" data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} className={settingOpen ? 'settingOpen' : ''}>
       <Header
         section={section}
         sectionID={sectionID}
@@ -879,7 +946,7 @@ const Scoreboard = () => {
 
       {/* セクション進行ナビゲーション */}
       <SectionNav
-        setColor={setColor}
+        setColor={isColorSet}
         section={section}
         sectionID={sectionID}
         totalEnds={match?.totalEnds}
@@ -897,10 +964,10 @@ const Scoreboard = () => {
         warmupTimer={warmupTimer}
         intervalTimer={intervalTimer}
         isCtrl={isCtrl}
-        scoreAdjusting={scoreAdjusting}
+        scoreAdjusting={isScoreAdjusting}
         redPenaltyBall={red?.penaltyBall || 0}
         bluePenaltyBall={blue?.penaltyBall || 0}
-        onConfirmColorToggle={() => updateConfirmColor(!setColor, saveData)}
+        onConfirmColorToggle={() => updateConfirmColor(!isColorSet, saveData)}
         onStartWarmup={handleStartWarmup}
         onWarmupTimerToggle={handleWarmupTimerToggle}
         onNextSection={handleNextSection}
@@ -932,7 +999,7 @@ const Scoreboard = () => {
             handleTimeAdjust={handleTimeAdjust}
             getText={getText}
             onClose={handleSettingModalClose}
-            scoreAdjusting={scoreAdjusting}
+            scoreAdjusting={isScoreAdjusting}
             onRestartEnd={handleRestartEnd}
             onPenaltyClick={handlePenaltyClick}
             onTimeoutClick={handleTimeoutClick}
@@ -1091,6 +1158,48 @@ const Scoreboard = () => {
                       ...updatedGameData.match,
                       sections: newSections
                     };
+                    
+                    // totalEndsが変更された場合、scores配列を初期化（すべてのエンドのエントリを事前に作成）
+                    const totalEnds = value;
+                    const redScores = [];
+                    const blueScores = [];
+                    
+                    for (let i = 1; i <= totalEnds; i++) {
+                      // 既存のエントリがある場合は保持、ない場合は新規作成
+                      const existingRedEntry = gameData.red?.scores?.find(s => typeof s === 'object' && s.end === i);
+                      const existingBlueEntry = gameData.blue?.scores?.find(s => typeof s === 'object' && s.end === i);
+                      
+                      if (existingRedEntry) {
+                        redScores.push(existingRedEntry);
+                      } else {
+                        redScores.push({ 
+                          end: i, 
+                          score: 0
+                        });
+                      }
+                      
+                      if (existingBlueEntry) {
+                        blueScores.push(existingBlueEntry);
+                      } else {
+                        blueScores.push({ 
+                          end: i, 
+                          score: 0
+                        });
+                      }
+                    }
+                    
+                    updatedGameData.red = {
+                      ...updatedGameData.red,
+                      scores: redScores
+                    };
+                    updatedGameData.blue = {
+                      ...updatedGameData.blue,
+                      scores: blueScores
+                    };
+                    
+                    // updateFieldでもscores配列を更新（gameDataに反映）
+                    updateField('red', 'scores', redScores);
+                    updateField('blue', 'scores', blueScores);
                   }
                   
                   saveData(updatedGameData);

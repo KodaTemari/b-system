@@ -6,7 +6,7 @@ import colorIcon from '../img/icon_color.png';
  * セクション進行ナビゲーションコンポーネント
  */
 const SectionNavigation = ({
-  setColor,
+  setColor: isColorSet,
   section,
   sectionID,
   totalEnds,
@@ -88,24 +88,24 @@ const SectionNavigation = ({
           {/* ctrl画面のみのボタン類 */}
           {isCtrl && (
             <div id="setColorBox">
-              {!setColor && (
+              {!isColorSet && (
                 <button type="button" name="colorChangeBtn" onClick={onSwapTeamNames}>
                   <img src={colorIcon} alt={getText('changeColor')} />
                 </button>
               )}
               <button 
                 type="button" 
-                name={setColor ? "resetColorBtn" : "setColorBtn"}
+                name={isColorSet ? "resetColorBtn" : "setColorBtn"}
                 className="btn" 
                 onClick={onConfirmColorToggle}
               >
-                {setColor ? getText('resetColor') : getText('setColor')}
+                {isColorSet ? getText('resetColor') : getText('setColor')}
               </button>
             </div>
           )}
           
           {/* ctrl画面のみのウォームアップ開始/試合開始ボタン */}
-          {isCtrl && setColor && (
+          {isCtrl && isColorSet && (
             <button 
               type="button" 
               name="startWarmupBtn"
@@ -133,7 +133,7 @@ const SectionNavigation = ({
             type="button" 
             name="warmupTimerBtn" 
             className="timer"
-            data-running={warmup.isRun}
+            data-running={warmup.isRunning}
             role={isCtrl ? undefined : "none"}
             onClick={isCtrl ? onWarmupTimerToggle : undefined}
           >
@@ -144,7 +144,7 @@ const SectionNavigation = ({
               <br />
               {/* warmup2セクションでは、タイマーが停止している時は「ウォームアップ開始」、動いている時は「ウォームアップ終了」を表示 */}
               {section === 'warmup2' ? (
-                !warmup.isRun ? (
+                !warmup.isRunning ? (
                   <button 
                     type="button" 
                     className="btn finishWarmup" 
@@ -208,7 +208,7 @@ const SectionNavigation = ({
             type="button" 
             name="intervalTimerBtn" 
             className="timer"
-            data-running={interval.isRun}
+            data-running={interval.isRunning}
             role={isCtrl ? undefined : "none"}
             onClick={isCtrl ? onIntervalTimerToggle : undefined}
           >

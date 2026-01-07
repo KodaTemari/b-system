@@ -100,7 +100,7 @@ export const useScoreboard = () => {
   // タイマー管理（デフォルト値を設定）
   const redTimer = useTimerManagement({
     initialTime: gameData.red.time !== undefined ? gameData.red.time : gameData.red.limit,
-    isRunning: gameData.red.isRun || false,
+    isRunning: gameData.red.isRunning || false,
     enableAudio: true,
     onTimeUpdate: handleRedTimeUpdate,
     isViewMode: !isCtrl,
@@ -109,7 +109,7 @@ export const useScoreboard = () => {
 
   const blueTimer = useTimerManagement({
     initialTime: gameData.blue.time !== undefined ? gameData.blue.time : gameData.blue.limit,
-    isRunning: gameData.blue.isRun || false,
+    isRunning: gameData.blue.isRunning || false,
     enableAudio: true,
     onTimeUpdate: handleBlueTimeUpdate,
     isViewMode: !isCtrl,
@@ -118,7 +118,7 @@ export const useScoreboard = () => {
 
   const warmupTimer = useTimerManagement({
     initialTime: gameData.warmup.time !== undefined ? gameData.warmup.time : gameData.warmup.limit,
-    isRunning: gameData.warmup.isRun || false,
+    isRunning: gameData.warmup.isRunning || false,
     enableAudio: true,
     onTimeUpdate: handleWarmupTimeUpdate,
     isViewMode: !isCtrl,
@@ -127,7 +127,7 @@ export const useScoreboard = () => {
 
   const intervalTimer = useTimerManagement({
     initialTime: gameData.interval.time !== undefined ? gameData.interval.time : gameData.interval.limit,
-    isRunning: gameData.interval.isRun || false,
+    isRunning: gameData.interval.isRunning || false,
     enableAudio: true,
     onTimeUpdate: handleIntervalTimeUpdate,
     isViewMode: !isCtrl,
@@ -137,7 +137,7 @@ export const useScoreboard = () => {
   // ゲームデータから値を取得
   const { match, warmup, interval, red, blue, screen } = gameData;
   const { sectionID, section, end, tieBreak } = match || {};
-  const { setColor, scoreAdjusting } = screen || {};
+  const { isColorSet, isScoreAdjusting } = screen || {};
   const active = screen?.active || '';
 
 
@@ -166,7 +166,7 @@ export const useScoreboard = () => {
 
   // ウォームアップタイマー切り替えハンドラー（warmupTimer.remainingMsを使用）
   const handleWarmupTimerToggle = useCallback(() => {
-    const isRunning = !gameData.warmup.isRun;
+    const isRunning = !gameData.warmup.isRunning;
     // 現在の残り時間を使用（タイマーが動いている場合はwarmupTimer.remainingMs、停止している場合はgameData.warmup.time）
     // タイマーを停止するときは、現在の残り時間を保存する
     const currentTime = isRunning 
@@ -182,7 +182,7 @@ export const useScoreboard = () => {
         ...gameData,
         warmup: {
           ...gameData.warmup,
-          isRun: isRunning,
+          isRunning: isRunning,
           time: currentTime
         }
       };
@@ -192,7 +192,7 @@ export const useScoreboard = () => {
 
   // インターバルタイマー切り替えハンドラー（intervalTimer.remainingMsを使用）
   const handleIntervalTimerToggle = useCallback(() => {
-    const isRunning = !gameData.interval.isRun;
+    const isRunning = !gameData.interval.isRunning;
     // 現在の残り時間を使用（タイマーが動いている場合はintervalTimer.remainingMs、停止している場合はgameData.interval.time）
     // タイマーを停止するときは、現在の残り時間を保存する
     const currentTime = isRunning 
@@ -208,7 +208,7 @@ export const useScoreboard = () => {
         ...gameData,
         interval: {
           ...gameData.interval,
-          isRun: isRunning,
+          isRunning: isRunning,
           time: currentTime
         }
       };
@@ -332,11 +332,11 @@ export const useScoreboard = () => {
       switch(event.key) {
         case '1':
           event.preventDefault();
-          handlers.handleTimerToggle('red', !gameData.red.isRun, redTimer.remainingMs);
+          handlers.handleTimerToggle('red', !gameData.red.isRunning, redTimer.remainingMs);
           break;
         case '2':
           event.preventDefault();
-          handlers.handleTimerToggle('blue', !gameData.blue.isRun, blueTimer.remainingMs);
+          handlers.handleTimerToggle('blue', !gameData.blue.isRunning, blueTimer.remainingMs);
           break;
         default:
           break;
@@ -359,7 +359,7 @@ export const useScoreboard = () => {
   const blueTimerEndedRef = useRef(false);
   
   useEffect(() => {
-    if (redTimer.remainingMs <= 0 && gameData.red.isRun && !redTimerEndedRef.current) {
+    if (redTimer.remainingMs <= 0 && gameData.red.isRunning && !redTimerEndedRef.current) {
       redTimerEndedRef.current = true;
       handlers.handleTimerEnd();
       // タイマーを停止し、ballを0にする
@@ -388,14 +388,14 @@ export const useScoreboard = () => {
         };
         saveData(updatedGameData);
       }
-    } else if (gameData.red.isRun && redTimer.remainingMs > 0) {
+    } else if (gameData.red.isRunning && redTimer.remainingMs > 0) {
       // タイマーが再開されたらフラグをリセット
       redTimerEndedRef.current = false;
     }
-  }, [redTimer.remainingMs, gameData.red.isRun, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
+  }, [redTimer.remainingMs, gameData.red.isRunning, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
 
   useEffect(() => {
-    if (blueTimer.remainingMs <= 0 && gameData.blue.isRun && !blueTimerEndedRef.current) {
+    if (blueTimer.remainingMs <= 0 && gameData.blue.isRunning && !blueTimerEndedRef.current) {
       blueTimerEndedRef.current = true;
       handlers.handleTimerEnd();
       // タイマーを停止し、ballを0にする
@@ -424,11 +424,11 @@ export const useScoreboard = () => {
         };
         saveData(updatedGameData);
       }
-    } else if (gameData.blue.isRun && blueTimer.remainingMs > 0) {
+    } else if (gameData.blue.isRunning && blueTimer.remainingMs > 0) {
       // タイマーが再開されたらフラグをリセット
       blueTimerEndedRef.current = false;
     }
-  }, [blueTimer.remainingMs, gameData.blue.isRun, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
+  }, [blueTimer.remainingMs, gameData.blue.isRunning, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
 
   // ペナルティースロー表示の判定（ボール数が0で、ペナルティーボールが1以上）
   useEffect(() => {
@@ -459,7 +459,7 @@ export const useScoreboard = () => {
       }
       
       // penaltyThrow中の状態をgameDataに保存
-      updateField('screen', 'penaltyThrow', true);
+      updateField('screen', 'isPenaltyThrow', true);
       
       // データを保存
       if (saveData) {
@@ -469,31 +469,31 @@ export const useScoreboard = () => {
             ...gameData.red,
             ball: redPenaltyBall,
             time: redPenaltyBall > 0 ? 60000 : gameData.red.time,
-            isRun: false
+            isRunning: false
           },
           blue: {
             ...gameData.blue,
             ball: bluePenaltyBall,
             time: bluePenaltyBall > 0 ? 60000 : gameData.blue.time,
-            isRun: false
+            isRunning: false
           },
           screen: {
             ...gameData.screen,
-            penaltyThrow: true
+            isPenaltyThrow: true
           }
         };
         saveData(updatedGameData);
       }
     }
     // 赤・青両方のペナルティボールが0になった場合、penaltyThrow中を終了
-    if (redPenaltyBall === 0 && bluePenaltyBall === 0 && gameData.screen?.penaltyThrow) {
-      updateField('screen', 'penaltyThrow', false);
+    if (redPenaltyBall === 0 && bluePenaltyBall === 0 && gameData.screen?.isPenaltyThrow) {
+      updateField('screen', 'isPenaltyThrow', false);
       if (saveData) {
         const updatedGameData = {
           ...gameData,
           screen: {
             ...gameData.screen,
-            penaltyThrow: false
+            isPenaltyThrow: false
           }
         };
         saveData(updatedGameData);
@@ -502,20 +502,20 @@ export const useScoreboard = () => {
   }, [gameData.red?.ball, gameData.blue?.ball, gameData.red?.penaltyBall, gameData.blue?.penaltyBall, isCtrl, updateTimer, updateBall, saveData, gameData]);
 
   useEffect(() => {
-    if (warmupTimer.remainingMs <= 0 && gameData.warmup.isRun) {
+    if (warmupTimer.remainingMs <= 0 && gameData.warmup.isRunning) {
       handlers.handleTimerEnd();
       // ウォームアップタイマーが0になったら次のセクションへ移行
       handlers.handleNextSection();
     }
-  }, [warmupTimer.remainingMs, gameData.warmup.isRun, handlers]);
+  }, [warmupTimer.remainingMs, gameData.warmup.isRunning, handlers]);
 
   useEffect(() => {
-    if (intervalTimer.remainingMs <= 0 && gameData.interval.isRun) {
+    if (intervalTimer.remainingMs <= 0 && gameData.interval.isRunning) {
       handlers.handleTimerEnd();
       // インターバルタイマーが0になったら次のセクションへ移行
       handlers.handleNextSection();
     }
-  }, [intervalTimer.remainingMs, gameData.interval.isRun, handlers]);
+  }, [intervalTimer.remainingMs, gameData.interval.isRunning, handlers]);
 
   // 勝敗判定
   const { isTie } = determineWinner(gameData.red.score, gameData.blue.score);
@@ -532,7 +532,7 @@ export const useScoreboard = () => {
     
     // 状態
     active,
-    scoreAdjusting,
+    isScoreAdjusting,
     showTimeModal,
     settingOpen,
     setSettingOpen,
@@ -554,7 +554,7 @@ export const useScoreboard = () => {
     interval,
     red,
     blue,
-    setColor,
+    isColorSet,
     redName,
     blueName,
     category: gameData.category,

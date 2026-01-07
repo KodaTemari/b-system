@@ -21,9 +21,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       },
       screen: {
         active: '',
-        setColor: false,
-        scoreAdjusting: false,
-        penaltyThrow: false
+        isColorSet: false,
+        isScoreAdjusting: false,
+        isPenaltyThrow: false
       },
       warmup: {
         limit: TIMER_LIMITS.WARMUP
@@ -37,9 +37,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         scores: [],
         limit: TIMER_LIMITS.GAME,
         ball: BALL_COUNTS.DEFAULT_RED,
-        isRun: false,
+        isRunning: false,
         time: TIMER_LIMITS.GAME,
-        tieBreak: false,
+        isTieBreak: false,
         result: ''
       },
       blue: {
@@ -48,11 +48,29 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         scores: [],
         limit: TIMER_LIMITS.GAME,
         ball: BALL_COUNTS.DEFAULT_BLUE,
-        isRun: false,
+        isRunning: false,
         time: TIMER_LIMITS.GAME,
-        tieBreak: false,
+        isTieBreak: false,
         result: ''
       }
+    };
+
+    // 後方互換性: 数値配列を新しい構造に変換するヘルパー関数
+    const convertScoresArray = (scores) => {
+      if (!Array.isArray(scores) || scores.length === 0) {
+        return [];
+      }
+      
+      // 既に新しい構造（オブジェクト配列）の場合はそのまま返す
+      if (typeof scores[0] === 'object' && scores[0].end !== undefined) {
+        return scores;
+      }
+      
+      // 数値配列の場合は新しい構造に変換
+      return scores.map((score, index) => ({
+        end: index + 1,
+        score: typeof score === 'number' ? score : 0
+      }));
     };
 
     // 優先順位: 1. game.json 2. ローカルストレージ 3. デフォルト値
@@ -87,11 +105,41 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         },
         red: {
           ...defaultData.red,
-          ...(initialData.red || {})
+          ...(initialData.red || {}),
+          scores: (() => {
+            const convertedScores = convertScoresArray(initialData.red?.scores);
+            const totalEnds = initialData.match?.totalEnds || defaultData.match.totalEnds;
+            // totalEndsに基づいて、すべてのエンドのエントリを確保
+            const scores = [];
+            for (let i = 1; i <= totalEnds; i++) {
+              const existingEntry = convertedScores.find(s => typeof s === 'object' && s.end === i);
+              if (existingEntry) {
+                scores.push(existingEntry);
+              } else {
+                scores.push({ end: i, score: 0 });
+              }
+            }
+            return scores;
+          })()
         },
         blue: {
           ...defaultData.blue,
-          ...(initialData.blue || {})
+          ...(initialData.blue || {}),
+          scores: (() => {
+            const convertedScores = convertScoresArray(initialData.blue?.scores);
+            const totalEnds = initialData.match?.totalEnds || defaultData.match.totalEnds;
+            // totalEndsに基づいて、すべてのエンドのエントリを確保
+            const scores = [];
+            for (let i = 1; i <= totalEnds; i++) {
+              const existingEntry = convertedScores.find(s => typeof s === 'object' && s.end === i);
+              if (existingEntry) {
+                scores.push(existingEntry);
+              } else {
+                scores.push({ end: i, score: 0 });
+              }
+            }
+            return scores;
+          })()
         },
         warmup: {
           ...defaultData.warmup,
@@ -105,7 +153,25 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }
 
     // initialDataが存在しない場合はデフォルト値を使用
-    return defaultData;
+    // totalEndsに基づいて、すべてのエンドのエントリを確保
+    const totalEnds = defaultData.match.totalEnds;
+    const redScores = [];
+    const blueScores = [];
+    for (let i = 1; i <= totalEnds; i++) {
+      redScores.push({ end: i, score: 0 });
+      blueScores.push({ end: i, score: 0 });
+    }
+    return {
+      ...defaultData,
+      red: {
+        ...defaultData.red,
+        scores: redScores
+      },
+      blue: {
+        ...defaultData.blue,
+        scores: blueScores
+      }
+    };
   });
 
   // フィールド更新関数
@@ -133,9 +199,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
   }, [updateField]);
 
   // タイマー更新
-  const updateTimer = useCallback((color, time, isRun = false) => {
+  const updateTimer = useCallback((color, time, isRunning = false) => {
     updateField(color, 'time', time);
-    updateField(color, 'isRun', isRun);
+    updateField(color, 'isRunning', isRunning);
   }, [updateField]);
 
   // ボール数更新
@@ -166,7 +232,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       ...prevData,
       screen: {
         ...prevData.screen,
-        scoreAdjusting: isAdjusting
+        isScoreAdjusting: isAdjusting
       }
     }));
   }, []);
@@ -200,24 +266,32 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
 
       // エンド番号が設定された場合、scores配列を初期化
       if (endNumber > 0) {
-        const endIndex = endNumber - 1;
-        
         // redのscores配列を初期化
         const redScores = [...(prevData.red?.scores || [])];
-        while (redScores.length <= endIndex) {
-          redScores.push(0);
-        }
-        if (redScores[endIndex] === undefined) {
-          redScores[endIndex] = 0;
+        // 既存のエンドエントリを探す
+        const redEndIndex = redScores.findIndex(s => typeof s === 'object' && s.end === endNumber);
+        if (redEndIndex === -1) {
+          // エンドエントリが存在しない場合、追加
+          redScores.push({ end: endNumber, score: 0 });
+        } else {
+          // エンドエントリが存在する場合、scoreが未定義の場合は0に設定
+          if (redScores[redEndIndex].score === undefined) {
+            redScores[redEndIndex] = { ...redScores[redEndIndex], score: 0 };
+          }
         }
         
         // blueのscores配列を初期化
         const blueScores = [...(prevData.blue?.scores || [])];
-        while (blueScores.length <= endIndex) {
-          blueScores.push(0);
-        }
-        if (blueScores[endIndex] === undefined) {
-          blueScores[endIndex] = 0;
+        // 既存のエンドエントリを探す
+        const blueEndIndex = blueScores.findIndex(s => typeof s === 'object' && s.end === endNumber);
+        if (blueEndIndex === -1) {
+          // エンドエントリが存在しない場合、追加
+          blueScores.push({ end: endNumber, score: 0 });
+        } else {
+          // エンドエントリが存在する場合、scoreが未定義の場合は0に設定
+          if (blueScores[blueEndIndex].score === undefined) {
+            blueScores[blueEndIndex] = { ...blueScores[blueEndIndex], score: 0 };
+          }
         }
         
         newData.red = {
@@ -235,13 +309,13 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
   }, [extractEndNumber]);
 
   // 色確定状態の更新
-  const updateConfirmColor = useCallback((setColor, saveData) => {
+  const updateConfirmColor = useCallback((isColorSet, saveData) => {
     setGameData(prevData => {
       const newData = {
         ...prevData,
         screen: {
           ...prevData.screen,
-          setColor
+          isColorSet
         }
       };
       
@@ -270,34 +344,34 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       warmup: {
         ...prevData.warmup,
         time: TIMER_LIMITS.WARMUP,
-        isRun: false
+        isRunning: false
       },
       interval: {
         ...prevData.interval,
         time: TIMER_LIMITS.INTERVAL,
-        isRun: false
+        isRunning: false
       },
       red: {
         ...prevData.red,
         score: 0,
         scores: [],
         time: prevData.red.limit || TIMER_LIMITS.GAME,
-        isRun: false,
+        isRunning: false,
         ball: BALL_COUNTS.DEFAULT_RED,
-        tieBreak: false
+        isTieBreak: false
       },
       blue: {
         ...prevData.blue,
         score: 0,
         scores: [],
         time: prevData.blue.limit || TIMER_LIMITS.GAME,
-        isRun: false,
+        isRunning: false,
         ball: BALL_COUNTS.DEFAULT_BLUE,
-        tieBreak: false
+        isTieBreak: false
       },
       screen: {
         ...prevData.screen,
-        setColor: false
+        isColorSet: false
       }
     }));
   }, []);
@@ -345,11 +419,19 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           },
           red: {
             ...prevData.red,
-            ...(initialData.red || {})
+            ...(initialData.red || {}),
+            scores: initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined 
+              ? initialData.red.scores 
+              : initialData.red.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
+            ) : prevData.red?.scores
           },
           blue: {
             ...prevData.blue,
-            ...(initialData.blue || {})
+            ...(initialData.blue || {}),
+            scores: initialData.blue?.scores ? (Array.isArray(initialData.blue.scores) && initialData.blue.scores.length > 0 && typeof initialData.blue.scores[0] === 'object' && initialData.blue.scores[0].end !== undefined 
+              ? initialData.blue.scores 
+              : initialData.blue.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
+            ) : prevData.blue?.scores
           },
           warmup: {
             ...prevData.warmup,
@@ -369,6 +451,38 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     if (initialData && Object.keys(initialData).length > 0) {
       setGameData(prevData => {
         // ボール、タイマー、スコアなどの重要なデータのみを更新
+        const totalEnds = initialData.match?.totalEnds ?? prevData.match?.totalEnds ?? 4;
+        
+        // redのscores配列を初期化
+        const redConvertedScores = initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined 
+          ? initialData.red.scores 
+          : initialData.red.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
+        ) : (prevData.red?.scores || []);
+        const redScores = [];
+        for (let i = 1; i <= totalEnds; i++) {
+          const existingEntry = redConvertedScores.find(s => typeof s === 'object' && s.end === i);
+          if (existingEntry) {
+            redScores.push(existingEntry);
+          } else {
+            redScores.push({ end: i, score: 0, penalties: [] });
+          }
+        }
+        
+        // blueのscores配列を初期化
+        const blueConvertedScores = initialData.blue?.scores ? (Array.isArray(initialData.blue.scores) && initialData.blue.scores.length > 0 && typeof initialData.blue.scores[0] === 'object' && initialData.blue.scores[0].end !== undefined 
+          ? initialData.blue.scores 
+          : initialData.blue.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
+        ) : (prevData.blue?.scores || []);
+        const blueScores = [];
+        for (let i = 1; i <= totalEnds; i++) {
+          const existingEntry = blueConvertedScores.find(s => typeof s === 'object' && s.end === i);
+          if (existingEntry) {
+            blueScores.push(existingEntry);
+          } else {
+            blueScores.push({ end: i, score: 0, penalties: [] });
+          }
+        }
+        
         const updatedData = {
           ...prevData,
           red: {
@@ -376,28 +490,30 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             ...(initialData.red || {}),
             ball: initialData.red?.ball ?? prevData.red?.ball,
             time: initialData.red?.time ?? prevData.red?.time,
-            isRun: initialData.red?.isRun ?? prevData.red?.isRun,
+            isRunning: initialData.red?.isRunning ?? prevData.red?.isRunning,
             score: initialData.red?.score ?? prevData.red?.score,
-            tieBreak: initialData.red?.tieBreak ?? prevData.red?.tieBreak
+            isTieBreak: initialData.red?.isTieBreak ?? prevData.red?.isTieBreak,
+            scores: redScores
           },
           blue: {
             ...prevData.blue,
             ...(initialData.blue || {}),
             ball: initialData.blue?.ball ?? prevData.blue?.ball,
             time: initialData.blue?.time ?? prevData.blue?.time,
-            isRun: initialData.blue?.isRun ?? prevData.blue?.isRun,
+            isRunning: initialData.blue?.isRunning ?? prevData.blue?.isRunning,
             score: initialData.blue?.score ?? prevData.blue?.score,
-            tieBreak: initialData.blue?.tieBreak ?? prevData.blue?.tieBreak
+            isTieBreak: initialData.blue?.isTieBreak ?? prevData.blue?.isTieBreak,
+            scores: blueScores
           },
           warmup: {
             ...prevData.warmup,
             time: initialData.warmup?.time ?? prevData.warmup?.time,
-            isRun: initialData.warmup?.isRun ?? prevData.warmup?.isRun
+            isRunning: initialData.warmup?.isRunning ?? prevData.warmup?.isRunning
           },
           interval: {
             ...prevData.interval,
             time: initialData.interval?.time ?? prevData.interval?.time,
-            isRun: initialData.interval?.isRun ?? prevData.interval?.isRun
+            isRunning: initialData.interval?.isRunning ?? prevData.interval?.isRunning
           },
           match: {
             ...prevData.match,
@@ -416,9 +532,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           },
           screen: {
             ...prevData.screen,
-            setColor: initialData.screen?.setColor ?? prevData.screen?.setColor ?? false,
-            scoreAdjusting: initialData.screen?.scoreAdjusting ?? prevData.screen?.scoreAdjusting ?? false,
-            penaltyThrow: initialData.screen?.penaltyThrow ?? prevData.screen?.penaltyThrow ?? false,
+            isColorSet: initialData.screen?.isColorSet ?? prevData.screen?.isColorSet ?? false,
+            isScoreAdjusting: initialData.screen?.isScoreAdjusting ?? prevData.screen?.isScoreAdjusting ?? false,
+            isPenaltyThrow: initialData.screen?.isPenaltyThrow ?? prevData.screen?.isPenaltyThrow ?? false,
             // screen.activeの更新処理（ctrlとviewで分岐）
             active: (() => {
               const currentActive = prevData.screen?.active;
