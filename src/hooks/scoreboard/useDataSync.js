@@ -258,12 +258,32 @@ export const useDataSync = (id, cls, court, isCtrl) => {
   const saveData = useCallback(async (data) => {
     if (!data) return;
     
+    // totalEndsが失われないように保護
+    // data.matchが存在し、totalEndsが含まれていない場合のみ推測
+    const protectedData = {
+      ...data,
+      match: data.match ? {
+        ...data.match,
+        // totalEndsが存在しない場合、sectionsから推測
+        totalEnds: data.match.totalEnds ?? (data.match.sections 
+          ? (() => {
+              const endSections = data.match.sections.filter(s => s.startsWith('end'));
+              if (endSections.length > 0) {
+                const endNumbers = endSections.map(s => parseInt(s.replace('end', ''), 10));
+                return Math.max(...endNumbers);
+              }
+              return 4; // デフォルト値
+            })()
+          : 4)
+      } : data.match
+    };
+    
     // Local Storageに保存
-    saveToLocalStorage(data);
+    saveToLocalStorage(protectedData);
     
     // game.jsonにも保存（ctrlモードの場合のみ）
     if (isCtrl) {
-      await saveToGameJson(data);
+      await saveToGameJson(protectedData);
     }
   }, [saveToLocalStorage, saveToGameJson, isCtrl]);
 

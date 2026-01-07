@@ -13,7 +13,7 @@ import { setLanguage, getCurrentLanguage } from '../../locales';
 export const useScoreboard = () => {
   // URL パラメータとクエリパラメータ
   const { id, court } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const mode = searchParams.get('p'); // 'ctrl' または 'view'
   const isCtrl = mode === 'ctrl';
   const langParam = searchParams.get('l'); // 言語パラメータ ('en' または 'ja')
@@ -233,6 +233,70 @@ export const useScoreboard = () => {
       window.removeEventListener('languageChanged', handleLanguageChange);
     };
   }, []);
+
+  // LocalStorageとBroadcastChannelで他のタブからの言語変更を監視（ctrl画面とview画面の連動のため）
+  useEffect(() => {
+    // LocalStorageから初期言語を読み込む
+    const storedLang = localStorage.getItem('scoreboard_language');
+    if (storedLang === 'en' || storedLang === 'ja') {
+      if (storedLang !== getCurrentLanguage()) {
+        setLanguage(storedLang);
+        setCurrentLang(storedLang);
+        // URLパラメータも更新
+        setSearchParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          newParams.set('l', storedLang);
+          return newParams;
+        });
+      }
+    }
+
+    // BroadcastChannelで他のタブからの言語変更を監視
+    const channel = new BroadcastChannel('scoreboard_language');
+    channel.onmessage = (event) => {
+      const { language } = event.data;
+      if (language === 'en' || language === 'ja') {
+        setLanguage(language);
+        setCurrentLang(language);
+        // URLパラメータも更新
+        setSearchParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          newParams.set('l', language);
+          return newParams;
+        });
+        // 言語変更イベントを発火
+        window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language } }));
+      }
+    };
+
+    // LocalStorageの変更を監視（同じタブ内での変更も検知）
+    const handleStorageChange = (e) => {
+      if (e.key === 'scoreboard_language' && e.newValue) {
+        const newLang = e.newValue;
+        if (newLang === 'en' || newLang === 'ja') {
+          if (newLang !== getCurrentLanguage()) {
+            setLanguage(newLang);
+            setCurrentLang(newLang);
+            // URLパラメータも更新
+            setSearchParams(prev => {
+              const newParams = new URLSearchParams(prev);
+              newParams.set('l', newLang);
+              return newParams;
+            });
+            // 言語変更イベントを発火
+            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: newLang } }));
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      channel.close();
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [setSearchParams]);
 
   // bodyのdata-mode属性を設定
   useEffect(() => {
@@ -460,6 +524,7 @@ export const useScoreboard = () => {
     id,
     court,
     isCtrl,
+    setSearchParams,
     
     // 状態
     active,

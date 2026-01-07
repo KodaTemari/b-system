@@ -43,6 +43,9 @@ export const useScoreboardHandlers = ({
         if (saveData) {
           const updatedGameData = {
             ...gameData,
+            match: {
+              ...gameData.match
+            },
             red: {
               ...gameData.red,
               isRun: false
@@ -820,8 +823,7 @@ export const useScoreboardHandlers = ({
           match: {
             ...gameData.match,
             sectionID: warmupSectionID,
-            section: warmupSection,
-            totalEnds: gameData.match?.totalEnds // totalEndsを明示的に保持
+            section: warmupSection
           },
           warmup: {
             ...gameData.warmup,
@@ -1220,6 +1222,14 @@ export const useScoreboardHandlers = ({
           },
           lastUpdated: new Date().toISOString()
         };
+        
+        // DOM属性をリセット（勝敗・タイブレーク・反則負けの表示をクリア）
+        const scoreboardElement = document.getElementById('scoreboard');
+        if (scoreboardElement) {
+          scoreboardElement.removeAttribute('data-win');
+          scoreboardElement.removeAttribute('data-tieBreak');
+          scoreboardElement.removeAttribute('data-forfeit');
+        }
         
         saveData(resetGameData);
     } catch (error) {

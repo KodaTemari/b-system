@@ -82,7 +82,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           section,
           end,
           tieBreak,
-          sections
+          sections,
+          totalEnds: initialData.match?.totalEnds || defaultData.match.totalEnds // totalEndsを明示的に保持
         },
         red: {
           ...defaultData.red,
@@ -339,7 +340,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             ...prevData.match,
             ...(initialData.match || {}),
             sectionID: initialData.match?.sectionID || prevData.match.sectionID,
-            end: end
+            end: end,
+            totalEnds: initialData.match?.totalEnds ?? prevData.match?.totalEnds // totalEndsを明示的に保持
           },
           red: {
             ...prevData.red,
@@ -403,6 +405,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             section: initialData.match?.section ?? prevData.match?.section,
             sections: initialData.match?.sections ?? prevData.match?.sections,
             approvals: initialData.match?.approvals ?? prevData.match?.approvals,
+            totalEnds: initialData.match?.totalEnds ?? prevData.match?.totalEnds, // totalEndsを明示的に保持
             end: (() => {
               const extractEndNumber = (sectionName) => {
                 if (sectionName && sectionName.startsWith('end')) {

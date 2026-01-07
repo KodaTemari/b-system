@@ -22,6 +22,7 @@ const Scoreboard = () => {
   const {
     // URL パラメータ
     isCtrl,
+    setSearchParams,
     
     // 状態
     active,
@@ -936,6 +937,7 @@ const Scoreboard = () => {
             gameData={gameData}
             id={id}
             saveData={saveData}
+            setSearchParams={setSearchParams}
             onUpdateField={(parent, child, value) => {
               if (child) {
                 // red.name や blue.name の場合

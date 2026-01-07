@@ -25,7 +25,8 @@ const SettingModal = ({
   gameData,
   onUpdateField,
   saveData,
-  id
+  id,
+  setSearchParams
 }) => {
   // クラス選択肢と性別選択肢の状態
   const [classificationOptions, setClassificationOptions] = useState([]);
@@ -60,6 +61,26 @@ const SettingModal = ({
     setShowLanguageModal(false);
     // 言語変更イベントを発火して再レンダリングをトリガー
     window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+    
+    // URLパラメータを更新（ctrl画面とview画面の両方で動作）
+    if (setSearchParams) {
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('l', lang);
+        return newParams;
+      });
+    }
+    
+    // LocalStorageに保存して他のタブに通知（ctrl画面とview画面の連動のため）
+    try {
+      localStorage.setItem('scoreboard_language', lang);
+      // BroadcastChannel APIで他のタブに通知
+      const channel = new BroadcastChannel('scoreboard_language');
+      channel.postMessage({ language: lang });
+      channel.close();
+    } catch (error) {
+      console.error('言語設定の保存に失敗しました:', error);
+    }
   };
 
   // 言語変更イベントをリッスン
