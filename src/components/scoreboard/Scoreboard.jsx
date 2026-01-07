@@ -92,6 +92,9 @@ const Scoreboard = () => {
     updateDirectField
   } = useScoreboard();
 
+  // 設定モーダルのpendingChangesを追跡
+  const [settingPendingChanges, setSettingPendingChanges] = useState({});
+
   // 設定モーダル開閉ハンドラー
   const handleSettingModalOpen = () => {
     setSettingOpen(true);
@@ -100,6 +103,9 @@ const Scoreboard = () => {
 
   const handleSettingModalClose = () => {
     setSettingOpen(false);
+    document.getElementById('settingModal').close();
+    // モーダルを閉じる際にpendingChangesをクリア
+    setSettingPendingChanges({});
   };
 
   // 反則モーダルの状態管理
@@ -377,15 +383,12 @@ const Scoreboard = () => {
     // 現在のエンドに反則を記録
     const currentEnd = gameData.match?.end || 0;
     if (currentEnd > 0) {
-      // 反則名を取得（ローカライズされたテキスト）
-      const penaltyText = getText(`penalties.${penaltyId}`, currentLang) || penaltyId;
-      
       // 反則を記録する必要がある反則IDのリスト（restartedEndとforfeitは除く）
       const recordablePenalties = ['lineCross', 'throwBeforeInstruction', 'retraction', 'penaltyBall', 
                                    'retractionAndPenaltyBall', 'penaltyBallAndYellowCard', 'yellowCard', 'redCard'];
       
       if (recordablePenalties.includes(penaltyId)) {
-        // 反則したチームのscores配列を更新
+        // 反則したチームのscores配列を更新（penaltyIdを英語のキーで保存）
         const teamScores = [...(updatedTeamData.scores || [])];
         let teamEndEntryIndex = teamScores.findIndex(s => {
           if (typeof s === 'number') return false; // 後方互換性
@@ -397,15 +400,25 @@ const Scoreboard = () => {
           teamScores.push({ 
             end: currentEnd, 
             score: updatedTeamData.score || 0,
-            penalties: [penaltyText]
+            penalties: [penaltyId]
           });
         } else {
           // エンドエントリが存在する場合、penalties配列に追加
           const existingPenalties = teamScores[teamEndEntryIndex].penalties || [];
-          if (!existingPenalties.includes(penaltyText)) {
+          // 既存のpenaltiesが文字列（ローカライズされたテキスト）の場合も考慮
+          // penaltyIdが既に存在するか、または既存のpenaltyIdから逆引きできるか確認
+          const penaltyExists = existingPenalties.some(p => {
+            // 既にpenaltyId（英語のキー）として保存されている場合
+            if (p === penaltyId) return true;
+            // 後方互換性: ローカライズされたテキストの場合、penaltyIdから逆引き
+            const localizedText = getText(`penalties.${penaltyId}`, currentLang);
+            return p === localizedText;
+          });
+          
+          if (!penaltyExists) {
             teamScores[teamEndEntryIndex] = {
               ...teamScores[teamEndEntryIndex],
-              penalties: [...existingPenalties, penaltyText]
+              penalties: [...existingPenalties, penaltyId]
             };
           }
         }
@@ -424,15 +437,22 @@ const Scoreboard = () => {
             opponentScores.push({ 
               end: currentEnd, 
               score: updatedOpponentData.score || 0,
-              penalties: [penaltyText]
+              penalties: [penaltyId]
             });
           } else {
             // エンドエントリが存在する場合、penalties配列に追加
             const existingPenalties = opponentScores[opponentEndEntryIndex].penalties || [];
-            if (!existingPenalties.includes(penaltyText)) {
+            // 既存のpenaltiesが文字列（ローカライズされたテキスト）の場合も考慮
+            const penaltyExists = existingPenalties.some(p => {
+              if (p === penaltyId) return true;
+              const localizedText = getText(`penalties.${penaltyId}`, currentLang);
+              return p === localizedText;
+            });
+            
+            if (!penaltyExists) {
               opponentScores[opponentEndEntryIndex] = {
                 ...opponentScores[opponentEndEntryIndex],
-                penalties: [...existingPenalties, penaltyText]
+                penalties: [...existingPenalties, penaltyId]
               };
             }
           }
@@ -954,7 +974,7 @@ const Scoreboard = () => {
         sections={match?.sections}
         category={category}
         matchName={matchName}
-        classification={classification}
+        classification={settingPendingChanges.classification !== undefined ? settingPendingChanges.classification : classification}
         warmup={warmup}
         warmupEnabled={match?.warmup !== 'none'}
         warmupMode={match?.warmup || 'simultaneous'}
@@ -1009,6 +1029,7 @@ const Scoreboard = () => {
             setSearchParams={setSearchParams}
             classParam={classParam}
             genderParam={genderParam}
+            onPendingChangesChange={setSettingPendingChanges}
             onUpdateField={(parent, child, value) => {
               if (child) {
                 // red.name や blue.name の場合
@@ -1159,47 +1180,7 @@ const Scoreboard = () => {
                       sections: newSections
                     };
                     
-                    // totalEndsが変更された場合、scores配列を初期化（すべてのエンドのエントリを事前に作成）
-                    const totalEnds = value;
-                    const redScores = [];
-                    const blueScores = [];
-                    
-                    for (let i = 1; i <= totalEnds; i++) {
-                      // 既存のエントリがある場合は保持、ない場合は新規作成
-                      const existingRedEntry = gameData.red?.scores?.find(s => typeof s === 'object' && s.end === i);
-                      const existingBlueEntry = gameData.blue?.scores?.find(s => typeof s === 'object' && s.end === i);
-                      
-                      if (existingRedEntry) {
-                        redScores.push(existingRedEntry);
-                      } else {
-                        redScores.push({ 
-                          end: i, 
-                          score: 0
-                        });
-                      }
-                      
-                      if (existingBlueEntry) {
-                        blueScores.push(existingBlueEntry);
-                      } else {
-                        blueScores.push({ 
-                          end: i, 
-                          score: 0
-                        });
-                      }
-                    }
-                    
-                    updatedGameData.red = {
-                      ...updatedGameData.red,
-                      scores: redScores
-                    };
-                    updatedGameData.blue = {
-                      ...updatedGameData.blue,
-                      scores: blueScores
-                    };
-                    
-                    // updateFieldでもscores配列を更新（gameDataに反映）
-                    updateField('red', 'scores', redScores);
-                    updateField('blue', 'scores', blueScores);
+                    // totalEndsが変更された場合、scores配列は既存のエントリのみ保持（事前生成しない）
                   }
                   
                   saveData(updatedGameData);

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getText as getLocalizedText, getCurrentLanguage } from '../../../locales';
 
 /**
  * 結果表コンポーネント
@@ -76,9 +77,14 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
                   {redData.score}
                   {redData.penalties.length > 0 && (
                     <div className="penalties">
-                      {redData.penalties.map((penalty, i) => (
-                        <span key={i} className="penalty-badge">{penalty}</span>
-                      ))}
+                      {redData.penalties.map((penalty, i) => {
+                        // penaltyがpenaltyId（英語のキー）か、ローカライズされたテキストかを判定
+                        const currentLang = getCurrentLanguage();
+                        const penaltyText = getLocalizedText(`penalties.${penalty}`, currentLang) || penalty;
+                        return (
+                          <span key={i} className="penalty-badge">{penaltyText}</span>
+                        );
+                      })}
                     </div>
                   )}
                 </td>
@@ -87,9 +93,14 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
                   {blueData.score}
                   {blueData.penalties.length > 0 && (
                     <div className="penalties">
-                      {blueData.penalties.map((penalty, i) => (
-                        <span key={i} className="penalty-badge">{penalty}</span>
-                      ))}
+                      {blueData.penalties.map((penalty, i) => {
+                        // penaltyがpenaltyId（英語のキー）か、ローカライズされたテキストかを判定
+                        const currentLang = getCurrentLanguage();
+                        const penaltyText = getLocalizedText(`penalties.${penalty}`, currentLang) || penalty;
+                        return (
+                          <span key={i} className="penalty-badge">{penaltyText}</span>
+                        );
+                      })}
                     </div>
                   )}
                 </td>

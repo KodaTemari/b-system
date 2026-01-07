@@ -98,44 +98,55 @@ export const useScoreboardHandlers = ({
     }
     
     if (endNumber > 0) {
-      const currentScores = gameData[color].scores || [];
-      const newScores = [...currentScores];
+      // 両チームのscores配列を更新（0点のチームも必ずエントリを作成）
+      const redScores = [...(gameData.red?.scores || [])];
+      const blueScores = [...(gameData.blue?.scores || [])];
       
-      // 既存のエンドエントリを探す
-      let endEntryIndex = newScores.findIndex(s => {
-        // 後方互換性: 数値の場合は変換
-        if (typeof s === 'number') {
-          return false; // 数値の場合は見つからないとして扱う
+      // 両チームのエンドエントリを確認・作成（存在しない場合は0点で初期化）
+      const ensureEndEntry = (scores, endNum) => {
+        const index = scores.findIndex(s => typeof s === 'object' && s.end === endNum);
+        if (index === -1) {
+          scores.push({ end: endNum, score: 0 });
+          return scores.length - 1;
         }
-        return s.end === endNumber;
-      });
+        return index;
+      };
       
-      if (endEntryIndex === -1) {
-        // エンドエントリが存在しない場合、新規作成（scoreは現在のred.scoreの値）
-        newScores.push({ 
-          end: endNumber, 
-          score: newScore
-        });
+      const redEndEntryIndex = ensureEndEntry(redScores, endNumber);
+      const blueEndEntryIndex = ensureEndEntry(blueScores, endNumber);
+      
+      // スコアを調整したチームのスコアを更新
+      if (color === 'red') {
+        const currentEndScore = redScores[redEndEntryIndex].score || 0;
+        redScores[redEndEntryIndex] = {
+          ...redScores[redEndEntryIndex],
+          score: Math.max(0, currentEndScore + delta)
+        };
       } else {
-        // エンドエントリが存在する場合、スコアを更新（delta分だけ加減算）
-        const currentEndScore = newScores[endEntryIndex].score || 0;
-        newScores[endEntryIndex] = {
-          ...newScores[endEntryIndex],
+        const currentEndScore = blueScores[blueEndEntryIndex].score || 0;
+        blueScores[blueEndEntryIndex] = {
+          ...blueScores[blueEndEntryIndex],
           score: Math.max(0, currentEndScore + delta)
         };
       }
       
-      // スコア配列を更新
-      updateField(color, 'scores', newScores);
+      // 両チームのスコア配列を更新
+      updateField('red', 'scores', redScores);
+      updateField('blue', 'scores', blueScores);
       
       // スコア調整後、データを保存（scores配列も含める）
       if (isCtrl && saveData) {
         const updatedGameData = {
           ...gameData,
-          [color]: {
-            ...gameData[color],
-            score: newScore,
-            scores: newScores
+          red: {
+            ...gameData.red,
+            score: color === 'red' ? newScore : gameData.red?.score || 0,
+            scores: redScores
+          },
+          blue: {
+            ...gameData.blue,
+            score: color === 'blue' ? newScore : gameData.blue?.score || 0,
+            scores: blueScores
           },
           screen: {
             ...gameData.screen,
@@ -592,6 +603,40 @@ export const useScoreboardHandlers = ({
         updateTimer('blue', blueTime, false);
       }
       
+      // エンド開始時に両チームのスコアエントリを作成（エンドセクションに移行する際）
+      let recordedRedScores = null;
+      let recordedBlueScores = null;
+      
+      if (nextSection && nextSection.startsWith('end')) {
+        const nextEndNumber = parseInt(nextSection.replace('end', ''), 10);
+        if (nextEndNumber > 0) {
+          const ensureEndEntry = (scores, endNum) => {
+            const index = scores.findIndex(s => typeof s === 'object' && s.end === endNum);
+            if (index === -1) {
+              scores.push({ end: endNum, score: 0 });
+              return true; // エントリが作成された
+            }
+            return false; // エントリが既に存在
+          };
+          
+          const redScores = [...(gameData.red?.scores || [])];
+          const blueScores = [...(gameData.blue?.scores || [])];
+          
+          const redCreated = ensureEndEntry(redScores, nextEndNumber);
+          const blueCreated = ensureEndEntry(blueScores, nextEndNumber);
+          
+          // エントリが作成された場合のみ更新
+          if (redCreated) {
+            recordedRedScores = redScores;
+            updateField('red', 'scores', redScores);
+          }
+          if (blueCreated) {
+            recordedBlueScores = blueScores;
+            updateField('blue', 'scores', blueScores);
+          }
+        }
+      }
+      
       // 試合終了セクションに移行する場合、勝敗判定を行う
       if (nextSection === 'matchFinished') {
         const scoreboardElement = document.getElementById('scoreboard');
@@ -625,10 +670,12 @@ export const useScoreboardHandlers = ({
             end: endNumber
           },
           red: {
-            ...gameData.red
+            ...gameData.red,
+            scores: recordedRedScores || (gameData.red?.scores || [])
           },
           blue: {
-            ...gameData.blue
+            ...gameData.blue,
+            scores: recordedBlueScores || (gameData.blue?.scores || [])
           },
           screen: {
             ...gameData.screen,

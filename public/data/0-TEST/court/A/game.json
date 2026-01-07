@@ -48,22 +48,11 @@
   "red": {
     "name": "Red",
     "score": 0,
-    "scores": [
-      {
-        "end": 1,
-        "score": 0,
-        "penalties": []
-      },
-      {
-        "end": 2,
-        "score": 0,
-        "penalties": []
-      }
-    ],
+    "scores": [],
     "limit": 210000,
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -75,22 +64,11 @@
   "blue": {
     "name": "Blue",
     "score": 0,
-    "scores": [
-      {
-        "end": 1,
-        "score": 0,
-        "penalties": []
-      },
-      {
-        "end": 2,
-        "score": 0,
-        "penalties": []
-      }
-    ],
+    "scores": [],
     "limit": 210000,
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -100,8 +78,8 @@
     "tieBreak": false
   },
   "courtId": "",
-  "classification": "個人 BC4 男子",
+  "classification": "IND BC2 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-07T13:18:06.203Z"
+  "lastUpdated": "2026-01-07T13:58:38.429Z"
 }

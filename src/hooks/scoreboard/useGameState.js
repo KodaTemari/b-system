@@ -106,40 +106,12 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         red: {
           ...defaultData.red,
           ...(initialData.red || {}),
-          scores: (() => {
-            const convertedScores = convertScoresArray(initialData.red?.scores);
-            const totalEnds = initialData.match?.totalEnds || defaultData.match.totalEnds;
-            // totalEndsに基づいて、すべてのエンドのエントリを確保
-            const scores = [];
-            for (let i = 1; i <= totalEnds; i++) {
-              const existingEntry = convertedScores.find(s => typeof s === 'object' && s.end === i);
-              if (existingEntry) {
-                scores.push(existingEntry);
-              } else {
-                scores.push({ end: i, score: 0 });
-              }
-            }
-            return scores;
-          })()
+          scores: convertScoresArray(initialData.red?.scores)
         },
         blue: {
           ...defaultData.blue,
           ...(initialData.blue || {}),
-          scores: (() => {
-            const convertedScores = convertScoresArray(initialData.blue?.scores);
-            const totalEnds = initialData.match?.totalEnds || defaultData.match.totalEnds;
-            // totalEndsに基づいて、すべてのエンドのエントリを確保
-            const scores = [];
-            for (let i = 1; i <= totalEnds; i++) {
-              const existingEntry = convertedScores.find(s => typeof s === 'object' && s.end === i);
-              if (existingEntry) {
-                scores.push(existingEntry);
-              } else {
-                scores.push({ end: i, score: 0 });
-              }
-            }
-            return scores;
-          })()
+          scores: convertScoresArray(initialData.blue?.scores)
         },
         warmup: {
           ...defaultData.warmup,
@@ -153,25 +125,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }
 
     // initialDataが存在しない場合はデフォルト値を使用
-    // totalEndsに基づいて、すべてのエンドのエントリを確保
-    const totalEnds = defaultData.match.totalEnds;
-    const redScores = [];
-    const blueScores = [];
-    for (let i = 1; i <= totalEnds; i++) {
-      redScores.push({ end: i, score: 0 });
-      blueScores.push({ end: i, score: 0 });
-    }
-    return {
-      ...defaultData,
-      red: {
-        ...defaultData.red,
-        scores: redScores
-      },
-      blue: {
-        ...defaultData.blue,
-        scores: blueScores
-      }
-    };
+    return defaultData;
   });
 
   // フィールド更新関数
@@ -264,35 +218,23 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         }
       };
 
-      // エンド番号が設定された場合、scores配列を初期化
+      // エンド番号が設定された場合、scores配列を初期化（後方互換性のため）
       if (endNumber > 0) {
-        // redのscores配列を初期化
-        const redScores = [...(prevData.red?.scores || [])];
-        // 既存のエンドエントリを探す
-        const redEndIndex = redScores.findIndex(s => typeof s === 'object' && s.end === endNumber);
-        if (redEndIndex === -1) {
-          // エンドエントリが存在しない場合、追加
-          redScores.push({ end: endNumber, score: 0 });
-        } else {
-          // エンドエントリが存在する場合、scoreが未定義の場合は0に設定
-          if (redScores[redEndIndex].score === undefined) {
-            redScores[redEndIndex] = { ...redScores[redEndIndex], score: 0 };
+        const ensureEndEntry = (scores, endNum) => {
+          const index = scores.findIndex(s => typeof s === 'object' && s.end === endNum);
+          if (index === -1) {
+            scores.push({ end: endNum, score: 0 });
+          } else if (scores[index].score === undefined) {
+            // 後方互換性: scoreが未定義の場合は0に設定
+            scores[index] = { ...scores[index], score: 0 };
           }
-        }
+        };
         
-        // blueのscores配列を初期化
+        const redScores = [...(prevData.red?.scores || [])];
         const blueScores = [...(prevData.blue?.scores || [])];
-        // 既存のエンドエントリを探す
-        const blueEndIndex = blueScores.findIndex(s => typeof s === 'object' && s.end === endNumber);
-        if (blueEndIndex === -1) {
-          // エンドエントリが存在しない場合、追加
-          blueScores.push({ end: endNumber, score: 0 });
-        } else {
-          // エンドエントリが存在する場合、scoreが未定義の場合は0に設定
-          if (blueScores[blueEndIndex].score === undefined) {
-            blueScores[blueEndIndex] = { ...blueScores[blueEndIndex], score: 0 };
-          }
-        }
+        
+        ensureEndEntry(redScores, endNumber);
+        ensureEndEntry(blueScores, endNumber);
         
         newData.red = {
           ...prevData.red,
@@ -451,37 +393,16 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     if (initialData && Object.keys(initialData).length > 0) {
       setGameData(prevData => {
         // ボール、タイマー、スコアなどの重要なデータのみを更新
-        const totalEnds = initialData.match?.totalEnds ?? prevData.match?.totalEnds ?? 4;
-        
-        // redのscores配列を初期化
+        // scores配列は既存のエントリのみ保持（事前生成しない）
         const redConvertedScores = initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined 
           ? initialData.red.scores 
           : initialData.red.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
         ) : (prevData.red?.scores || []);
-        const redScores = [];
-        for (let i = 1; i <= totalEnds; i++) {
-          const existingEntry = redConvertedScores.find(s => typeof s === 'object' && s.end === i);
-          if (existingEntry) {
-            redScores.push(existingEntry);
-          } else {
-            redScores.push({ end: i, score: 0, penalties: [] });
-          }
-        }
         
-        // blueのscores配列を初期化
         const blueConvertedScores = initialData.blue?.scores ? (Array.isArray(initialData.blue.scores) && initialData.blue.scores.length > 0 && typeof initialData.blue.scores[0] === 'object' && initialData.blue.scores[0].end !== undefined 
           ? initialData.blue.scores 
           : initialData.blue.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
         ) : (prevData.blue?.scores || []);
-        const blueScores = [];
-        for (let i = 1; i <= totalEnds; i++) {
-          const existingEntry = blueConvertedScores.find(s => typeof s === 'object' && s.end === i);
-          if (existingEntry) {
-            blueScores.push(existingEntry);
-          } else {
-            blueScores.push({ end: i, score: 0, penalties: [] });
-          }
-        }
         
         const updatedData = {
           ...prevData,
@@ -493,7 +414,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             isRunning: initialData.red?.isRunning ?? prevData.red?.isRunning,
             score: initialData.red?.score ?? prevData.red?.score,
             isTieBreak: initialData.red?.isTieBreak ?? prevData.red?.isTieBreak,
-            scores: redScores
+            scores: redConvertedScores
           },
           blue: {
             ...prevData.blue,
@@ -503,7 +424,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             isRunning: initialData.blue?.isRunning ?? prevData.blue?.isRunning,
             score: initialData.blue?.score ?? prevData.blue?.score,
             isTieBreak: initialData.blue?.isTieBreak ?? prevData.blue?.isTieBreak,
-            scores: blueScores
+            scores: blueConvertedScores
           },
           warmup: {
             ...prevData.warmup,

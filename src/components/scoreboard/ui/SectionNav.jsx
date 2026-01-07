@@ -41,6 +41,90 @@ const SectionNavigation = ({
     return getLocalizedText(`buttons.${key}`, currentLang);
   };
 
+  // classificationを英語形式（または日本語形式）から多言語対応で表示する関数
+  const formatClassification = (classification) => {
+    if (!classification) return '';
+    
+    const currentLang = getCurrentLanguage();
+    const parts = classification.split(' ');
+    
+    // プレフィックスを多言語対応に変換（英語形式と日本語形式の両方に対応）
+    let prefix = '';
+    let prefixIndex = 0;
+    if (parts[0] === 'IND' || parts[0] === '個人') {
+      prefix = currentLang === 'ja' ? '個人 ' : 'IND ';
+      prefixIndex = 1;
+    } else if (parts[0] === 'PAIR' || parts[0] === 'ペア') {
+      prefix = currentLang === 'ja' ? 'ペア ' : 'PAIR ';
+      prefixIndex = 1;
+    } else if (parts[0] === 'TEAM' || parts[0] === 'チーム') {
+      prefix = currentLang === 'ja' ? 'チーム ' : 'TEAM ';
+      prefixIndex = 1;
+    } else if (parts[0] === 'Recreation' || parts[0] === 'レクリエーション') {
+      return getLocalizedText('classNames.Recreation', currentLang) || classification;
+    }
+    
+    // クラス名部分を取得（プレフィックスの後、性別の前）
+    let className = '';
+    let genderPart = '';
+    
+    if (parts.length > prefixIndex) {
+      const lastPart = parts[parts.length - 1];
+      // 性別の判定（英語と日本語の両方に対応）
+      if (lastPart === 'Male' || lastPart === 'Female' || lastPart === '男子' || lastPart === '女子') {
+        genderPart = lastPart;
+        // プレフィックスを除去
+        if (prefixIndex > 0) {
+          className = parts.slice(prefixIndex, -1).join(' ');
+        } else {
+          className = parts.slice(0, -1).join(' ');
+        }
+      } else {
+        // 性別がない場合
+        if (prefixIndex > 0) {
+          className = parts.slice(prefixIndex).join(' ');
+        } else {
+          className = parts.join(' ');
+        }
+      }
+    } else {
+      className = classification;
+    }
+    
+    // クラス名を多言語対応に変換（classNamesから取得）
+    let localizedClassName = className;
+    const classNames = ['BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'Friendly', 
+                        'PairBC3', 'PairBC4', 'PairFriendly', 'TeamsBC1BC2', 'TeamFriendly', 'Recreation'];
+    
+    // 完全一致するキーを探す（英語名とローカライズ名の両方をチェック）
+    let found = false;
+    for (const key of classNames) {
+      const englishName = getLocalizedText(`classNames.${key}`, 'en') || key;
+      const localizedName = getLocalizedText(`classNames.${key}`, currentLang);
+      // 英語名、ローカライズ名、またはキー自体と一致するかチェック
+      if (localizedName === className || englishName === className || key === className) {
+        localizedClassName = getLocalizedText(`classNames.${key}`, currentLang) || className;
+        found = true;
+        break;
+      }
+    }
+    
+    // マッチしない場合は、そのままclassNameを使用（後方互換性のため）
+    if (!found) {
+      localizedClassName = className;
+    }
+    
+    // 性別を多言語対応に変換
+    let localizedGender = '';
+    if (genderPart === 'Male' || genderPart === '男子') {
+      localizedGender = currentLang === 'ja' ? '男子' : 'Male';
+    } else if (genderPart === 'Female' || genderPart === '女子') {
+      localizedGender = currentLang === 'ja' ? '女子' : 'Female';
+    }
+    
+    return localizedGender ? `${prefix}${localizedClassName} ${localizedGender}` : `${prefix}${localizedClassName}`;
+  };
+
 
   // セクションごとの表示制御
   const getCurrentSectionId = () => {
@@ -76,7 +160,7 @@ const SectionNavigation = ({
         <div id="sec-standby">
           {/* ctrlとview両方に表示 */}
           <div id="matchInfo">
-            <p id="classification">{classification}</p>
+            <p id="classification">{formatClassification(classification)}</p>
             <p id="matchName">{matchName}</p>
           </div>
           

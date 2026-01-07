@@ -28,7 +28,8 @@ const SettingModal = ({
   id,
   setSearchParams,
   classParam,
-  genderParam
+  genderParam,
+  onPendingChangesChange
 }) => {
   // クラス選択肢と性別選択肢の状態
   const [classificationOptions, setClassificationOptions] = useState([]);
@@ -51,6 +52,13 @@ const SettingModal = ({
   
   // 変更を追跡するためのstate（OKボタン押下時にまとめて保存）
   const [pendingChanges, setPendingChanges] = useState({});
+  
+  // pendingChangesが変更されたときに親コンポーネントに通知
+  useEffect(() => {
+    if (onPendingChangesChange) {
+      onPendingChangesChange(pendingChanges);
+    }
+  }, [pendingChanges, onPendingChangesChange]);
   
   // 言語切り替えモーダルの表示状態
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -608,29 +616,26 @@ const SettingModal = ({
           const classDef = data.classifications?.[classId];
           if (!classDef) return;
 
-          // タイプに基づいてプレフィックスを追加
-          const currentLang = getCurrentLanguage();
+          // タイプに基づいてプレフィックスを追加（常に英語形式で保存）
           let prefix = '';
           if (classDef.type === 'individual') {
-            prefix = currentLang === 'ja' ? '個人 ' : 'IND ';
+            prefix = 'IND ';
           } else if (classDef.type === 'pair') {
-            prefix = currentLang === 'ja' ? 'ペア ' : 'PAIR ';
+            prefix = 'PAIR ';
           } else if (classDef.type === 'team') {
-            prefix = currentLang === 'ja' ? 'チーム ' : 'TEAM ';
+            prefix = 'TEAM ';
           } else if (classDef.type === 'recreation') {
             prefix = ''; // レクリエーションはプレフィックスなし
           }
 
-          // クラス名をローカライズ
-          const className = getLocalizedText(`classNames.${classId}`, currentLang) || classDef.name;
+          // クラス名を英語で取得（classNamesの英語版を使用、なければclassDef.name）
+          const className = getLocalizedText(`classNames.${classId}`, 'en') || classDef.name;
 
           let displayName = `${prefix}${className}`;
           if (gender === 'M') {
-            const maleText = currentLang === 'ja' ? '男子' : 'Male';
-            displayName = `${prefix}${className} ${maleText}`;
+            displayName = `${prefix}${className} Male`;
           } else if (gender === 'F') {
-            const femaleText = currentLang === 'ja' ? '女子' : 'Female';
-            displayName = `${prefix}${className} ${femaleText}`;
+            displayName = `${prefix}${className} Female`;
           }
 
           if (!skipSave && onUpdateField) {
