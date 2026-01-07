@@ -1,32 +1,38 @@
 {
   "matchID": "",
   "match": {
-    "totalEnds": 2,
+    "totalEnds": 4,
     "sectionID": 0,
     "section": "standby",
     "end": 0,
+    "tieBreak": "extraEnd",
     "sections": [
       "standby",
-      "warmup",
+      "warmup1",
+      "warmup2",
       "end1",
       "interval",
       "end2",
-      "matchFinished"
+      "interval",
+      "end3",
+      "interval",
+      "end4",
+      "matchFinished",
+      "resultApproval"
     ],
-    "tieBreak": "finalShot",
     "approvals": {
       "red": false,
       "referee": false,
       "blue": false
     },
-    "warmup": "simultaneous",
+    "warmup": "separate",
     "interval": "enabled",
-    "rules": "friendlyMatch",
-    "resultApproval": "none"
+    "rules": "worldBoccia",
+    "resultApproval": "enabled"
   },
   "screen": {
     "active": "",
-    "setColor": false,
+    "setColor": true,
     "scoreAdjusting": false,
     "penaltyThrow": false
   },
@@ -74,5 +80,5 @@
   "classification": "個人 OP 立位 男子",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-07T08:33:25.880Z"
+  "lastUpdated": "2026-01-07T10:21:56.543Z"
 }
