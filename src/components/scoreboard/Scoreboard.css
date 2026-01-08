@@ -2936,17 +2936,22 @@
   color: var(--color-white, #FFF);
   cursor: pointer;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8vmin;
+  box-sizing: border-box;
 }
 
-.languageSelectBtn.selected {
+#scoreboard .languageSelectBtn.selected {
   background-color: var(--color-green-base, #2E7D32);
   border-color: var(--color-green-base, #2E7D32);
 }
 
-.languageSelectBtn:hover {
+#scoreboard .languageSelectBtn:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.languageSelectBtn.selected:hover {
+#scoreboard .languageSelectBtn.selected:hover {
   background-color: var(--color-green-light, rgba(46, 125, 50, 0.7));
 }

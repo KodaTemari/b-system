@@ -2,8 +2,8 @@
   "matchID": "",
   "match": {
     "totalEnds": 4,
-    "sectionID": 7,
-    "section": "interval",
+    "sectionID": 0,
+    "section": "standby",
     "end": 0,
     "tieBreak": "extraEnd",
     "sections": [
@@ -81,5 +81,5 @@
   "classification": "IND BC3 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-08T06:08:47.387Z"
+  "lastUpdated": "2026-01-08T06:38:34.149Z"
 }
