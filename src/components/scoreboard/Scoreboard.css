@@ -102,6 +102,7 @@
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -111,6 +112,7 @@
   0% {
     opacity: 1;
   }
+
   100% {
     opacity: 0;
   }
@@ -330,7 +332,7 @@
   margin: 0 auto;
 }
 
-#scoreboard main > section {
+#scoreboard main>section {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -537,7 +539,7 @@
   margin: 0 2vw 0 4vw;
 }
 
-#scoreboard[data-section="standby"]  main h2 {
+#scoreboard[data-section="standby"] main h2 {
   position: relative;
   top: 40vh;
   z-index: 100;
@@ -665,7 +667,7 @@
   font-size: 6vmin;
   font-weight: bold;
   color: var(--color-white);
-  text-shadow: 
+  text-shadow:
     0.1vmin 0 0 var(--color-gray-dark),
     -0.1vmin 0 0 var(--color-gray-dark),
     0 0.1vmin 0 var(--color-gray-dark),
@@ -728,7 +730,7 @@
 [data-mode="view"] #scoreboard .score .plus,
 [data-mode="view"] #scoreboard .score .minus,
 [data-mode="view"] #scoreboard .score .tieBreak {
-  display: none!important;
+  display: none !important;
 }
 
 #scoreboard .score button.plus {
@@ -739,7 +741,7 @@
   bottom: 1.5vh;
 }
 
-#scoreboard .score button.tieBreak  {
+#scoreboard .score button.tieBreak {
   top: 9vh;
 }
 
@@ -1121,11 +1123,12 @@
 
 @keyframes ball-anim {
   0% {
-		filter: brightness(1);
+    filter: brightness(1);
   }
-	100% {
-		filter: brightness(1.5);
-	}
+
+  100% {
+    filter: brightness(1.5);
+  }
 }
 
 [data-active="red-time"] #red [data-ball="7"] li:nth-child(8),
@@ -1137,11 +1140,12 @@
 
 @keyframes jack-anim {
   0% {
-		filter: brightness(1);
+    filter: brightness(1);
   }
-	100% {
-		filter: brightness(1.1);
-	}
+
+  100% {
+    filter: brightness(1.1);
+  }
 }
 
 #sectionNav {
@@ -1154,7 +1158,7 @@
   box-sizing: border-box;
 }
 
-#sectionNav > div {
+#sectionNav>div {
   box-sizing: border-box;
 }
 
@@ -1175,6 +1179,7 @@
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -1296,8 +1301,8 @@
   display: none;
 }
 
-[data-section="standby"] main > section > div,
-[data-section="standby"] main > section > ul {
+[data-section="standby"] main>section>div,
+[data-section="standby"] main>section>ul {
   opacity: 0;
 }
 
@@ -1335,12 +1340,12 @@
 [data-section="warmup"] [name="warmupTimerBtn"]:not([data-running="true"]),
 [data-section="warmup1"] [name="warmupTimerBtn"]:not([data-running="true"]),
 [data-section="warmup2"] [name="warmupTimerBtn"]:not([data-running="true"]) {
-    opacity: 0.8;
+  opacity: 0.8;
 }
 
 /* インターバルタイマーが停止しているときの透明度 */
 [data-section="interval"] [name="intervalTimerBtn"]:not([data-running="true"]) {
-    opacity: 0.8;
+  opacity: 0.8;
 }
 
 /* data-mode="view"の時はフルスクリーン以外のボタンを無効化 */
@@ -1349,48 +1354,49 @@
 [data-mode="view"] footer button,
 [data-section="matchFinished"] .score button,
 [data-section="resultApproval"] .score button {
-    pointer-events: none;
-    cursor: not-allowed;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 /* タイムモーダル */
 .timeModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: var(--color-gray-medium-dark);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    pointer-events: none;
-    animation: timeModalFadeOut 1s 2s linear forwards;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-gray-medium-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  pointer-events: none;
+  animation: timeModalFadeOut 1s 2s linear forwards;
 }
 
 .timeModalContent {
-    color: white;
-    padding: 40px 80px;
-    text-align: center;
+  color: white;
+  padding: 40px 80px;
+  text-align: center;
 }
 
 .timeModalContent p {
-    font-size: 8rem;
-    font-weight: bold;
-    margin: 0;
-    text-shadow: 2px 2px 4px var(--color-black-medium);
+  font-size: 8rem;
+  font-weight: bold;
+  margin: 0;
+  text-shadow: 2px 2px 4px var(--color-black-medium);
 }
 
 @keyframes timeModalFadeOut {
-    0% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(1);
-    }
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
 }
 
 [data-mode="ctrl"] [data-section="interval"] #sectionNav [data-word="finishInterval"] {
@@ -1494,15 +1500,15 @@
   font-size: 4vmin;
   width: 20vw;
   box-shadow: inset 0.2vmin 0.2vmin 1vmin rgba(0, 0, 0, 0.5),
-              inset -0.1vmin -0.1vmin 0.5vmin rgba(255, 255, 255, 0.1);
+    inset -0.1vmin -0.1vmin 0.5vmin rgba(255, 255, 255, 0.1);
 }
 
 #standbySetting select {
   padding: 2vh 1.25em 2vh 1vw;
 }
 
-#standbySetting > select,
-#standbySetting > input {
+#standbySetting>select,
+#standbySetting>input {
   position: absolute;
   text-align: center;
 }
@@ -1605,19 +1611,19 @@
 
 /* タイブレークボタンのスタイル */
 .tiebreakButtons {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .tiebreakBtn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    transition: all 0.3s ease;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
 }
 
 #settingDetailsModal {
@@ -1637,7 +1643,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-    box-shadow: 0 10px 30px var(--color-black-dark);
+  box-shadow: 0 10px 30px var(--color-black-dark);
   border: 1px solid var(--color-gray-medium);
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1820,7 +1826,7 @@
 }
 
 [name="resetBtn"]:hover {
-opacity: 0.8;
+  opacity: 0.8;
 }
 
 [name="languageBtn"] {
@@ -2180,13 +2186,13 @@ opacity: 0.8;
   margin-left: 3%;
 }
 
-#timeSetting .btnList > div {
+#timeSetting .btnList>div {
   position: relative;
   width: 16vmin;
   margin: 0 0.6vmin;
 }
 
-#timeSetting .btnList > div:first-child {
+#timeSetting .btnList>div:first-child {
   margin-right: 10vmin;
 }
 
@@ -2221,13 +2227,15 @@ opacity: 0.8;
   0% {
     opacity: 0;
   }
+
   100% {
-  	opacity: 1;
+    opacity: 1;
   }
 }
+
 @keyframes fadeOut-anim {
   100% {
-  	opacity: 0;
+    opacity: 0;
   }
 }
 
@@ -2235,6 +2243,7 @@ opacity: 0.8;
   main section h2 {
     font-size: 90px;
   }
+
   .bibs {
     width: 96px;
     height: 133px;
@@ -2249,13 +2258,15 @@ opacity: 0.8;
   main section h2 {
     font-size: 4.5vw;
   }
+
   .bibs {
     top: 1.5vh;
     width: 3.6vw;
     height: 5vw;
   }
- .time button {
-   font-size: 17vw;
+
+  .time button {
+    font-size: 17vw;
   }
 
 
@@ -2265,6 +2276,7 @@ opacity: 0.8;
 }
 
 @media screen and (max-width: 800px) {
+
   /* ステップバーを横スクロール可能にする */
   #endsSetting {
     overflow-x: auto;
@@ -2846,7 +2858,7 @@ opacity: 0.8;
     font-size: 4vmin;
     padding: 3vmin 5vmin;
   }
-  
+
   .timeoutTimerModalBox {
     width: 90vw;
     padding: 4vmin;
@@ -2860,4 +2872,81 @@ opacity: 0.8;
     font-size: 5vmin;
     padding: 3vmin 6vmin;
   }
+}
+
+/* System Settings Buttons */
+.resetBtn {
+  position: absolute;
+  top: 3vh;
+  left: 3vw;
+  width: 6vw;
+  height: auto;
+  z-index: 200;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.languageBtn {
+  position: absolute;
+  top: 3vh;
+  right: 3vw;
+  width: 6vw;
+  height: auto;
+  z-index: 200;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Language Selection Modal */
+.customeModalOverlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+}
+
+.customeModalContent {
+  position: absolute;
+  top: 12vh;
+  right: 3vw;
+  background-color: var(--color-gray-darker, #1a1a1a);
+  border: 1px solid var(--color-gray-base, #444);
+  border-radius: 2vmin;
+  padding: 3vmin;
+  display: flex;
+  flex-direction: column;
+  gap: 2vmin;
+  min-width: 20vw;
+  box-shadow: 0 10px 30px var(--color-black-dark, rgba(0, 0, 0, 0.8));
+}
+
+.languageSelectBtn {
+  width: 100%;
+  padding: 1.5vmin 2vmin;
+  font-size: 4vmin;
+  border: 0.2vmin solid var(--color-white, #FFF);
+  border-radius: 1.5vmin;
+  background-color: transparent;
+  color: var(--color-white, #FFF);
+  cursor: pointer;
+  text-align: center;
+}
+
+.languageSelectBtn.selected {
+  background-color: var(--color-green-base, #2E7D32);
+  border-color: var(--color-green-base, #2E7D32);
+}
+
+.languageSelectBtn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.languageSelectBtn.selected:hover {
+  background-color: var(--color-green-light, rgba(46, 125, 50, 0.7));
 }

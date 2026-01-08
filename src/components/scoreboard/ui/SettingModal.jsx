@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage, setLanguage } from '../../../locales';
-import resetIcon from '../img/icon_reset.png';
 import setting2Icon from '../img/icon_setting_2.png';
-import languageIcon from '../img/icon_language.png';
+import { MatchGeneralSettings, MatchRuleSettings } from './settings/MatchSettings';
+import TimerSettings from './settings/TimerSettings';
+import TeamSettings from './settings/TeamSettings';
+import SystemSettings from './settings/SystemSettings';
 
 /**
  * 設定モーダルコンポーネント
@@ -31,7 +33,7 @@ const SettingModal = ({
   genderParam,
   onPendingChangesChange
 }) => {
-  // クラス選択肢と性別選択肢の状態
+  // Class options and gender state
   const [classificationOptions, setClassificationOptions] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
@@ -42,28 +44,27 @@ const SettingModal = ({
   const [selectedResultApproval, setSelectedResultApproval] = useState(gameData?.match?.resultApproval || 'none');
   const [selectedRules, setSelectedRules] = useState(gameData?.match?.rules || 'worldBoccia');
 
-  // 赤・青タイマーのリミット時間（ミリ秒）
+  // Red/Blue timer limits (ms)
   const [selectedRedLimit, setSelectedRedLimit] = useState(gameData?.red?.limit || 300000);
   const [selectedBlueLimit, setSelectedBlueLimit] = useState(gameData?.blue?.limit || 300000);
 
-  // クラス変更による自動更新を追跡するためのref
+  // Tracks automatic updates from class changes
   const lastClassChangeRef = useRef({ classId: null, timestamp: 0 });
   const currentLimitsRef = useRef({ red: selectedRedLimit, blue: selectedBlueLimit });
 
-  // 保存されたかどうかを追跡するref
+  // Tracks if changes were saved
   const savedRef = useRef(false);
 
-  // 変更を追跡するためのstate（OKボタン押下時にまとめて保存）
+  // Tracks pending changes (applied on OK)
   const [pendingChanges, setPendingChanges] = useState({});
 
-  // pendingChangesが変更されたときに親コンポーネントに通知
-  // classificationの変更のみを通知（他の変更はOKボタン押下時にまとめて通知）
+  // Notify parent of changes (specifically classification)
   useEffect(() => {
     if (import.meta.env.DEV) {
       console.log('[SettingModal] pendingChanges.classification updated:', pendingChanges.classification);
     }
     if (onPendingChangesChange) {
-      // classificationの変更のみを即座に通知
+      // Notify instant classification changes if needed
       const classificationOnly = pendingChanges.classification !== undefined
         ? { classification: pendingChanges.classification }
         : {};
@@ -71,19 +72,17 @@ const SettingModal = ({
     }
   }, [pendingChanges.classification, onPendingChangesChange]);
 
-  // 言語切り替えモーダルの表示状態
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  // Language modal state
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
 
-  // 言語変更ハンドラー
+  // Language change handler
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
     setCurrentLang(lang);
-    setShowLanguageModal(false);
-    // 言語変更イベントを発火して再レンダリングをトリガー
+    // Trigger re-render
     window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
 
-    // URLパラメータを更新（ctrl画面とview画面の両方で動作）
+    // Update URL params
     if (setSearchParams) {
       setSearchParams(prev => {
         const newParams = new URLSearchParams(prev);
@@ -92,19 +91,18 @@ const SettingModal = ({
       });
     }
 
-    // LocalStorageに保存して他のタブに通知（ctrl画面とview画面の連動のため）
+    // Save to LocalStorage and notify other tabs
     try {
       localStorage.setItem('scoreboard_language', lang);
-      // BroadcastChannel APIで他のタブに通知
       const channel = new BroadcastChannel('scoreboard_language');
       channel.postMessage({ language: lang });
       channel.close();
     } catch (error) {
-      console.error('言語設定の保存に失敗しました:', error);
+      console.error('Failed to save language settings:', error);
     }
   };
 
-  // 言語変更イベントをリッスン
+  // Listen for language changes
   useEffect(() => {
     const handleLanguageChangeEvent = (event) => {
       setCurrentLang(event.detail.language);
@@ -115,8 +113,7 @@ const SettingModal = ({
     };
   }, []);
 
-  // totalEndsが変更されたときに状態を更新
-  // pendingChangesにmatch.totalEndsがある場合は、gameDataの更新を無視（ユーザーが手動で変更した値を優先）
+  // Sync state when totalEnds changes
   useEffect(() => {
     const hasPendingTotalEnds = pendingChanges['match.totalEnds'] !== undefined;
     if (!hasPendingTotalEnds) {
@@ -124,16 +121,15 @@ const SettingModal = ({
     }
   }, [totalEnds, pendingChanges]);
 
-  // モーダルが開かれたときにpendingChangesをリセット（classificationは保持）
+  // Reset pendingChanges (keep classification) when modal opens
   useEffect(() => {
     setPendingChanges(prev => {
-      // classificationは保持する
       const classification = prev.classification;
       return classification ? { classification } : {};
     });
   }, [section]);
 
-  // 選択されたクラスが性別を必要としない場合、性別を混合（''）に保証
+  // Ensure gender is reset if class doesn't support it
   useEffect(() => {
     if (selectedClassId) {
       const classOption = classificationOptions.find(opt => opt.value === selectedClassId);
@@ -143,15 +139,15 @@ const SettingModal = ({
     }
   }, [selectedClassId, classificationOptions, selectedGender]);
 
-  // gameDataの変更に合わせて詳細設定の状態を更新
+  // Update detail settings based on gameData changes
   useEffect(() => {
-    // クラス変更直後（1000ms以内）は更新しない
+    // Skip update immediately after class change (1000ms debounce)
     const now = Date.now();
     if (now - lastClassChangeRef.current.timestamp < 1000) {
       return;
     }
 
-    // pendingChangesに値がある場合は、gameDataの更新を無視（ユーザーが手動で変更した値を優先）
+    // Prioritize pendingChanges over gameData updates
     const hasPendingTieBreak = pendingChanges['match.tieBreak'] !== undefined;
     const hasPendingResultApproval = pendingChanges['match.resultApproval'] !== undefined;
     const hasPendingRules = pendingChanges['match.rules'] !== undefined;
@@ -174,13 +170,10 @@ const SettingModal = ({
       setSelectedInterval(gameData.match.interval);
     }
 
-    // pendingChangesにred.limitまたはblue.limitがある場合は、gameDataの更新を無視
-    // （ユーザーが手動で変更した値を優先）
+    // Similar logic for timer limits
     const hasPendingRedLimit = pendingChanges['red.limit'] !== undefined;
     const hasPendingBlueLimit = pendingChanges['blue.limit'] !== undefined;
 
-    // 現在の値と異なる場合のみ更新（pendingChangesがない場合のみ）
-    // selectedRedLimit/selectedBlueLimitが既に正しい値の場合は更新しない（保存直後の上書きを防ぐ）
     if (!hasPendingRedLimit && gameData?.red?.limit !== undefined) {
       const shouldUpdate = gameData.red.limit !== currentLimitsRef.current.red &&
         selectedRedLimit !== gameData.red.limit;
@@ -199,18 +192,15 @@ const SettingModal = ({
     }
   }, [gameData?.match?.tieBreak, gameData?.match?.resultApproval, gameData?.match?.rules, gameData?.match?.warmup, gameData?.match?.interval, gameData?.red?.limit, gameData?.blue?.limit, pendingChanges, selectedRedLimit, selectedBlueLimit]);
 
-  // URLパラメータからクラスと性別を設定
+  // Set class and gender from URL params
   useEffect(() => {
     if (section === 'standby' && classParam) {
-      // URLパラメータにクラスが指定されている場合、それを設定
       setSelectedClassId(classParam);
 
-      // 性別パラメータがある場合、それを設定（'m' -> 'M', 'f' -> 'F'）
-      // パラメータがない場合は混合（''）を保持
       const genderValue = genderParam ? (genderParam.toUpperCase() === 'M' ? 'M' : genderParam.toUpperCase() === 'F' ? 'F' : '') : '';
       setSelectedGender(genderValue);
 
-      // クラスに応じた設定値を適用
+      // Apply class settings
       const settings = getClassSettings(classParam);
       currentLimitsRef.current.red = settings.redLimit;
       currentLimitsRef.current.blue = settings.blueLimit;
@@ -223,7 +213,7 @@ const SettingModal = ({
       setSelectedResultApproval(settings.resultApproval);
       setSelectedEnds(settings.totalEnds);
 
-      // 変更をpendingChangesに記録
+      // Record changes in pendingChanges
       setPendingChanges(prev => ({
         ...prev,
         'red.limit': settings.redLimit,
@@ -236,17 +226,16 @@ const SettingModal = ({
         'match.resultApproval': settings.resultApproval
       }));
 
-      // classificationの表示値を更新（少し遅延させて、selectedClassIdが更新されるのを待つ）
+      // Update classification display value
       setTimeout(() => {
         updateClassificationValue(classParam, genderValue, true);
       }, 0);
     }
   }, [classParam, genderParam, section]);
 
-  // gameData.classificationが更新されたときに、pendingChanges.classificationと一致する場合はクリア
+  // Clear pendingChanges.classification if it matches gameData (Optimistic UI sync)
   useEffect(() => {
     if (pendingChanges.classification && gameData?.classification) {
-      // pendingChanges.classificationとgameData.classificationが一致する場合、pendingChangesから削除
       if (pendingChanges.classification === gameData.classification) {
         if (import.meta.env.DEV) {
           console.log('[SettingModal] gameData.classification matched pendingChanges, clearing:', gameData.classification);
@@ -256,7 +245,6 @@ const SettingModal = ({
           delete newChanges.classification;
           return newChanges;
         });
-        // 親コンポーネントにも通知
         if (onPendingChangesChange) {
           onPendingChangesChange({});
         }
@@ -264,41 +252,26 @@ const SettingModal = ({
     }
   }, [gameData?.classification, pendingChanges.classification, onPendingChangesChange]);
 
-  // 現在のclassificationからクラスIDと性別を解析
+  // Parse class ID and gender from current classification string
   useEffect(() => {
-    // URLパラメータがある場合は、gameDataのclassificationを無視
-    if (classParam) {
-      return;
-    }
-
-    // pendingChangesにclassificationがある場合は、gameDataの更新を無視（ユーザーが手動で変更した値を優先）
-    if (pendingChanges.classification !== undefined) {
-      return;
-    }
-
-    // selectedClassIdが既に設定されている場合は、gameDataの更新を無視（手動で選択した値を優先）
-    if (selectedClassId) {
+    // Ignore if URL params, pending changes, or manual selection exists
+    if (classParam || pendingChanges.classification !== undefined || selectedClassId) {
       return;
     }
 
     if (gameData?.classification) {
       const classification = gameData.classification;
-      // "個人 BC1 男子" または "IND BC1 Male" のような形式から解析
       const parts = classification.split(' ');
 
-      // プレフィックスを除去（個人、ペア、チーム、IND、PAIR、TEAM）
       const prefixes = ['個人', 'ペア', 'チーム', 'IND', 'PAIR', 'TEAM'];
-      // 性別のテキスト（日本語と英語）
       const genderTexts = ['男子', '女子', 'Male', 'Female'];
       let classPart = '';
       let genderPart = '';
 
       if (parts.length >= 2) {
-        // 最後の部分が性別かどうかを確認
         const lastPart = parts[parts.length - 1];
         if (genderTexts.includes(lastPart)) {
           genderPart = lastPart;
-          // プレフィックスを除去
           const withoutPrefix = parts.slice(0, -1);
           if (prefixes.includes(withoutPrefix[0])) {
             classPart = withoutPrefix.slice(1).join(' ');
@@ -306,7 +279,6 @@ const SettingModal = ({
             classPart = withoutPrefix.join(' ');
           }
         } else {
-          // 性別がない場合
           if (prefixes.includes(parts[0])) {
             classPart = parts.slice(1).join(' ');
           } else {
@@ -317,7 +289,7 @@ const SettingModal = ({
         classPart = classification;
       }
 
-      // クラス名からクラスIDを逆引き
+      // Reverse lookup class ID from name
       const findClassId = async () => {
         try {
           const apiUrl = 'http://localhost:3001';
@@ -327,7 +299,6 @@ const SettingModal = ({
             const classDefData = await classDefResponse.json();
             const classDefinitions = classDefData.classifications || {};
 
-            // プレフィックスからタイプを判定
             let expectedType = null;
             if (parts.length >= 2) {
               const firstPart = parts[0];
@@ -342,14 +313,11 @@ const SettingModal = ({
               expectedType = 'recreation';
             }
 
-            // 現在の言語を取得
             const currentLang = getCurrentLanguage();
 
             for (const [id, def] of Object.entries(classDefinitions)) {
-              // ローカライズされたクラス名を取得
               const localizedName = getLocalizedText(`classNames.${id}`, currentLang) || def.name;
 
-              // 名前が一致し、タイプも一致する場合（タイプが判定できた場合）
               if (def.name === classPart || localizedName === classPart) {
                 if (expectedType === null || def.type === expectedType) {
                   setSelectedClassId(id);
@@ -358,7 +326,6 @@ const SettingModal = ({
                   } else if (genderPart === '女子' || genderPart === 'Female') {
                     setSelectedGender('F');
                   } else {
-                    // 性別がない場合は混合（''）を保持
                     setSelectedGender('');
                   }
                   break;
@@ -367,15 +334,14 @@ const SettingModal = ({
             }
           }
         } catch (error) {
-          console.error('クラス解析エラー:', error);
+          console.error('Class analysis error:', error);
         }
       };
       findClassId();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameData?.classification]);
 
-  // クラス定義と大会設定を読み込む
+  // Load class definitions and tournament settings
   useEffect(() => {
     const loadClassifications = async () => {
       if (!id) return;
@@ -383,7 +349,7 @@ const SettingModal = ({
       try {
         const apiUrl = 'http://localhost:3001';
 
-        // classDefinitions.jsonを読み込む
+        // Load classDefinitions.json
         const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
         const classDefResponse = await fetch(classDefUrl);
         let classDefinitions = {};
@@ -392,7 +358,7 @@ const SettingModal = ({
           classDefinitions = classDefData.classifications || {};
         }
 
-        // init.jsonを読み込む
+        // Load init.json
         const initUrl = `${apiUrl}/data/${id}/init.json`;
         const initResponse = await fetch(initUrl);
         let tournamentClassifications = [];
@@ -401,10 +367,8 @@ const SettingModal = ({
           tournamentClassifications = initData.classifications || [];
         }
 
-        // ユニークなクラスIDのリストを生成
         const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];
 
-        // 指定された順序でクラスを並び替え
         const classOrder = [
           'BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'Friendly',
           'PairBC3', 'PairBC4', 'PairFriendly',
@@ -412,14 +376,12 @@ const SettingModal = ({
           'Recreation'
         ];
 
-        // 順序に従ってソート
         const sortedClassIds = classOrder.filter(id => uniqueClassIds.includes(id));
 
         const options = sortedClassIds.map(classId => {
           const classDef = classDefinitions[classId];
           if (!classDef) return null;
 
-          // タイプに基づいてプレフィックスを追加
           let prefix = '';
           if (classDef.type === 'individual') {
             prefix = currentLang === 'ja' ? '個人 ' : 'IND ';
@@ -428,10 +390,9 @@ const SettingModal = ({
           } else if (classDef.type === 'team') {
             prefix = currentLang === 'ja' ? 'チーム ' : 'TEAM ';
           } else if (classDef.type === 'recreation') {
-            prefix = ''; // レクリエーションはプレフィックスなし
+            prefix = '';
           }
 
-          // クラス名をローカライズ
           const className = getLocalizedText(`classNames.${classId}`, currentLang) || classDef.name;
 
           return {
@@ -444,7 +405,7 @@ const SettingModal = ({
 
         setClassificationOptions(options);
       } catch (error) {
-        console.error('クラス定義の読み込みエラー:', error);
+        console.error('Class info load error:', error);
       }
     };
 
@@ -453,94 +414,94 @@ const SettingModal = ({
     }
   }, [id, section, currentLang]);
 
-  // クラスに応じた設定値を取得
+  // Get settings for specific class
   const getClassSettings = (classId) => {
     const settings = {
-      // デフォルト値
+      // Default values
       redLimit: 270000, // 4:30
       blueLimit: 270000, // 4:30
-      warmup: 'simultaneous', // 2:00 同時
+      warmup: 'simultaneous', // 2:00
       interval: 'enabled', // 1:00
       totalEnds: 4,
-      tieBreak: 'extraEnd', // 追加エンド
-      rules: 'worldBoccia', // 公式ルール
-      resultApproval: 'enabled' // あり
+      tieBreak: 'extraEnd',
+      rules: 'worldBoccia',
+      resultApproval: 'enabled'
     };
 
     switch (classId) {
       case 'BC1':
-        settings.redLimit = 270000; // 4:30
-        settings.blueLimit = 270000; // 4:30
+        settings.redLimit = 270000;
+        settings.blueLimit = 270000;
         break;
       case 'BC2':
-        settings.redLimit = 210000; // 3:30
-        settings.blueLimit = 210000; // 3:30
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
         break;
       case 'BC3':
-        settings.redLimit = 360000; // 6:00
-        settings.blueLimit = 360000; // 6:00
+        settings.redLimit = 360000;
+        settings.blueLimit = 360000;
         break;
       case 'BC4':
-        settings.redLimit = 210000; // 3:30
-        settings.blueLimit = 210000; // 3:30
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
         break;
       case 'OPStanding':
-        settings.redLimit = 210000; // 3:30
-        settings.blueLimit = 210000; // 3:30
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
         break;
       case 'OPSeated':
-        settings.redLimit = 210000; // 3:30
-        settings.blueLimit = 210000; // 3:30
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
         break;
       case 'Friendly':
-        settings.redLimit = 240000; // 4:00
-        settings.blueLimit = 240000; // 4:00
+        settings.redLimit = 240000;
+        settings.blueLimit = 240000;
         settings.totalEnds = 2;
-        settings.tieBreak = 'finalShot'; // ファイナルショット
-        settings.rules = 'friendlyMatch'; // フレンドリーマッチ
-        settings.resultApproval = 'none'; // なし
+        settings.tieBreak = 'finalShot';
+        settings.rules = 'friendlyMatch';
+        settings.resultApproval = 'none';
         break;
       case 'PairBC3':
-        settings.redLimit = 420000; // 7:00
-        settings.blueLimit = 420000; // 7:00
-        settings.warmup = 'separate'; // 2:00 別々
+        settings.redLimit = 420000;
+        settings.blueLimit = 420000;
+        settings.warmup = 'separate';
         break;
       case 'PairBC4':
-        settings.redLimit = 240000; // 4:00
-        settings.blueLimit = 240000; // 4:00
-        settings.warmup = 'separate'; // 2:00 別々
+        settings.redLimit = 240000;
+        settings.blueLimit = 240000;
+        settings.warmup = 'separate';
         break;
       case 'PairFriendly':
-        settings.redLimit = 300000; // 5:00
-        settings.blueLimit = 300000; // 5:00
+        settings.redLimit = 300000;
+        settings.blueLimit = 300000;
         settings.totalEnds = 2;
-        settings.tieBreak = 'finalShot'; // ファイナルショット
-        settings.rules = 'friendlyMatch'; // フレンドリーマッチ
-        settings.resultApproval = 'none'; // なし
+        settings.tieBreak = 'finalShot';
+        settings.rules = 'friendlyMatch';
+        settings.resultApproval = 'none';
         break;
       case 'TeamsBC1BC2':
-        settings.redLimit = 300000; // 5:00
-        settings.blueLimit = 300000; // 5:00
-        settings.warmup = 'separate'; // 2:00 別々
+        settings.redLimit = 300000;
+        settings.blueLimit = 300000;
+        settings.warmup = 'separate';
         settings.totalEnds = 6;
         break;
       case 'TeamFriendly':
-        settings.redLimit = 300000; // 5:00
-        settings.blueLimit = 300000; // 5:00
+        settings.redLimit = 300000;
+        settings.blueLimit = 300000;
         settings.totalEnds = 2;
-        settings.tieBreak = 'finalShot'; // ファイナルショット
-        settings.rules = 'friendlyMatch'; // フレンドリーマッチ
-        settings.resultApproval = 'none'; // なし
+        settings.tieBreak = 'finalShot';
+        settings.rules = 'friendlyMatch';
+        settings.resultApproval = 'none';
         break;
       case 'Recreation':
-        settings.redLimit = 300000; // 5:00
-        settings.blueLimit = 300000; // 5:00
-        settings.warmup = 'none'; // なし
-        settings.interval = 'none'; // なし
+        settings.redLimit = 300000;
+        settings.blueLimit = 300000;
+        settings.warmup = 'none';
+        settings.interval = 'none';
         settings.totalEnds = 2;
-        settings.tieBreak = 'none'; // なし
-        settings.rules = 'recreation'; // レク
-        settings.resultApproval = 'none'; // なし
+        settings.tieBreak = 'none';
+        settings.rules = 'recreation';
+        settings.resultApproval = 'none';
         break;
       default:
         break;
@@ -549,23 +510,21 @@ const SettingModal = ({
     return settings;
   };
 
-  // クラスと性別の変更を処理
+  // Handle class/gender changes
   const handleClassificationChange = (classId) => {
     setSelectedClassId(classId);
 
-    // クラスが変更されたら性別をリセット
-    // hasGenderがtrueの場合は「男子」、falseの場合は「混合」をデフォルトに
+    // Reset gender when class changes
     const classOption = classificationOptions.find(opt => opt.value === classId);
     const defaultGender = classOption?.hasGender ? 'M' : '';
     setSelectedGender(defaultGender);
 
-    // URLパラメータを更新
+    // Update URL params
     if (setSearchParams) {
       setSearchParams(prev => {
         const newParams = new URLSearchParams(prev);
         if (classId) {
           newParams.set('c', classId);
-          // 性別はリセット（hasGenderがtrueの場合は'm'、falseの場合は削除）
           if (classOption?.hasGender) {
             newParams.set('g', 'm');
           } else {
@@ -579,9 +538,8 @@ const SettingModal = ({
       });
     }
 
-    // クラスに応じた設定値を適用
+    // Apply class settings
     if (classId) {
-      // クラス変更のタイムスタンプを記録
       lastClassChangeRef.current = {
         classId: classId,
         timestamp: Date.now()
@@ -589,7 +547,7 @@ const SettingModal = ({
 
       const settings = getClassSettings(classId);
 
-      // 設定値を更新（UI表示用）
+      // Update UI state
       currentLimitsRef.current.red = settings.redLimit;
       currentLimitsRef.current.blue = settings.blueLimit;
       setSelectedRedLimit(settings.redLimit);
@@ -599,9 +557,9 @@ const SettingModal = ({
       setSelectedTieBreak(settings.tieBreak);
       setSelectedRules(settings.rules);
       setSelectedResultApproval(settings.resultApproval);
-      setSelectedEnds(settings.totalEnds); // エンド数も更新
+      setSelectedEnds(settings.totalEnds);
 
-      // 変更をpendingChangesに記録（保存はOKボタン押下時）
+      // Record changes (saved on OK)
       setPendingChanges(prev => ({
         ...prev,
         'red.limit': settings.redLimit,
@@ -615,14 +573,12 @@ const SettingModal = ({
       }));
     }
 
-    // classificationの表示値を更新（保存はOKボタン押下時）
     updateClassificationValue(classId, defaultGender, true);
   };
 
   const handleGenderChange = (gender) => {
     setSelectedGender(gender);
 
-    // URLパラメータを更新
     if (setSearchParams && selectedClassId) {
       setSearchParams(prev => {
         const newParams = new URLSearchParams(prev);
@@ -645,7 +601,6 @@ const SettingModal = ({
       if (!skipSave && onUpdateField) {
         onUpdateField('classification', null, '');
       } else {
-        // 変更をpendingChangesに記録（useEffectで親コンポーネントに通知される）
         setPendingChanges(prev => ({
           ...prev,
           'classification': ''
@@ -663,7 +618,6 @@ const SettingModal = ({
           const classDef = data.classifications?.[classId];
           if (!classDef) return;
 
-          // タイプに基づいてプレフィックスを追加（常に英語形式で保存）
           let prefix = '';
           if (classDef.type === 'individual') {
             prefix = 'IND ';
@@ -672,10 +626,10 @@ const SettingModal = ({
           } else if (classDef.type === 'team') {
             prefix = 'TEAM ';
           } else if (classDef.type === 'recreation') {
-            prefix = ''; // レクリエーションはプレフィックスなし
+            prefix = '';
           }
 
-          // クラス名を英語で取得（classNamesの英語版を使用、なければclassDef.name）
+          // Use English class name for storage
           const className = getLocalizedText(`classNames.${classId}`, 'en') || classDef.name;
 
           let displayName = `${prefix}${className}`;
@@ -688,7 +642,6 @@ const SettingModal = ({
           if (!skipSave && onUpdateField) {
             onUpdateField('classification', null, displayName);
           } else {
-            // 変更をpendingChangesに記録（useEffectで親コンポーネントに通知される）
             setPendingChanges(prev => ({
               ...prev,
               'classification': displayName
@@ -696,38 +649,32 @@ const SettingModal = ({
           }
         })
         .catch(error => {
-          console.error('クラス定義の読み込みエラー:', error);
+          console.error('Class def load error:', error);
         });
     } catch (error) {
-      console.error('エラー:', error);
+      console.error('Error:', error);
     }
   };
 
-  // sections配列を再計算する関数
+  // Recalculate sections array
   const recalculateSections = (totalEnds, warmup, interval, resultApproval) => {
     const newSections = ['standby'];
 
-    // ウォームアップの追加
     if (warmup === 'simultaneous') {
       newSections.push('warmup');
     } else if (warmup === 'separate') {
       newSections.push('warmup1', 'warmup2');
     }
-    // warmup === 'none' の場合は何も追加しない
 
-    // エンドとインターバルの追加
     for (let i = 1; i <= totalEnds; i++) {
       newSections.push(`end${i}`);
-      // 最後のエンド以外で、インターバルが有効な場合はintervalを追加
       if (i < totalEnds && interval !== 'none') {
         newSections.push('interval');
       }
     }
 
-    // 試合終了
     newSections.push('matchFinished');
 
-    // 結果承認の追加
     if (resultApproval !== 'none') {
       newSections.push('resultApproval');
     }
@@ -735,11 +682,11 @@ const SettingModal = ({
     return newSections;
   };
 
-  // OKボタン押下時に変更をまとめて保存
+  // Save changes on OK
   const handleSaveChanges = () => {
     if (!onUpdateField) return;
 
-    // 現在の設定値を取得（pendingChangesがあれば優先）
+    // Get current values (pending or current gameData)
     const currentTotalEnds = pendingChanges['match.totalEnds'] !== undefined
       ? pendingChanges['match.totalEnds']
       : (gameData?.match?.totalEnds || 4);
@@ -753,14 +700,12 @@ const SettingModal = ({
       ? pendingChanges['match.resultApproval']
       : (gameData?.match?.resultApproval || 'enabled');
 
-    // totalEnds、warmup、interval、resultApprovalのいずれかが変更された場合、sectionsを再計算
     const shouldRecalculateSections =
       pendingChanges['match.totalEnds'] !== undefined ||
       pendingChanges['match.warmup'] !== undefined ||
       pendingChanges['match.interval'] !== undefined ||
       pendingChanges['match.resultApproval'] !== undefined;
 
-    // 再計算したsectionsを含む最終的な変更オブジェクトを作成
     const finalChanges = { ...pendingChanges };
     if (shouldRecalculateSections) {
       const newSections = recalculateSections(
@@ -772,8 +717,7 @@ const SettingModal = ({
       finalChanges['match.sections'] = newSections;
     }
 
-    // red.limitとblue.limitが変更された場合、currentLimitsRefとstateを更新
-    // ただし、onUpdateFieldを呼び出す前に更新する（保存処理の前にUIを更新）
+    // Update timer limits state if changed
     if (finalChanges['red.limit'] !== undefined) {
       const redLimitValue = finalChanges['red.limit'];
       currentLimitsRef.current.red = redLimitValue;
@@ -785,18 +729,14 @@ const SettingModal = ({
       setSelectedBlueLimit(blueLimitValue);
     }
 
-    // すべての変更を一度に適用するため、gameDataを直接更新してsaveDataを呼び出す
-    // これにより、複数のonUpdateField呼び出しによる競合を防ぐ
     if (!saveData || !gameData) {
-      console.error('saveDataまたはgameDataが利用できません');
+      console.error('saveData or gameData unavailable');
       return;
     }
 
     const updatedGameData = { ...gameData };
 
-    // 各変更を適用
-
-    // 各変更を適用
+    // Apply changes
     Object.entries(finalChanges).forEach(([key, value]) => {
       const [parent, child] = key.split('.');
       if (child) {
@@ -857,9 +797,9 @@ const SettingModal = ({
       onClose(e);
     }
   };
-  // セクションごとの表示制御
+  // Section visibility controls
   const shouldShowRedBlueTimers = () => {
-    // エンド、ファイナルショット、タイブレークの時は赤・青タイマーを表示
+    // Show Red/Blue timers for end, finalShot, and tieBreak sections
     if (section && section.startsWith('end')) return true;
     if (section === 'finalShot') return true;
     if (section === 'tieBreak') return true;
@@ -867,23 +807,23 @@ const SettingModal = ({
   };
 
   const shouldShowWarmupTimer = () => {
-    // ウォームアップの時のみウォームアップタイマーを表示
+    // Only show warmup timer during warmup
     return section === 'warmup' || section === 'warmup1' || section === 'warmup2';
   };
 
   const shouldShowIntervalTimer = () => {
-    // インターバルの時のみインターバルタイマーを表示
+    // Only show interval timer during interval
     return section === 'interval';
   };
 
   const shouldShowPenaltyAndTimeout = () => {
-    // スタンバイ、ウォームアップ、試合終了、結果承認のセクションでは表示しない
+    // Hide for standby, warmup, matchFinished, resultApproval
     if (section === 'standby') return false;
     if (section === 'warmup' || section === 'warmup1' || section === 'warmup2') return false;
     if (section === 'matchFinished') return false;
     if (section === 'resultApproval') return false;
 
-    // 競技規則が「レク」の場合、反則・タイムアウトボタンを表示しない
+    // Hide penalty/timeout if rules are 'recreation'
     const rules = gameData?.match?.rules || 'worldBoccia';
     if (rules === 'recreation') return false;
 
@@ -893,83 +833,57 @@ const SettingModal = ({
   return (
     <dialog id="settingModal" data-section={section} onClose={handleDialogClose}>
       <div id="indexModal" className="modalBox">
-        <button type="button" name="resetBtn" onClick={handleReset}>
-          <img src={resetIcon} alt={getLocalizedText('buttons.reset', getCurrentLanguage())} />
-        </button>
-        <button
-          type="button"
-          name="languageBtn"
-          onClick={() => setShowLanguageModal(!showLanguageModal)}
-        >
-          <img src={languageIcon} alt="Language" />
-        </button>
-
-        {/* 言語一覧モーダル */}
-        {showLanguageModal && (
-          <div id="languageModal" className="languageModal">
-            <div className="languageModalContent">
-              <button
-                type="button"
-                className={`languageOption ${currentLang === 'en' ? 'active' : ''}`}
-                onClick={() => handleLanguageChange('en')}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                className={`languageOption ${currentLang === 'ja' ? 'active' : ''}`}
-                onClick={() => handleLanguageChange('ja')}
-              >
-                日本語
-              </button>
-            </div>
-          </div>
-        )}
+        <SystemSettings
+          handleReset={handleReset}
+          handleLanguageChange={handleLanguageChange}
+          section={section}
+          currentLang={currentLang}
+        />
 
         {section !== 'standby' && (
           <div
             id="endsSetting"
             role="progressbar"
-            aria-label="ゲーム進行状況"
+            aria-label="Game Progress"
             aria-valuenow={sectionID}
             aria-valuemin={0}
             aria-valuemax={sections ? sections.length - 1 : 0}
           >
             <ol className="step-list" data-current-step={sectionID}>
               {sections && sections.map((sectionName, index) => {
-                // endsの数に基づいてボタンを制限
+                // Limit buttons based on number of ends
                 const shouldShowButton = () => {
-                  // エンド関連のセクション（end1, end2, end3, end4など）の場合
+                  // For end-related sections (end1, end2, etc.)
                   if (sectionName.startsWith('end')) {
                     const endNumber = parseInt(sectionName.replace('end', ''), 10);
-                    return endNumber <= (totalEnds || 4); // totalEndsが未定義の場合はデフォルト4
+                    return endNumber <= (totalEnds || 4); // Default to 4 if totalEnds is undefined
                   }
-                  // インターバルの場合、最後のエンドより前のインターバル、またはタイブレークの前のインターバルを表示
+                  // Show interval if before last end or before tieBreak
                   if (sectionName === 'interval') {
-                    // 前のセクションがエンドかどうかチェック
+                    // Check if previous section is an end
                     const prevSection = sections[index - 1];
                     if (prevSection && prevSection.startsWith('end')) {
                       const prevEndNumber = parseInt(prevSection.replace('end', ''), 10);
-                      // 最後のエンドより前のインターバルは常に表示
+                      // Always show intervals before the last end
                       if (prevEndNumber < (totalEnds || 4)) {
                         return true;
                       }
-                      // 最後のエンドの後のインターバルで、次のセクションがタイブレークの場合
+                      // If interval after last end, show only if tieBreak follows
                       // sections配列にtieBreakが存在する場合のみ表示（タイブレークボタンを押したとき）
                       const nextSection = sections[index + 1];
                       if (nextSection === 'tieBreak') {
-                        // sections配列にtieBreakが存在する場合のみ表示
+                        // Show only if tieBreak exists in sections array
                         return sections.includes('tieBreak');
                       }
                     }
-                    return false; // エンドの前でない、かつタイブレークの前でもないインターバルは表示しない
+                    return false; // Hide interval if not before end or tieBreak
                   }
-                  // タイブレークセクションの場合、sections配列に存在する場合のみ表示（タイブレークボタンを押したとき）
+                  // Show tieBreak only if it exists in sections array
                   if (sectionName === 'tieBreak') {
-                    // sections配列にtieBreakが存在する場合のみ表示
+                    // Show only if tieBreak exists in sections array
                     return sections.includes('tieBreak');
                   }
-                  // エンド以外のセクション（standby, warmup, warmup1, warmup2, finalShot, matchFinished）は常に表示
+                  // Always show non-end sections (standby, warmup, etc.)
                   if (sectionName === 'warmup' || sectionName === 'warmup1' || sectionName === 'warmup2') {
                     return true;
                   }
@@ -980,7 +894,7 @@ const SettingModal = ({
                   return null;
                 }
 
-                // 表示されるステップのインデックスを計算（shouldShowButtonでフィルタリングされた後のインデックス）
+                // Calculate visible step indices (after filtering)
                 const visibleSteps = sections.filter((s, i) => {
                   if (s.startsWith('end')) {
                     const endNumber = parseInt(s.replace('end', ''), 10);
@@ -990,7 +904,7 @@ const SettingModal = ({
                     const prevSection = sections[i - 1];
                     if (prevSection && prevSection.startsWith('end')) {
                       const prevEndNumber = parseInt(prevSection.replace('end', ''), 10);
-                      // 最後のエンドより前のインターバルは常に表示
+                      // Always show intervals before the last end
                       if (prevEndNumber < (totalEnds || 4)) {
                         return true;
                       }
@@ -998,7 +912,7 @@ const SettingModal = ({
                       // sections配列にtieBreakが存在する場合のみ表示（タイブレークボタンを押したとき）
                       const nextSection = sections[i + 1];
                       if (nextSection === 'tieBreak') {
-                        // sections配列にtieBreakが存在する場合のみ表示
+                        // Show only if tieBreak exists in sections array
                         return sections.includes('tieBreak');
                       }
                     }
@@ -1006,7 +920,7 @@ const SettingModal = ({
                   }
                   // タイブレークセクションの場合、sections配列に存在する場合のみ表示（タイブレークボタンを押したとき）
                   if (s === 'tieBreak') {
-                    // sections配列にtieBreakが存在する場合のみ表示
+                    // Show only if tieBreak exists in sections array
                     return sections.includes('tieBreak');
                   }
                   return true;
@@ -1017,7 +931,7 @@ const SettingModal = ({
                 const isCurrent = index === sectionID;
                 const isFuture = index > sectionID;
                 const isLast = visibleIndex === visibleSteps.length - 1;
-                // 最後のステップ以外は、すべて右側に線を表示
+                // Show line to the right for all except last step
                 const shouldShowLine = !isLast;
 
                 return (
@@ -1034,7 +948,7 @@ const SettingModal = ({
                       data-word={sectionName}
                       className="step-button"
                       onClick={handleEndsSelect}
-                      aria-label={`${getText(`sections.${sectionName}`)} - ${isCurrent ? '現在のステップ' : isCompleted ? '完了済み' : '未完了'}`}
+                      aria-label={`${getText(`sections.${sectionName}`)} - ${isCurrent ? 'Current' : isCompleted ? 'Completed' : 'Pending'}`}
                     >
                       <span className="step-indicator" aria-hidden="true">
                         {(isCompleted || isCurrent) && <span className="step-indicator-fill"></span>}
@@ -1048,290 +962,52 @@ const SettingModal = ({
           </div>
         )}
 
-        {/* スタンバイセクションの入力欄 */}
+        {/* Standby Section Inputs */}
         {section === 'standby' && (
           <div id="standbySetting">
-            <select
-              id="classificationInput"
-              value={selectedClassId}
-              onChange={(e) => handleClassificationChange(e.target.value)}
-            >
-              <option value="">{getLocalizedText('labels.classification', getCurrentLanguage()) || 'クラスを選択'}</option>
-              {classificationOptions.map((option, index) => (
-                <option key={index} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <select
-              id="genderInput"
-              value={selectedGender}
-              onChange={(e) => handleGenderChange(e.target.value)}
-              disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}
-            >
-              <option value="M">{getLocalizedText('options.gender.male', currentLang)}</option>
-              <option value="F">{getLocalizedText('options.gender.female', currentLang)}</option>
-              <option value="">{getLocalizedText('options.gender.mixed', currentLang)}</option>
-            </select>
-            <input
-              id="matchNameInput"
-              type="text"
-              placeholder={getLocalizedText('labels.matchName', getCurrentLanguage()) || '試合名'}
-              value={pendingChanges['matchName'] !== undefined ? pendingChanges['matchName'] : (gameData?.matchName || '')}
-              onChange={(e) => {
-                // 変更をpendingChangesに記録
-                setPendingChanges(prev => ({
-                  ...prev,
-                  'matchName': e.target.value
-                }));
-              }}
+            <MatchGeneralSettings
+              classificationOptions={classificationOptions}
+              selectedClassId={selectedClassId}
+              handleClassificationChange={handleClassificationChange}
+              selectedGender={selectedGender}
+              handleGenderChange={handleGenderChange}
+              pendingChanges={pendingChanges}
+              gameData={gameData}
+              setPendingChanges={setPendingChanges}
             />
-            <input
-              id="redNameInput"
-              type="text"
-              placeholder={getLocalizedText('labels.redName', getCurrentLanguage()) || '赤の名前'}
-              value={pendingChanges['red.name'] !== undefined ? pendingChanges['red.name'] : (gameData?.red?.name || '')}
-              onChange={(e) => {
-                // 変更をpendingChangesに記録
-                setPendingChanges(prev => ({
-                  ...prev,
-                  'red.name': e.target.value
-                }));
-              }}
-            />
-            <input
-              id="blueNameInput"
-              type="text"
-              placeholder={getLocalizedText('labels.blueName', getCurrentLanguage()) || '青の名前'}
-              value={pendingChanges['blue.name'] !== undefined ? pendingChanges['blue.name'] : (gameData?.blue?.name || '')}
-              onChange={(e) => {
-                // 変更をpendingChangesに記録
-                setPendingChanges(prev => ({
-                  ...prev,
-                  'blue.name': e.target.value
-                }));
-              }}
+            <TeamSettings
+              pendingChanges={pendingChanges}
+              gameData={gameData}
+              setPendingChanges={setPendingChanges}
             />
             <div id="detailSettings">
-              <div className="detailSettingItem">
-                <label htmlFor="redLimitInput" className="detailSettingLabel">{getLocalizedText('labels.redTimer', currentLang)}</label>
-                <select
-                  id="redLimitInput"
-                  className="detailSettingSelect"
-                  value={selectedRedLimit}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value, 10);
-                    if (!isNaN(value)) {
-                      setSelectedRedLimit(value);
-                      // 変更をpendingChangesに記録
-                      setPendingChanges(prev => ({
-                        ...prev,
-                        'red.limit': value
-                      }));
-                    }
-                  }}
-                >
-                  {(() => {
-                    const options = [];
-                    // 2:00～7:00の30秒ごと
-                    for (let minutes = 2; minutes <= 7; minutes++) {
-                      for (let seconds = 0; seconds < 60; seconds += 30) {
-                        // 7分の時は0秒のみ
-                        if (minutes === 7 && seconds === 30) {
-                          continue;
-                        }
-                        const totalMs = minutes * 60000 + seconds * 1000;
-                        const displayTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                        options.push(
-                          <option key={totalMs} value={totalMs}>
-                            {displayTime}
-                          </option>
-                        );
-                      }
-                    }
-                    return options;
-                  })()}
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="blueLimitInput" className="detailSettingLabel">{getLocalizedText('labels.blueTimer', currentLang)}</label>
-                <select
-                  id="blueLimitInput"
-                  className="detailSettingSelect"
-                  value={selectedBlueLimit}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value, 10);
-                    if (!isNaN(value)) {
-                      setSelectedBlueLimit(value);
-                      // 変更をpendingChangesに記録
-                      setPendingChanges(prev => ({
-                        ...prev,
-                        'blue.limit': value
-                      }));
-                    }
-                  }}
-                >
-                  {(() => {
-                    const options = [];
-                    // 2:00～7:00の30秒ごと（7:30は除外）
-                    for (let minutes = 2; minutes <= 7; minutes++) {
-                      for (let seconds = 0; seconds < 60; seconds += 30) {
-                        // 7分の時は0秒のみ（7:30を除外）
-                        if (minutes === 7 && seconds === 30) {
-                          continue;
-                        }
-                        const totalMs = minutes * 60000 + seconds * 1000;
-                        const displayTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                        options.push(
-                          <option key={totalMs} value={totalMs}>
-                            {displayTime}
-                          </option>
-                        );
-                      }
-                    }
-                    return options;
-                  })()}
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="warmupInput" className="detailSettingLabel">{getLocalizedText('labels.warmup', currentLang)}</label>
-                <select
-                  id="warmupInput"
-                  className="detailSettingSelect"
-                  value={selectedWarmup}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedWarmup(value);
-                    // 変更をpendingChangesに記録
-                    setPendingChanges(prev => ({
-                      ...prev,
-                      'match.warmup': value
-                    }));
-                  }}
-                >
-                  <option value="simultaneous">{getLocalizedText('options.warmup.simultaneous', currentLang)}</option>
-                  <option value="separate">{getLocalizedText('options.warmup.separate', currentLang)}</option>
-                  <option value="none">{getLocalizedText('options.warmup.none', currentLang)}</option>
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="intervalInput" className="detailSettingLabel">{getLocalizedText('labels.interval', currentLang)}</label>
-                <select
-                  id="intervalInput"
-                  className="detailSettingSelect"
-                  value={selectedInterval}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedInterval(value);
-                    // 変更をpendingChangesに記録
-                    setPendingChanges(prev => ({
-                      ...prev,
-                      'match.interval': value
-                    }));
-                  }}
-                >
-                  <option value="enabled">{getLocalizedText('options.interval.enabled', currentLang)}</option>
-                  <option value="none">{getLocalizedText('options.interval.none', currentLang)}</option>
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="endsInput" className="detailSettingLabel">{getLocalizedText('labels.numberOfEnds', currentLang)}</label>
-                <select
-                  id="endsInput"
-                  className="detailSettingSelect"
-                  value={selectedEnds || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '') {
-                      setSelectedEnds('');
-                      return;
-                    }
-                    const newEnds = parseInt(value, 10);
-                    if (!isNaN(newEnds)) {
-                      setSelectedEnds(newEnds);
-                      // 変更をpendingChangesに記録
-                      setPendingChanges(prev => ({
-                        ...prev,
-                        'match.totalEnds': newEnds
-                      }));
-                    }
-                  }}
-                >
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="tieBreakInput" className="detailSettingLabel">{getLocalizedText('labels.tieBreak', currentLang)}</label>
-                <select
-                  id="tieBreakInput"
-                  className="detailSettingSelect"
-                  value={selectedTieBreak}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedTieBreak(value);
-                    // 変更をpendingChangesに記録
-                    setPendingChanges(prev => ({
-                      ...prev,
-                      'match.tieBreak': value
-                    }));
-                  }}
-                >
-                  <option value="extraEnd">{getLocalizedText('options.tieBreak.extraEnd', currentLang)}</option>
-                  <option value="finalShot">{getLocalizedText('options.tieBreak.finalShot', currentLang)}</option>
-                  <option value="none">{getLocalizedText('options.tieBreak.none', currentLang)}</option>
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="rulesInput" className="detailSettingLabel">{getLocalizedText('labels.rules', currentLang)}</label>
-                <select
-                  id="rulesInput"
-                  className="detailSettingSelect"
-                  value={selectedRules}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedRules(value);
-                    // 変更をpendingChangesに記録
-                    setPendingChanges(prev => ({
-                      ...prev,
-                      'match.rules': value
-                    }));
-                  }}
-                >
-                  <option value="worldBoccia">{getLocalizedText('options.rules.worldBoccia', currentLang)}</option>
-                  <option value="friendlyMatch">{getLocalizedText('options.rules.friendlyMatch', currentLang)}</option>
-                  <option value="recreation">{getLocalizedText('options.rules.recreation', currentLang)}</option>
-                </select>
-              </div>
-              <div className="detailSettingItem">
-                <label htmlFor="resultApprovalInput" className="detailSettingLabel">{getLocalizedText('labels.resultApproval', currentLang)}</label>
-                <select
-                  id="resultApprovalInput"
-                  className="detailSettingSelect"
-                  value={selectedResultApproval}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedResultApproval(value);
-                    // 変更をpendingChangesに記録
-                    setPendingChanges(prev => ({
-                      ...prev,
-                      'match.resultApproval': value
-                    }));
-                  }}
-                >
-                  <option value="enabled">{getLocalizedText('options.resultApproval.enabled', currentLang)}</option>
-                  <option value="none">{getLocalizedText('options.resultApproval.none', currentLang)}</option>
-                </select>
-              </div>
+              <TimerSettings
+                selectedRedLimit={selectedRedLimit}
+                setSelectedRedLimit={setSelectedRedLimit}
+                selectedBlueLimit={selectedBlueLimit}
+                setSelectedBlueLimit={setSelectedBlueLimit}
+                selectedWarmup={selectedWarmup}
+                setSelectedWarmup={setSelectedWarmup}
+                selectedInterval={selectedInterval}
+                setSelectedInterval={setSelectedInterval}
+                setPendingChanges={setPendingChanges}
+              />
+              <MatchRuleSettings
+                selectedEnds={selectedEnds}
+                setSelectedEnds={setSelectedEnds}
+                selectedTieBreak={selectedTieBreak}
+                setSelectedTieBreak={setSelectedTieBreak}
+                selectedRules={selectedRules}
+                setSelectedRules={setSelectedRules}
+                selectedResultApproval={selectedResultApproval}
+                setSelectedResultApproval={setSelectedResultApproval}
+                setPendingChanges={setPendingChanges}
+              />
             </div>
           </div>
         )}
 
-        {/* エンド再開ボタン（settingOpenかつscoreAdjustingかつエンドセクションの時のみ表示） */}
+        {/* Restart End Button (only if settingOpen, scoreAdjusting, and end section) */}
         {scoreAdjusting && section && section.startsWith('end') && (
           <div id="restartEndContainer">
             <button
@@ -1351,7 +1027,7 @@ const SettingModal = ({
           </div>
         )}
 
-        {/* 反則・タイムアウトボタン */}
+        {/* Penalty and Timeout Buttons */}
         {shouldShowPenaltyAndTimeout() && (
           <div id="penaltyTimeoutSetting">
             <div className="penaltyTimeoutGroup red">
@@ -1361,7 +1037,7 @@ const SettingModal = ({
                 className="btn penalty"
                 onClick={() => onPenaltyClick && onPenaltyClick('red')}
               >
-                {getLocalizedText('buttons.penalty', getCurrentLanguage()) || '反則'}
+                {getLocalizedText('buttons.penalty', getCurrentLanguage()) || 'Penalty'}
               </button>
               <button
                 type="button"
@@ -1375,7 +1051,7 @@ const SettingModal = ({
                   }
                 }}
               >
-                {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'タイムアウト'}
+                {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'Timeout'}
               </button>
             </div>
             <div className="penaltyTimeoutGroup blue">
@@ -1385,7 +1061,7 @@ const SettingModal = ({
                 className="btn penalty"
                 onClick={() => onPenaltyClick && onPenaltyClick('blue')}
               >
-                {getLocalizedText('buttons.penalty', getCurrentLanguage()) || '反則'}
+                {getLocalizedText('buttons.penalty', getCurrentLanguage()) || 'Penalty'}
               </button>
               <button
                 type="button"
@@ -1399,16 +1075,16 @@ const SettingModal = ({
                   }
                 }}
               >
-                {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'タイムアウト'}
+                {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'Timeout'}
               </button>
             </div>
           </div>
         )}
 
-        {/* タイマー設定（スタンバイセクションの時は非表示） */}
+        {/* Timer Settings (Hidden in Standby) */}
         {section !== 'standby' && (
           <div id="timeSetting">
-            {/* 赤・青タイマー調整（エンド、ファイナルショット、タイブレークの時のみ表示） */}
+            {/* Red/Blue Timer Adjustment (End, FinalShot, TieBreak only) */}
             {shouldShowRedBlueTimers() && (
               <>
                 <div className="btnList">
@@ -1441,7 +1117,7 @@ const SettingModal = ({
                 </div>
               </>
             )}
-            {/* ウォームアップタイマー調整（ウォームアップの時のみ表示） */}
+            {/* Warmup Timer Adjustment (Warmup only) */}
             {shouldShowWarmupTimer() && (
               <div className="btnList warmupTimer">
                 <div>
@@ -1459,7 +1135,7 @@ const SettingModal = ({
               </div>
             )}
 
-            {/* インターバルタイマー調整（インターバルの時のみ表示） */}
+            {/* Interval Timer Adjustment (Interval only) */}
             {shouldShowIntervalTimer() && (
               <div className="btnList intervalTimer">
                 <div>
@@ -1479,7 +1155,7 @@ const SettingModal = ({
           </div>
         )}
 
-        {/* 試合終了セクションと結果承認セクションで「次の試合へ」ボタンを表示 */}
+        {/* Show 'Next Match' button for matchFinished and resultApproval */}
         {(section === 'matchFinished' || section === 'resultApproval') && (
           <div id="nextMatchContainer">
             <button
@@ -1487,7 +1163,7 @@ const SettingModal = ({
               className="btn nextMatchBtn"
               onClick={handleResetDirect}
             >
-              {getLocalizedText('buttons.nextMatch', getCurrentLanguage()) || '次の試合へ'}
+              {getLocalizedText('buttons.nextMatch', getCurrentLanguage()) || 'Next Match'}
             </button>
           </div>
         )}
@@ -1496,7 +1172,7 @@ const SettingModal = ({
           <button
             className="settingModalCloseBtn"
             onClick={() => {
-              // OKボタン押下時に変更をまとめて保存
+              // Save changes on OK click
               if (section === 'standby') {
                 handleSaveChanges();
               }

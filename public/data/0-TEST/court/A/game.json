@@ -2,8 +2,8 @@
   "matchID": "",
   "match": {
     "totalEnds": 4,
-    "sectionID": 0,
-    "section": "standby",
+    "sectionID": 7,
+    "section": "interval",
     "end": 0,
     "tieBreak": "extraEnd",
     "sections": [
@@ -31,7 +31,7 @@
   },
   "screen": {
     "active": "",
-    "isColorSet": true,
+    "isColorSet": false,
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
@@ -52,7 +52,7 @@
     "limit": 360000,
     "ball": 6,
     "isRunning": false,
-    "time": 240000,
+    "time": 360000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -68,7 +68,7 @@
     "limit": 360000,
     "ball": 6,
     "isRunning": false,
-    "time": 240000,
+    "time": 360000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -81,5 +81,5 @@
   "classification": "IND BC3 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-08T04:38:40.320Z"
+  "lastUpdated": "2026-01-08T06:08:47.387Z"
 }

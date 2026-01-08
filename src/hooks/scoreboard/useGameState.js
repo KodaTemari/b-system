@@ -2,14 +2,14 @@ import { useState, useCallback, useEffect } from 'react';
 import { TIMER_LIMITS, BALL_COUNTS, GAME_SECTIONS } from '../../utils/scoreboard/constants';
 
 /**
- * ゲーム状態管理のカスタムフック
- * @param {Object} initialData - 初期データ
- * @returns {Object} ゲーム状態と制御関数
+ * Custom hook for game state management
+ * @param {Object} initialData - Initial data
+ * @returns {Object} Game state and control functions
  */
 export const useGameState = (initialData = {}, isCtrl = false) => {
-  // 初期状態（initialDataを統合）
+  // Initial state (merged with initialData)
   const [gameData, setGameData] = useState(() => {
-    // デフォルト値（最後のフォールバック）
+    // Default values (fallback)
     const defaultData = {
       matchID: '',
       match: {
@@ -55,33 +55,33 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       }
     };
 
-    // 後方互換性: 数値配列を新しい構造に変換するヘルパー関数
+    // Helper to convert legacy numeric scores array to new object structure
     const convertScoresArray = (scores) => {
       if (!Array.isArray(scores) || scores.length === 0) {
         return [];
       }
 
-      // 既に新しい構造（オブジェクト配列）の場合はそのまま返す
+      // If already in new structure (object array), return as is
       if (typeof scores[0] === 'object' && scores[0].end !== undefined) {
         return scores;
       }
 
-      // 数値配列の場合は新しい構造に変換
+      // Convert numeric array to object structure
       return scores.map((score, index) => ({
         end: index + 1,
         score: typeof score === 'number' ? score : 0
       }));
     };
 
-    // 優先順位: 1. game.json 2. ローカルストレージ 3. デフォルト値
+    // Priority: 1. game.json, 2. LocalStorage, 3. Default
     if (initialData && initialData !== null && Object.keys(initialData).length > 0) {
-      // init.jsonのsections配列からsectionIDに対応するsection値を取得
+      // Get section value from init.json's sections array based on sectionID
       const sections = initialData.match?.sections || GAME_SECTIONS;
       const sectionID = initialData.match?.sectionID || defaultData.match.sectionID;
       const section = sections[sectionID] || 'standby';
       const tieBreak = initialData.match?.tieBreak || initialData.tieBreak || defaultData.match.tieBreak;
 
-      // sectionからエンド番号を抽出
+      // Extract end number from section name
       const extractEndNumber = (sectionName) => {
         if (sectionName && sectionName.startsWith('end')) {
           return parseInt(sectionName.replace('end', ''), 10);
@@ -101,7 +101,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           end,
           tieBreak,
           sections,
-          totalEnds: initialData.match?.totalEnds || defaultData.match.totalEnds // totalEndsを明示的に保持
+          totalEnds: initialData.match?.totalEnds || defaultData.match.totalEnds
         },
         red: {
           ...defaultData.red,
@@ -124,11 +124,11 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       };
     }
 
-    // initialDataが存在しない場合はデフォルト値を使用
+    // Use default if no initialData
     return defaultData;
   });
 
-  // フィールド更新関数
+  // Field update function
   const updateField = useCallback((parent, child, value) => {
     setGameData(prevData => ({
       ...prevData,
@@ -139,7 +139,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }));
   }, []);
 
-  // 直接プロパティ更新関数（classification, category, matchNameなど）
+  // Direct property update (classification, category, matchName, etc.)
   const updateDirectField = useCallback((fieldName, value) => {
     setGameData(prevData => ({
       ...prevData,
@@ -147,18 +147,18 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }));
   }, []);
 
-  // スコア更新
+  // Score update
   const updateScore = useCallback((color, newScore) => {
     updateField(color, 'score', newScore);
   }, [updateField]);
 
-  // タイマー更新
+  // Timer update
   const updateTimer = useCallback((color, time, isRunning = false) => {
     updateField(color, 'time', time);
     updateField(color, 'isRunning', isRunning);
   }, [updateField]);
 
-  // ボール数更新
+  // Ball count update
   const updateBall = useCallback((color, ballCount) => {
     setGameData(prevData => ({
       ...prevData,
@@ -169,7 +169,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }));
   }, []);
 
-  // スクリーンアクティブ状態更新
+  // Screen active state update
   const updateScreenActive = useCallback((activeValue) => {
     setGameData(prevData => ({
       ...prevData,
@@ -180,7 +180,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }));
   }, []);
 
-  // スコア調整フラグ更新
+  // Score adjusting flag update
   const updateScoreAdjusting = useCallback((isAdjusting) => {
     setGameData(prevData => ({
       ...prevData,
@@ -191,7 +191,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }));
   }, []);
 
-  // セクションからエンド番号を抽出する関数
+  // Helper to extract end number from section name
   const extractEndNumber = useCallback((sectionName) => {
     if (sectionName && sectionName.startsWith('end')) {
       return parseInt(sectionName.replace('end', ''), 10);
@@ -199,7 +199,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     return 0;
   }, []);
 
-  // セクション更新
+  // Section update
   const updateSection = useCallback((newSection, newSectionID, newSections = null) => {
     const endNumber = extractEndNumber(newSection);
     setGameData(prevData => {
@@ -218,14 +218,14 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         }
       };
 
-      // エンド番号が設定された場合、scores配列を初期化（後方互換性のため）
+      // If end number is set, ensure scores array entry exists (for backward compatibility)
       if (endNumber > 0) {
         const ensureEndEntry = (scores, endNum) => {
           const index = scores.findIndex(s => typeof s === 'object' && s.end === endNum);
           if (index === -1) {
             scores.push({ end: endNum, score: 0 });
           } else if (scores[index].score === undefined) {
-            // 後方互換性: scoreが未定義の場合は0に設定
+            // Backward compatibility: set undefined score to 0
             scores[index] = { ...scores[index], score: 0 };
           }
         };
@@ -250,7 +250,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     });
   }, [extractEndNumber]);
 
-  // 色確定状態の更新
+  // Color set state update
   const updateConfirmColor = useCallback((isColorSet, saveData) => {
     setGameData(prevData => {
       const newData = {
@@ -261,7 +261,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         }
       };
 
-      // データを保存（非同期で実行）
+      // Save data asynchronously
       if (saveData) {
         setTimeout(() => {
           saveData(newData);
@@ -272,12 +272,12 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     });
   }, []);
 
-  // プレイヤー名更新
+  // Player name update
   const updatePlayerName = useCallback((color, name) => {
     updateField(color, 'name', name);
   }, [updateField]);
 
-  // ゲームリセット
+  // Game reset
   const resetGame = useCallback(() => {
     setGameData(prevData => ({
       ...prevData,
@@ -318,7 +318,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }));
   }, []);
 
-  // ファイナルショット用のリセット
+  // Reset for final shot
   const resetForFinalShot = useCallback(() => {
     updateTimer('red', TIMER_LIMITS.FINAL_SHOT);
     updateTimer('blue', TIMER_LIMITS.FINAL_SHOT);
@@ -326,11 +326,11 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     updateBall('blue', BALL_COUNTS.FINAL_SHOT);
   }, [updateTimer, updateBall]);
 
-  // initialDataが変更された時にgameDataを更新（初回のみ）
+  // Update gameData when initialData changes (first time only usually, or external sync)
   useEffect(() => {
     if (initialData && initialData !== null && Object.keys(initialData).length > 0) {
       setGameData(prevData => {
-        // 既に同じデータが設定されている場合は更新しない
+        // Skip update if critical data matches (optimization)
         if (prevData.red?.name === initialData.red?.name &&
           prevData.blue?.name === initialData.blue?.name &&
           prevData.match?.sectionID === initialData.match?.sectionID &&
@@ -339,7 +339,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           return prevData;
         }
 
-        // sectionからendの値を計算
+        // Calculate end from section
         const extractEndNumber = (sectionName) => {
           if (sectionName && sectionName.startsWith('end')) {
             return parseInt(sectionName.replace('end', ''), 10);
@@ -357,7 +357,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             ...(initialData.match || {}),
             sectionID: initialData.match?.sectionID || prevData.match.sectionID,
             end: end,
-            totalEnds: initialData.match?.totalEnds ?? prevData.match?.totalEnds // totalEndsを明示的に保持
+            totalEnds: initialData.match?.totalEnds ?? prevData.match?.totalEnds
           },
           red: {
             ...prevData.red,
@@ -388,12 +388,11 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }
   }, [initialData]);
 
-  // localDataの変更を監視してgameDataを更新
+  // Monitor initialData changes to update simplified gameData (e.g. from local storage)
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       setGameData(prevData => {
-        // ボール、タイマー、スコアなどの重要なデータのみを更新
-        // scores配列は既存のエントリのみ保持（事前生成しない）
+        // Update only Critical Data: ball, timer, score, etc.
         const redConvertedScores = initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined
           ? initialData.red.scores
           : initialData.red.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
@@ -440,7 +439,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           match: {
             ...prevData.match,
             ...(initialData.match || {}),
-            // endはsectionから計算する必要があるため、個別に処理
+            // Calculate end from section separately
             end: (() => {
               const extractEndNumber = (sectionName) => {
                 if (sectionName && sectionName.startsWith('end')) {
@@ -457,16 +456,16 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             isColorSet: initialData.screen?.isColorSet ?? prevData.screen?.isColorSet ?? false,
             isScoreAdjusting: initialData.screen?.isScoreAdjusting ?? prevData.screen?.isScoreAdjusting ?? false,
             isPenaltyThrow: initialData.screen?.isPenaltyThrow ?? prevData.screen?.isPenaltyThrow ?? false,
-            // screen.activeの更新処理（ctrlとviewで分岐）
+            // Update active screen (branch logic for ctrl/view)
             active: (() => {
               const currentActive = prevData.screen?.active;
               const newActive = initialData.screen?.active;
 
               if (isCtrl) {
-                // ctrlモード: ローカルストレージのscreen.active変更を無視し、現在の値を維持
+                // Ctrl mode: ignore screen.active changes from local storage
                 return currentActive ?? '';
               } else {
-                // viewモード: 常にinitialDataから更新（リアルタイム連動を確保）
+                // View mode: always sync from initialData for real-time updates
                 return newActive ?? currentActive ?? '';
               }
             })()
