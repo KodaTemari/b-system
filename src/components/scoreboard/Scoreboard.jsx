@@ -95,6 +95,21 @@ const Scoreboard = () => {
   // Tracks pending changes in the settings modal
   const [settingPendingChanges, setSettingPendingChanges] = useState({});
 
+  const handleFullscreenToggle = useCallback(() => {
+    const elem = document.getElementById('scoreboard');
+    if (!elem) return;
+
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch((err) => {
+        console.warn('フルスクリーンに移行できませんでした', err);
+      });
+    } else {
+      document.exitFullscreen().catch((err) => {
+        console.warn('フルスクリーンを終了できませんでした', err);
+      });
+    }
+  }, []);
+
   // Debug logging
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -858,6 +873,7 @@ const Scoreboard = () => {
     );
   }
 
+
   return (
     <div id="scoreboard" data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} className={settingOpen ? 'settingOpen' : ''}>
       <Header
@@ -868,7 +884,7 @@ const Scoreboard = () => {
         tieBreak={tieBreak}
         option=""
         onSettingToggle={isCtrl ? handleSettingModalOpen : null}
-        onFullscreenToggle={() => { }}
+        onFullscreenToggle={handleFullscreenToggle}
         isCtrl={isCtrl}
       />
 

@@ -6,29 +6,17 @@ import fullScreenIcon from '../img/icon_fullScreen.png';
 /**
  * スコアボードのヘッダーコンポーネント
  */
-const Header = ({ 
-  section, 
-  sectionID, 
+const Header = ({
+  section,
+  sectionID,
   end,
-  match, 
+  match,
   tieBreak,
-  option, 
-  onSettingToggle, 
+  option,
+  onSettingToggle,
   onFullscreenToggle,
   isCtrl = false
 }) => {
-  const handleFullscreenToggle = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {
-        console.warn('フルスクリーンに移行できませんでした');
-      });
-    } else {
-      document.exitFullscreen().catch(() => {
-        console.warn('フルスクリーンを終了できませんでした');
-      });
-    }
-  };
-
   return (
     <header>
       <h1 className="hide">ボッチャ・スコアボード</h1>
@@ -63,17 +51,17 @@ const Header = ({
       </div>
       <nav id="setting">
         {isCtrl && onSettingToggle && (
-          <button 
-            type="button" 
-            name="settingBtn" 
+          <button
+            type="button"
+            name="settingBtn"
             onClick={onSettingToggle}
           >
             <img src={settingIcon} alt={getLocalizedText('buttons.setting', getCurrentLanguage())} />
           </button>
         )}
-        <button 
-          id="fullscreenBtn" 
-          onClick={handleFullscreenToggle}
+        <button
+          id="fullscreenBtn"
+          onClick={onFullscreenToggle}
         >
           <img src={fullScreenIcon} alt={getLocalizedText('buttons.fullscreen', getCurrentLanguage())} />
         </button>
