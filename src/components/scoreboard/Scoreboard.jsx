@@ -94,6 +94,28 @@ const Scoreboard = () => {
 
   // 設定モーダルのpendingChangesを追跡
   const [settingPendingChanges, setSettingPendingChanges] = useState({});
+  
+  // デバッグ用
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[Scoreboard] settingPendingChanges updated:', settingPendingChanges);
+      console.log('[Scoreboard] gameData.classification:', gameData?.classification);
+      console.log('[Scoreboard] classification prop:', settingPendingChanges.classification !== undefined ? settingPendingChanges.classification : classification);
+    }
+  }, [settingPendingChanges, classification, gameData?.classification]);
+  
+  // gameData.classificationが更新されたときに、settingPendingChanges.classificationと一致する場合はクリア
+  useEffect(() => {
+    if (settingPendingChanges.classification && gameData?.classification) {
+      // settingPendingChanges.classificationとgameData.classificationが一致する場合、settingPendingChangesから削除
+      if (settingPendingChanges.classification === gameData.classification) {
+        if (import.meta.env.DEV) {
+          console.log('[Scoreboard] gameData.classification matched settingPendingChanges, clearing:', gameData.classification);
+        }
+        setSettingPendingChanges({});
+      }
+    }
+  }, [gameData?.classification, settingPendingChanges.classification]);
 
   // 設定モーダル開閉ハンドラー
   const handleSettingModalOpen = () => {
@@ -104,8 +126,6 @@ const Scoreboard = () => {
   const handleSettingModalClose = () => {
     setSettingOpen(false);
     document.getElementById('settingModal').close();
-    // モーダルを閉じる際にpendingChangesをクリア
-    setSettingPendingChanges({});
   };
 
   // 反則モーダルの状態管理

@@ -60,12 +60,12 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       if (!Array.isArray(scores) || scores.length === 0) {
         return [];
       }
-      
+
       // 既に新しい構造（オブジェクト配列）の場合はそのまま返す
       if (typeof scores[0] === 'object' && scores[0].end !== undefined) {
         return scores;
       }
-      
+
       // 数値配列の場合は新しい構造に変換
       return scores.map((score, index) => ({
         end: index + 1,
@@ -80,7 +80,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       const sectionID = initialData.match?.sectionID || defaultData.match.sectionID;
       const section = sections[sectionID] || 'standby';
       const tieBreak = initialData.match?.tieBreak || initialData.tieBreak || defaultData.match.tieBreak;
-      
+
       // sectionからエンド番号を抽出
       const extractEndNumber = (sectionName) => {
         if (sectionName && sectionName.startsWith('end')) {
@@ -89,7 +89,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         return 0;
       };
       const end = extractEndNumber(section);
-      
+
       return {
         ...defaultData,
         ...initialData,
@@ -229,13 +229,13 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             scores[index] = { ...scores[index], score: 0 };
           }
         };
-        
+
         const redScores = [...(prevData.red?.scores || [])];
         const blueScores = [...(prevData.blue?.scores || [])];
-        
+
         ensureEndEntry(redScores, endNumber);
         ensureEndEntry(blueScores, endNumber);
-        
+
         newData.red = {
           ...prevData.red,
           scores: redScores
@@ -260,14 +260,14 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           isColorSet
         }
       };
-      
+
       // データを保存（非同期で実行）
       if (saveData) {
         setTimeout(() => {
           saveData(newData);
         }, 0);
       }
-      
+
       return newData;
     });
   }, []);
@@ -331,14 +331,14 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     if (initialData && initialData !== null && Object.keys(initialData).length > 0) {
       setGameData(prevData => {
         // 既に同じデータが設定されている場合は更新しない
-        if (prevData.red?.name === initialData.red?.name && 
-            prevData.blue?.name === initialData.blue?.name &&
-            prevData.match?.sectionID === initialData.match?.sectionID &&
-            prevData.red?.time === initialData.red?.time &&
-            prevData.blue?.time === initialData.blue?.time) {
+        if (prevData.red?.name === initialData.red?.name &&
+          prevData.blue?.name === initialData.blue?.name &&
+          prevData.match?.sectionID === initialData.match?.sectionID &&
+          prevData.red?.time === initialData.red?.time &&
+          prevData.blue?.time === initialData.blue?.time) {
           return prevData;
         }
-        
+
         // sectionからendの値を計算
         const extractEndNumber = (sectionName) => {
           if (sectionName && sectionName.startsWith('end')) {
@@ -348,7 +348,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         };
         const section = initialData.match?.section || prevData.match?.section;
         const end = extractEndNumber(section);
-        
+
         return {
           ...prevData,
           ...initialData,
@@ -362,16 +362,16 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           red: {
             ...prevData.red,
             ...(initialData.red || {}),
-            scores: initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined 
-              ? initialData.red.scores 
+            scores: initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined
+              ? initialData.red.scores
               : initialData.red.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
             ) : prevData.red?.scores
           },
           blue: {
             ...prevData.blue,
             ...(initialData.blue || {}),
-            scores: initialData.blue?.scores ? (Array.isArray(initialData.blue.scores) && initialData.blue.scores.length > 0 && typeof initialData.blue.scores[0] === 'object' && initialData.blue.scores[0].end !== undefined 
-              ? initialData.blue.scores 
+            scores: initialData.blue?.scores ? (Array.isArray(initialData.blue.scores) && initialData.blue.scores.length > 0 && typeof initialData.blue.scores[0] === 'object' && initialData.blue.scores[0].end !== undefined
+              ? initialData.blue.scores
               : initialData.blue.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
             ) : prevData.blue?.scores
           },
@@ -394,18 +394,19 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       setGameData(prevData => {
         // ボール、タイマー、スコアなどの重要なデータのみを更新
         // scores配列は既存のエントリのみ保持（事前生成しない）
-        const redConvertedScores = initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined 
-          ? initialData.red.scores 
+        const redConvertedScores = initialData.red?.scores ? (Array.isArray(initialData.red.scores) && initialData.red.scores.length > 0 && typeof initialData.red.scores[0] === 'object' && initialData.red.scores[0].end !== undefined
+          ? initialData.red.scores
           : initialData.red.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
         ) : (prevData.red?.scores || []);
-        
-        const blueConvertedScores = initialData.blue?.scores ? (Array.isArray(initialData.blue.scores) && initialData.blue.scores.length > 0 && typeof initialData.blue.scores[0] === 'object' && initialData.blue.scores[0].end !== undefined 
-          ? initialData.blue.scores 
+
+        const blueConvertedScores = initialData.blue?.scores ? (Array.isArray(initialData.blue.scores) && initialData.blue.scores.length > 0 && typeof initialData.blue.scores[0] === 'object' && initialData.blue.scores[0].end !== undefined
+          ? initialData.blue.scores
           : initialData.blue.scores.map((score, index) => ({ end: index + 1, score: typeof score === 'number' ? score : 0 }))
         ) : (prevData.blue?.scores || []);
-        
+
         const updatedData = {
           ...prevData,
+          ...initialData,
           red: {
             ...prevData.red,
             ...(initialData.red || {}),
@@ -460,7 +461,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             active: (() => {
               const currentActive = prevData.screen?.active;
               const newActive = initialData.screen?.active;
-              
+
               if (isCtrl) {
                 // ctrlモード: ローカルストレージのscreen.active変更を無視し、現在の値を維持
                 return currentActive ?? '';
@@ -471,7 +472,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             })()
           }
         };
-        
+
         return updatedData;
       });
     }

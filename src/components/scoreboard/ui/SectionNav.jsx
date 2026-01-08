@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../locales';
 import colorIcon from '../img/icon_color.png';
 
@@ -42,8 +42,12 @@ const SectionNavigation = ({
   };
 
   // classificationを英語形式（または日本語形式）から多言語対応で表示する関数
-  const formatClassification = (classification) => {
+  const formatClassification = React.useCallback((classification) => {
     if (!classification) return '';
+    
+    if (import.meta.env.DEV) {
+      console.log('[SectionNav] formatClassification called with:', classification);
+    }
     
     const currentLang = getCurrentLanguage();
     const parts = classification.split(' ');
@@ -123,7 +127,7 @@ const SectionNavigation = ({
     }
     
     return localizedGender ? `${prefix}${localizedClassName} ${localizedGender}` : `${prefix}${localizedClassName}`;
-  };
+  }, []);
 
 
   // セクションごとの表示制御

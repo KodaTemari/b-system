@@ -31,7 +31,7 @@
   },
   "screen": {
     "active": "",
-    "isColorSet": false,
+    "isColorSet": true,
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
@@ -49,10 +49,10 @@
     "name": "Red",
     "score": 0,
     "scores": [],
-    "limit": 210000,
+    "limit": 360000,
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 240000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -65,10 +65,10 @@
     "name": "Blue",
     "score": 0,
     "scores": [],
-    "limit": 210000,
+    "limit": 360000,
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 240000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -78,8 +78,8 @@
     "tieBreak": false
   },
   "courtId": "",
-  "classification": "IND BC2 Male",
+  "classification": "IND BC3 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-07T13:58:38.429Z"
+  "lastUpdated": "2026-01-08T04:38:40.320Z"
 }
