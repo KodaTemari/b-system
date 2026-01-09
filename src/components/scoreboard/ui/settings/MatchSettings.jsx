@@ -17,6 +17,7 @@ export const MatchGeneralSettings = ({
     <>
       <select
         id="classificationInput"
+        className="settingSelect"
         value={selectedClassId}
         onChange={(e) => handleClassificationChange(e.target.value)}
       >
@@ -29,6 +30,7 @@ export const MatchGeneralSettings = ({
       </select>
       <select
         id="genderInput"
+        className="settingSelect"
         value={selectedGender}
         onChange={(e) => handleGenderChange(e.target.value)}
         disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}
@@ -72,7 +74,7 @@ export const MatchRuleSettings = ({
         <label htmlFor="endsInput" className="detailSettingLabel">{getLocalizedText('labels.numberOfEnds', currentLang)}</label>
         <select
           id="endsInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedEnds || ''}
           onChange={(e) => {
             const value = e.target.value;
@@ -102,7 +104,7 @@ export const MatchRuleSettings = ({
         <label htmlFor="tieBreakInput" className="detailSettingLabel">{getLocalizedText('labels.tieBreak', currentLang)}</label>
         <select
           id="tieBreakInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedTieBreak}
           onChange={(e) => {
             const value = e.target.value;
@@ -122,7 +124,7 @@ export const MatchRuleSettings = ({
         <label htmlFor="rulesInput" className="detailSettingLabel">{getLocalizedText('labels.rules', currentLang)}</label>
         <select
           id="rulesInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedRules}
           onChange={(e) => {
             const value = e.target.value;
@@ -142,7 +144,7 @@ export const MatchRuleSettings = ({
         <label htmlFor="resultApprovalInput" className="detailSettingLabel">{getLocalizedText('labels.resultApproval', currentLang)}</label>
         <select
           id="resultApprovalInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedResultApproval}
           onChange={(e) => {
             const value = e.target.value;

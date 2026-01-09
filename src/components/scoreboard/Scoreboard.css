@@ -1528,9 +1528,8 @@
   color: var(--color-white);
 }
 
-#standbySetting #classificationInput,
-#standbySetting #genderInput,
-#standbySetting .detailSettingSelect {
+/* 共通のセレクトボックススタイル（カスタム矢印付き） */
+.settingSelect {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -1538,14 +1537,38 @@
   background-repeat: no-repeat;
   background-position: right 0.25vw center;
   background-size: 4.2vmin 4.2vmin;
-  width: 25vw;
+  background-color: var(--color-gray-medium-dark);
+  color: var(--color-white);
+  padding: 2vh 1vw;
+  border: solid 0.3vmin var(--color-white-medium);
+  border-radius: 1vmin;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 4vmin;
   text-align: center;
+  text-align-last: center;
+  /* 中央揃えの補完 */
+  cursor: pointer;
 }
 
-#standbySetting #classificationInput:focus,
-#standbySetting #genderInput:focus,
-#standbySetting .detailSettingSelect:focus {
+.settingSelect:focus {
+  background-color: var(--color-white);
+  color: var(--color-gray-dark);
+  outline: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23222' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* 左揃えオプション */
+.settingSelect.alignLeft {
+  text-align: left;
+  text-align-last: left;
+  padding-left: 2vw;
+}
+
+#standbySetting #classificationInput,
+#standbySetting #genderInput,
+#standbySetting .settingSelect {
+  width: 25vw;
 }
 
 #standbySetting #classificationInput {
@@ -2878,6 +2901,7 @@
 }
 
 .resetBtn,
+.customBtn,
 .languageBtn {
   position: absolute;
   top: 3vh;
@@ -2897,29 +2921,46 @@
   left: 3vw;
 }
 
+.customBtn {
+  left: 3vw;
+}
+
 .languageBtn {
   right: 3vw;
 }
 
 .resetBtn:hover,
+.customBtn:hover,
 .languageBtn:hover {
   opacity: 0.5;
 }
 
-/* Language Selection Modal */
-.customeModalOverlay {
+/* 言語選択・表示設定モーダル (dialog対応) */
+#languageModal,
+#customModal {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 300;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  background-color: transparent;
+  /* 背景は .customModalBox または backdrop で管理 */
+  border: none;
+  padding: 0;
+  z-index: 1002;
+  box-sizing: border-box;
 }
 
-.customeModalContent {
-  position: absolute;
-  top: 12vh;
-  right: 3vw;
+#languageModal::backdrop,
+#customModal::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.languageModalBox,
+.customModalBox {
+  position: fixed;
   background-color: var(--color-gray-darker, #1a1a1a);
   border: 1px solid var(--color-gray-base, #444);
   border-radius: 2vmin;
@@ -2929,6 +2970,45 @@
   gap: 2vmin;
   min-width: 20vw;
   box-shadow: 0 10px 30px var(--color-black-dark, rgba(0, 0, 0, 0.8));
+  box-sizing: border-box;
+}
+
+/* 言語モーダルの位置 (右上) */
+.languageModalBox {
+  top: 12vh;
+  right: 3vw;
+}
+
+/* カスタマイズモーダルの位置 (中央) */
+.customModalBox.centered {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60vw;
+  max-width: 800px;
+  padding: 4vmin;
+}
+
+.languageModalTitle,
+.customModalTitle {
+  color: #fff;
+  font-size: 3vmin;
+  text-align: center;
+  margin-bottom: 2vmin;
+  margin-top: 0;
+}
+
+.languageModalCloseBtn,
+.customModalCloseBtn {
+  position: absolute;
+  top: 0.5vmin;
+  right: 1.5vmin;
+  background: transparent;
+  border: none;
+  color: var(--color-white);
+  font-size: 6vmin;
+  cursor: pointer;
+  line-height: 1;
 }
 
 .languageSelectBtn {
@@ -2960,4 +3040,109 @@
 
 #scoreboard .languageSelectBtn.selected:hover {
   background-color: var(--color-green-light, rgba(46, 125, 50, 0.7));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Customization Modal & Team Icons (カスタマイズモーダルとチームアイコン)      */
+/* -------------------------------------------------------------------------- */
+
+
+/* 設定項目の横並びコンテナ */
+.customSettingRow {
+  display: flex;
+  gap: 4vw;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* 各チームの設定コラム */
+.customSettingCol {
+  flex: 1;
+  text-align: center;
+}
+
+/* チームラベル（赤） */
+.labelRed {
+  color: var(--color-red);
+  font-size: 2.5vmin;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 2vmin;
+}
+
+/* チームラベル（青） */
+.labelBlue {
+  color: var(--color-blue);
+  font-size: 2.5vmin;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 2vmin;
+}
+
+/* 国旗プレビュー画像 */
+.flagPreview {
+  width: 15vmin;
+  height: 10vmin;
+  object-fit: contain;
+  border: 1px solid #555;
+  margin-bottom: 2vmin;
+}
+
+/* スコアボード上の試合名コンテナ */
+#matchNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3vmin;
+}
+
+/* モーダル内のセレクトボックスは幅いっぱいにする */
+.customSettingCol .settingSelect {
+  width: 100%;
+  margin-top: 1vmin;
+}
+
+/* 選手名の横に表示するアイコン/国旗の枠 */
+.teamIconBox {
+  width: 10vmin;
+  height: 10vmin;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 国旗の場合は角を少し丸める */
+.teamIconBox.isFlag {
+  border-radius: 1vmin;
+}
+
+/* カスタム画像の場合は円形または元の形を維持（現在はそのまま） */
+.teamIconBox.isProfile {
+  border-radius: 0;
+}
+
+
+/* 確定ボタンのコンテナ */
+.confirmBtnBox {
+  text-align: center;
+  margin-top: 5vmin;
+}
+
+/* 確定ボタン（OKボタン）のサイズ調整 */
+.confirmBtnBox .languageSelectBtn {
+  width: 20vmin;
+  margin: 0 auto;
+}
+
+/* ボタン内のアイコン画像（リセット、言語、設定など共通） */
+.btnIcon {
+  width: 100%;
+  height: auto;
+}
+
+/* アイコン画像自体のスタイル */
+.teamIconBox img {
+  width: 100%;
+  height: auto;
 }

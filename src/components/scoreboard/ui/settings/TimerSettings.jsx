@@ -41,7 +41,7 @@ const TimerSettings = ({
         <label htmlFor="redLimitInput" className="detailSettingLabel">{getLocalizedText('labels.redTimer', currentLang)}</label>
         <select
           id="redLimitInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedRedLimit}
           onChange={(e) => {
             const value = parseInt(e.target.value, 10);
@@ -61,7 +61,7 @@ const TimerSettings = ({
         <label htmlFor="blueLimitInput" className="detailSettingLabel">{getLocalizedText('labels.blueTimer', currentLang)}</label>
         <select
           id="blueLimitInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedBlueLimit}
           onChange={(e) => {
             const value = parseInt(e.target.value, 10);
@@ -81,7 +81,7 @@ const TimerSettings = ({
         <label htmlFor="warmupInput" className="detailSettingLabel">{getLocalizedText('labels.warmup', currentLang)}</label>
         <select
           id="warmupInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedWarmup}
           onChange={(e) => {
             const value = e.target.value;
@@ -101,7 +101,7 @@ const TimerSettings = ({
         <label htmlFor="intervalInput" className="detailSettingLabel">{getLocalizedText('labels.interval', currentLang)}</label>
         <select
           id="intervalInput"
-          className="detailSettingSelect"
+          className="settingSelect"
           value={selectedInterval}
           onChange={(e) => {
             const value = e.target.value;

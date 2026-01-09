@@ -96,11 +96,8 @@ const Scoreboard = () => {
   const [settingPendingChanges, setSettingPendingChanges] = useState({});
 
   const handleFullscreenToggle = useCallback(() => {
-    const elem = document.getElementById('scoreboard');
-    if (!elem) return;
-
     if (!document.fullscreenElement) {
-      elem.requestFullscreen().catch((err) => {
+      document.documentElement.requestFullscreen().catch((err) => {
         console.warn('フルスクリーンに移行できませんでした', err);
       });
     } else {
@@ -110,22 +107,11 @@ const Scoreboard = () => {
     }
   }, []);
 
-  // Debug logging
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[Scoreboard] settingPendingChanges updated:', settingPendingChanges);
-      console.log('[Scoreboard] gameData.classification:', gameData?.classification);
-      console.log('[Scoreboard] classification prop:', settingPendingChanges.classification !== undefined ? settingPendingChanges.classification : classification);
-    }
-  }, [settingPendingChanges, classification, gameData?.classification]);
 
   // Clear settingPendingChanges when gameData updates to match (Optimistic UI sync)
   useEffect(() => {
     if (settingPendingChanges.classification && gameData?.classification) {
       if (settingPendingChanges.classification === gameData.classification) {
-        if (import.meta.env.DEV) {
-          console.log('[Scoreboard] gameData.classification matched settingPendingChanges, clearing:', gameData.classification);
-        }
         setSettingPendingChanges({});
       }
     }
@@ -984,27 +970,32 @@ const Scoreboard = () => {
 
       {/* セクション進行ナビゲーション */}
       <SectionNav
-        setColor={isColorSet}
-        section={section}
-        sectionID={sectionID}
-        totalEnds={match?.totalEnds}
-        tieBreak={tieBreak}
-        sections={match?.sections}
-        category={category}
-        matchName={matchName}
+        setColor={gameData.screen?.isColorSet}
+        section={gameData.match?.section}
+        sectionID={gameData.match?.sectionID}
+        totalEnds={gameData.match?.totalEnds}
+        tieBreak={gameData.match?.tieBreak}
+        sections={gameData.match?.sections}
+        category={gameData.category}
+        matchName={gameData.matchName}
         classification={settingPendingChanges.classification !== undefined ? settingPendingChanges.classification : classification}
         warmup={warmup}
-        warmupEnabled={match?.warmup !== 'none'}
-        warmupMode={match?.warmup || 'simultaneous'}
+        warmupEnabled={gameData.match?.warmup !== 'none'}
+        warmupMode={gameData.match?.warmup}
         interval={interval}
-        intervalEnabled={match?.interval !== 'none'}
+        intervalEnabled={gameData.match?.interval !== 'none'}
         isTie={isTie}
-        warmupTimer={section?.startsWith('warmup') ? warmupTimer : null}
-        intervalTimer={section === 'interval' ? intervalTimer : null}
+        warmupTimer={warmupTimer}
+        intervalTimer={intervalTimer}
         isCtrl={isCtrl}
-        scoreAdjusting={isScoreAdjusting}
-        redPenaltyBall={red?.penaltyBall || 0}
-        bluePenaltyBall={blue?.penaltyBall || 0}
+        scoreAdjusting={gameData.screen?.isScoreAdjusting}
+        redPenaltyBall={gameData.red?.penaltyBall}
+        bluePenaltyBall={gameData.blue?.penaltyBall}
+        currentLang={getCurrentLanguage()}
+        redCountry={gameData.red?.country}
+        redProfilePic={gameData.red?.profilePic}
+        blueCountry={gameData.blue?.country}
+        blueProfilePic={gameData.blue?.profilePic}
         onConfirmColorToggle={() => updateConfirmColor(!isColorSet, saveData)}
         onStartWarmup={handleStartWarmup}
         onWarmupTimerToggle={handleWarmupTimerToggle}
@@ -1012,7 +1003,6 @@ const Scoreboard = () => {
         onIntervalTimerToggle={handleIntervalTimerToggle}
         onTieBreak={handleTieBreak}
         onSwapTeamNames={handleSwapTeamNames}
-        currentLang={currentLang}
       />
 
       {/* タイムモーダル */}

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../locales';
+import { COUNTRIES } from '../../../utils/scoreboard/countries';
 import colorIcon from '../img/icon_color.png';
 
 /**
@@ -34,7 +35,11 @@ const SectionNavigation = React.memo(({
   onNextSection,
   onIntervalTimerToggle,
   onTieBreak,
-  onSwapTeamNames
+  onSwapTeamNames,
+  redCountry,
+  redProfilePic,
+  blueCountry,
+  blueProfilePic
 }) => {
   // Get text (uses current language)
   const getText = (key) => {
@@ -161,7 +166,29 @@ const SectionNavigation = React.memo(({
           {/* Display on both ctrl and view */}
           <div id="matchInfo">
             <p id="classification">{formattedClassification}</p>
-            <p id="matchName">{matchName}</p>
+            <div id="matchNameContainer">
+              {/* RED Flag/Icon */}
+              {(redProfilePic || redCountry) && (
+                <div className={`teamIconBox ${redProfilePic ? 'isProfile' : 'isFlag'}`}>
+                  <img
+                    src={redProfilePic || `/img/flags/${COUNTRIES.find(c => c.en === redCountry)?.code}.svg`}
+                    alt={redCountry}
+                  />
+                </div>
+              )}
+
+              <h1 id="matchName">{matchName}</h1>
+
+              {/* BLUE Flag/Icon */}
+              {(blueProfilePic || blueCountry) && (
+                <div className={`teamIconBox ${blueProfilePic ? 'isProfile' : 'isFlag'}`}>
+                  <img
+                    src={blueProfilePic || `/img/flags/${COUNTRIES.find(c => c.en === blueCountry)?.code}.svg`}
+                    alt={blueCountry}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Display only on view mode */}

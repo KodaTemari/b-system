@@ -60,9 +60,6 @@ const SettingModal = ({
 
   // Notify parent of changes (specifically classification)
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[SettingModal] pendingChanges.classification updated:', pendingChanges.classification);
-    }
     if (onPendingChangesChange) {
       // Notify instant classification changes if needed
       const classificationOnly = pendingChanges.classification !== undefined
@@ -237,9 +234,6 @@ const SettingModal = ({
   useEffect(() => {
     if (pendingChanges.classification && gameData?.classification) {
       if (pendingChanges.classification === gameData.classification) {
-        if (import.meta.env.DEV) {
-          console.log('[SettingModal] gameData.classification matched pendingChanges, clearing:', gameData.classification);
-        }
         setPendingChanges(prev => {
           const newChanges = { ...prev };
           delete newChanges.classification;
@@ -762,18 +756,12 @@ const SettingModal = ({
     const savedClassification = finalChanges.classification;
     saveData(updatedGameData);
 
-    if (import.meta.env.DEV) {
-      console.log('[SettingModal] handleSaveChanges: saved classification:', savedClassification);
-    }
 
     // pendingChangesをクリア（classificationは保持して、gameDataの更新を待つ）
     const newPendingChanges = {};
     // classificationが保存された場合、保持する（gameDataの更新を待つ）
     if (savedClassification) {
       newPendingChanges.classification = savedClassification;
-      if (import.meta.env.DEV) {
-        console.log('[SettingModal] handleSaveChanges: keeping classification in pendingChanges:', savedClassification);
-      }
     }
     setPendingChanges(newPendingChanges);
 
@@ -838,6 +826,9 @@ const SettingModal = ({
           handleLanguageChange={handleLanguageChange}
           section={section}
           currentLang={currentLang}
+          setPendingChanges={setPendingChanges}
+          pendingChanges={pendingChanges}
+          gameData={gameData}
         />
 
         {section !== 'standby' && (

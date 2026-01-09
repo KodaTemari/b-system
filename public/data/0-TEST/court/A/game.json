@@ -52,9 +52,11 @@
     "limit": 270000,
     "ball": 6,
     "isRunning": false,
-    "time": 360000,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
+    "country": "Ireland",
+    "profilePic": "",
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
@@ -68,9 +70,11 @@
     "limit": 270000,
     "ball": 6,
     "isRunning": false,
-    "time": 360000,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
+    "country": "United Arab Emirates",
+    "profilePic": "",
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
@@ -81,5 +85,5 @@
   "classification": "IND BC1 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-08T07:21:53.864Z"
+  "lastUpdated": "2026-01-09T01:37:35.124Z"
 }

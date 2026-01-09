@@ -40,7 +40,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         isRunning: false,
         time: TIMER_LIMITS.GAME,
         isTieBreak: false,
-        result: ''
+        result: '',
+        country: '',
+        profilePic: ''
       },
       blue: {
         name: '',
@@ -51,7 +53,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         isRunning: false,
         time: TIMER_LIMITS.GAME,
         isTieBreak: false,
-        result: ''
+        result: '',
+        country: '',
+        profilePic: ''
       }
     };
 
@@ -414,6 +418,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             isRunning: initialData.red?.isRunning ?? prevData.red?.isRunning,
             score: initialData.red?.score ?? prevData.red?.score,
             isTieBreak: initialData.red?.isTieBreak ?? prevData.red?.isTieBreak,
+            country: initialData.red?.country ?? prevData.red?.country,
+            profilePic: initialData.red?.profilePic ?? prevData.red?.profilePic,
             scores: redConvertedScores
           },
           blue: {
@@ -424,6 +430,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
             isRunning: initialData.blue?.isRunning ?? prevData.blue?.isRunning,
             score: initialData.blue?.score ?? prevData.blue?.score,
             isTieBreak: initialData.blue?.isTieBreak ?? prevData.blue?.isTieBreak,
+            country: initialData.blue?.country ?? prevData.blue?.country,
+            profilePic: initialData.blue?.profilePic ?? prevData.blue?.profilePic,
             scores: blueConvertedScores
           },
           warmup: {
