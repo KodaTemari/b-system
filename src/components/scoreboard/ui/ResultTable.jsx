@@ -27,7 +27,7 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
 
   const maxEnd = getMaxEnd();
 
-  // 行がない場合は何も表示しない
+  // 行がない場合、何も表示しない
   if (maxEnd === 0) {
     return null;
   }
@@ -73,7 +73,7 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
             
             return (
               <tr key={endNumber}>
-                <td className={redData.score >= 1 ? 'has-score' : ''}>
+                <td className={redData.score >= 1 ? 'hasScore' : ''}>
                   {redData.score}
                   {redData.penalties.length > 0 && (
                     <div className="penalties">
@@ -89,7 +89,7 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
                   )}
                 </td>
                 <td>{endNumber}</td>
-                <td className={blueData.score >= 1 ? 'has-score' : ''}>
+                <td className={blueData.score >= 1 ? 'hasScore' : ''}>
                   {blueData.score}
                   {blueData.penalties.length > 0 && (
                     <div className="penalties">
@@ -114,4 +114,3 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
 };
 
 export default ResultTable;
-

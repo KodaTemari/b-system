@@ -752,7 +752,7 @@ const SettingModal = ({
       }
     });
 
-    // 一度に保存
+    // 一度に保持
     const savedClassification = finalChanges.classification;
     saveData(updatedGameData);
 
@@ -771,7 +771,7 @@ const SettingModal = ({
 
   // ダイアログが閉じるときのハンドラー
   const handleDialogClose = (e) => {
-    // 保存されずに閉じられた場合（キャンセル）、親コンポーネントのpendingChangesをクリア
+    // 保存されずに閉じられた場合（キャンセル時）、親コンポーネントのpendingChangesをクリア
     if (!savedRef.current) {
       if (onPendingChangesChange) {
         onPendingChangesChange({});
@@ -840,7 +840,7 @@ const SettingModal = ({
             aria-valuemin={0}
             aria-valuemax={sections ? sections.length - 1 : 0}
           >
-            <ol className="step-list" data-current-step={sectionID}>
+            <ol className="stepList" data-current-step={sectionID}>
               {sections && sections.map((sectionName, index) => {
                 // Limit buttons based on number of ends
                 const shouldShowButton = () => {
@@ -928,7 +928,7 @@ const SettingModal = ({
                 return (
                   <li
                     key={index}
-                    className={`step-item ${isCompleted ? 'step-completed' : ''} ${isCurrent ? 'step-current' : ''} ${isFuture ? 'step-future' : ''} ${shouldShowLine ? 'step-has-line' : ''}`}
+                    className={`stepItem ${isCompleted ? 'stepCompleted' : ''} ${isCurrent ? 'stepCurrent' : ''} ${isFuture ? 'stepFuture' : ''} ${shouldShowLine ? 'stepHasLine' : ''}`}
                     aria-current={isCurrent ? 'step' : undefined}
                     data-step-index={visibleIndex}
                   >
@@ -937,14 +937,14 @@ const SettingModal = ({
                       name="endsSelectBtn"
                       value={index}
                       data-word={sectionName}
-                      className="step-button"
+                      className="stepButton"
                       onClick={handleEndsSelect}
                       aria-label={`${getText(`sections.${sectionName}`)} - ${isCurrent ? 'Current' : isCompleted ? 'Completed' : 'Pending'}`}
                     >
-                      <span className="step-indicator" aria-hidden="true">
-                        {(isCompleted || isCurrent) && <span className="step-indicator-fill"></span>}
+                      <span className="stepIndicator" aria-hidden="true">
+                        {(isCompleted || isCurrent) && <span className="stepIndicatorFill"></span>}
                       </span>
-                      <span className="step-label">{getText(`sections.${sectionName}`)}</span>
+                      <span className="stepLabel">{getText(`sections.${sectionName}`)}</span>
                     </button>
                   </li>
                 );
@@ -1080,30 +1080,30 @@ const SettingModal = ({
               <>
                 <div className="btnList">
                   <div>
-                    <button type="button" name="redTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('red', '60000')}>＋</button>
-                    <button type="button" name="redTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('red', '-60000')}>－</button>
+                    <button type="button" name="redTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('red', '60000')}>+</button>
+                    <button type="button" name="redTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('red', '-60000')}>-</button>
                   </div>
                   <div>
-                    <button type="button" name="redTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('red', '10000')}>＋</button>
-                    <button type="button" name="redTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('red', '-10000')}>－</button>
+                    <button type="button" name="redTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('red', '10000')}>+</button>
+                    <button type="button" name="redTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('red', '-10000')}>-</button>
                   </div>
                   <div>
-                    <button type="button" name="redTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('red', '1000')}>＋</button>
-                    <button type="button" name="redTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('red', '-1000')}>－</button>
+                    <button type="button" name="redTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('red', '1000')}>+</button>
+                    <button type="button" name="redTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('red', '-1000')}>-</button>
                   </div>
                 </div>
                 <div className="btnList">
                   <div>
-                    <button type="button" name="blueTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('blue', '60000')}>＋</button>
-                    <button type="button" name="blueTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('blue', '-60000')}>－</button>
+                    <button type="button" name="blueTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('blue', '60000')}>+</button>
+                    <button type="button" name="blueTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('blue', '-60000')}>-</button>
                   </div>
                   <div>
-                    <button type="button" name="blueTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('blue', '10000')}>＋</button>
-                    <button type="button" name="blueTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('blue', '-10000')}>－</button>
+                    <button type="button" name="blueTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('blue', '10000')}>+</button>
+                    <button type="button" name="blueTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('blue', '-10000')}>-</button>
                   </div>
                   <div>
-                    <button type="button" name="blueTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('blue', '1000')}>＋</button>
-                    <button type="button" name="blueTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('blue', '-1000')}>－</button>
+                    <button type="button" name="blueTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('blue', '1000')}>+</button>
+                    <button type="button" name="blueTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('blue', '-1000')}>-</button>
                   </div>
                 </div>
               </>
@@ -1112,16 +1112,16 @@ const SettingModal = ({
             {shouldShowWarmupTimer() && (
               <div className="btnList warmupTimer">
                 <div>
-                  <button type="button" name="warmupTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('warmup', '60000')}>＋</button>
-                  <button type="button" name="warmupTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('warmup', '-60000')}>－</button>
+                  <button type="button" name="warmupTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('warmup', '60000')}>+</button>
+                  <button type="button" name="warmupTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('warmup', '-60000')}>-</button>
                 </div>
                 <div>
-                  <button type="button" name="warmupTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('warmup', '10000')}>＋</button>
-                  <button type="button" name="warmupTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('warmup', '-10000')}>－</button>
+                  <button type="button" name="warmupTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('warmup', '10000')}>+</button>
+                  <button type="button" name="warmupTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('warmup', '-10000')}>-</button>
                 </div>
                 <div>
-                  <button type="button" name="warmupTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('warmup', '1000')}>＋</button>
-                  <button type="button" name="warmupTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('warmup', '-1000')}>－</button>
+                  <button type="button" name="warmupTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('warmup', '1000')}>+</button>
+                  <button type="button" name="warmupTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('warmup', '-1000')}>-</button>
                 </div>
               </div>
             )}
@@ -1130,16 +1130,16 @@ const SettingModal = ({
             {shouldShowIntervalTimer() && (
               <div className="btnList intervalTimer">
                 <div>
-                  <button type="button" name="intervalTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('interval', '60000')}>＋</button>
-                  <button type="button" name="intervalTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('interval', '-60000')}>－</button>
+                  <button type="button" name="intervalTimeAdjustBtn" value="60000" className="plus" onClick={() => handleTimeAdjust('interval', '60000')}>+</button>
+                  <button type="button" name="intervalTimeAdjustBtn" value="-60000" className="minus" onClick={() => handleTimeAdjust('interval', '-60000')}>-</button>
                 </div>
                 <div>
-                  <button type="button" name="intervalTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('interval', '10000')}>＋</button>
-                  <button type="button" name="intervalTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('interval', '-10000')}>－</button>
+                  <button type="button" name="intervalTimeAdjustBtn" value="10000" className="plus" onClick={() => handleTimeAdjust('interval', '10000')}>+</button>
+                  <button type="button" name="intervalTimeAdjustBtn" value="-10000" className="minus" onClick={() => handleTimeAdjust('interval', '-10000')}>-</button>
                 </div>
                 <div>
-                  <button type="button" name="intervalTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('interval', '1000')}>＋</button>
-                  <button type="button" name="intervalTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('interval', '-1000')}>－</button>
+                  <button type="button" name="intervalTimeAdjustBtn" value="1000" className="plus" onClick={() => handleTimeAdjust('interval', '1000')}>+</button>
+                  <button type="button" name="intervalTimeAdjustBtn" value="-1000" className="minus" onClick={() => handleTimeAdjust('interval', '-1000')}>-</button>
                 </div>
               </div>
             )}

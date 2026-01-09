@@ -2,9 +2,9 @@
   "matchID": "",
   "match": {
     "totalEnds": 4,
-    "sectionID": 0,
-    "section": "standby",
-    "end": 0,
+    "sectionID": 4,
+    "section": "end2",
+    "end": 2,
     "tieBreak": "extraEnd",
     "sections": [
       "standby",
@@ -33,7 +33,8 @@
     "active": "",
     "isColorSet": false,
     "isScoreAdjusting": false,
-    "isPenaltyThrow": false
+    "isPenaltyThrow": false,
+    "penaltyThrow": false
   },
   "warmup": {
     "limit": 120000,
@@ -46,16 +47,24 @@
     "isRunning": false
   },
   "red": {
-    "name": "Red",
+    "name": "Blue",
     "score": 0,
-    "scores": [],
+    "scores": [
+      {
+        "end": 1,
+        "score": 0,
+        "penalties": [
+          "retractionAndPenaltyBall"
+        ]
+      }
+    ],
     "limit": 210000,
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 210000,
     "isTieBreak": false,
     "result": "",
-    "country": "Ireland",
+    "country": "Armenia",
     "profilePic": "",
     "playerID": "",
     "yellowCard": 0,
@@ -64,13 +73,21 @@
     "tieBreak": false
   },
   "blue": {
-    "name": "Blue",
+    "name": "Red",
     "score": 0,
-    "scores": [],
+    "scores": [
+      {
+        "end": 1,
+        "score": 0,
+        "penalties": [
+          "retractionAndPenaltyBall"
+        ]
+      }
+    ],
     "limit": 210000,
-    "ball": 6,
+    "ball": 0,
     "isRunning": false,
-    "time": 270000,
+    "time": 207977,
     "isTieBreak": false,
     "result": "",
     "country": "United Arab Emirates",
@@ -79,7 +96,8 @@
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0,
-    "tieBreak": false
+    "tieBreak": false,
+    "isRun": false
   },
   "courtId": "",
   "classification": "IND BC2 Male",

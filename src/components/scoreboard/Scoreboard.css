@@ -52,7 +52,7 @@
   --color-black-dark: rgba(0, 0, 0, 0.8);
   --color-black-darker: rgba(0, 0, 0, 0.95);
 
-  /* 色 - 緑系（承認ボタン用） */
+  /* 色 - 緑系�E�承認�Eタン用�E�E*/
   --color-green: 46, 125, 50;
   --color-green-light: rgba(var(--color-green), 0.7);
   --color-green-base: rgba(var(--color-green), 1);
@@ -92,7 +92,7 @@
   animation: coverFadeIn 0.7s ease-in-out;
 }
 
-[data-mode="view"].cover-fade-out::after {
+[data-mode="view"].coverFadeOut::after {
   background-image: url('./img/cover.png');
   opacity: 1;
   animation: coverFadeOut 0.7s ease-in-out forwards;
@@ -495,7 +495,7 @@
   font-size: 3vmin;
 }
 
-#resultTable tbody td:first-child.has-score {
+#resultTable tbody td:first-child.hasScore {
   background-color: var(--color-red-base);
 }
 
@@ -506,7 +506,7 @@
   font-size: 3vmin;
 }
 
-#resultTable tbody td:last-child.has-score {
+#resultTable tbody td:last-child.hasScore {
   background-color: var(--color-blue-base);
 }
 
@@ -579,7 +579,7 @@
   transition: height 0.5s;
 }
 
-/* ペナルティアイコン */
+/* ペナルチE��アイコン */
 #scoreboard .score .penaltyIcons {
   position: absolute;
   left: 2vw;
@@ -919,7 +919,7 @@
   font-size: 15vmin;
 }
 
-/* viewモードで得点調整中: 得点を大きく、タイマーを小さく（タイブレークセクションを除く） */
+/* viewモードで得点調整中: 得点を大きく、タイマ�Eを小さく（タイブレークセクションを除く！E*/
 [data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .score {
   height: 45vh;
 }
@@ -982,7 +982,7 @@
   margin-left: auto;
 }
 
-/* resultApprovalセクションの承認ボタン */
+/* resultApprovalセクションの承認�Eタン */
 #resultApproval {
   display: flex;
   flex-direction: column;
@@ -1018,7 +1018,7 @@
 }
 
 #resultApproval .approvalButtons .btn.approval.approved::before {
-  content: '✔';
+  content: '✓';
   position: absolute;
   top: 50%;
   left: 1vw;
@@ -1171,7 +1171,7 @@
   padding-top: 8vh;
 }
 
-/* warmup1からwarmup2への切り替わり時にフェードイン */
+/* warmup1からwarmup2への刁E��替わり時にフェードイン */
 [data-section="warmup2"] #sec-warmup {
   animation: warmupFadeIn 0.5s ease-in-out forwards;
   opacity: 0;
@@ -1207,7 +1207,7 @@
   height: 100vh;
 }
 
-/* インターバルセクションの時に赤、青のタイマーを透明度0に */
+/* インターバルセクションの時に赤、E��のタイマ�Eを透�E度0に */
 [data-section="interval"] #red .time,
 [data-section="interval"] #blue .time {
   opacity: 0;
@@ -1258,23 +1258,23 @@
   padding-top: 28vh;
 }
 
-/* エンドセクション開始時、sectionNavを非表示（スコアボタンが押されるまで） */
+/* エンドセクション開始時、sectionNavを非表示�E�スコアボタンが押されるまで�E�E*/
 [data-mode="ctrl"][data-section^="end"] #sectionNav {
   display: none;
 }
 
-/* 点数加算ボタンが押されたら（ctrlモードの時はred-scoreまたはblue-score）sectionNavを表示 */
+/* 点数加算�Eタンが押されたら�E�Etrlモード�E時�Ered-scoreまた�Eblue-score�E�sectionNavを表示 */
 [data-mode="ctrl"][data-section^="end"][data-active="red-score"] #sectionNav,
 [data-mode="ctrl"][data-section^="end"][data-active="blue-score"] #sectionNav {
   display: block;
 }
 
-/* viewモードの時は、scoreでsectionNavを表示 */
+/* viewモード�E時�E、scoreでsectionNavを表示 */
 [data-mode="view"][data-section^="end"][data-active="score"] #sectionNav {
   display: block;
 }
 
-/* penaltyThrow中は、sectionNavを強制的に非表示 */
+/* penaltyThrow中は、sectionNavを強制皁E��非表示 */
 [data-penaltythrow="true"] #sectionNav {
   display: none !important;
 }
@@ -1331,26 +1331,26 @@
   opacity: 0.3;
 }
 
-/* ウォームアップタイマーのフォントサイズ */
+/* ウォームアチE�Eタイマ�Eのフォントサイズ */
 [data-mode="view"] [data-section="warmup"] [name="warmupTimerBtn"],
 [data-mode="view"] [data-section="warmup1"] [name="warmupTimerBtn"],
 [data-mode="view"] [data-section="warmup2"] [name="warmupTimerBtn"] {
   font-size: 35vmin;
 }
 
-/* ウォームアップタイマーが停止しているときの透明度 */
+/* ウォームアチE�Eタイマ�Eが停止してぁE��とき�E透�E度 */
 [data-section="warmup"] [name="warmupTimerBtn"]:not([data-running="true"]),
 [data-section="warmup1"] [name="warmupTimerBtn"]:not([data-running="true"]),
 [data-section="warmup2"] [name="warmupTimerBtn"]:not([data-running="true"]) {
   opacity: 0.8;
 }
 
-/* インターバルタイマーが停止しているときの透明度 */
+/* インターバルタイマ�Eが停止してぁE��とき�E透�E度 */
 [data-section="interval"] [name="intervalTimerBtn"]:not([data-running="true"]) {
   opacity: 0.8;
 }
 
-/* data-mode="view"の時はフルスクリーン以外のボタンを無効化 */
+/* data-mode="view"の時�Eフルスクリーン以外�Eボタンを無効匁E*/
 [data-mode="view"] main button,
 [data-mode="view"] header [name="settingBtn"],
 [data-mode="view"] footer button,
@@ -1481,7 +1481,7 @@
   background-color: var(--color-black);
 }
 
-/* スタンバイセクションの入力欄 */
+/* スタンバイセクションの入力欁E*/
 #standbySetting {
   display: flex;
   flex-direction: column;
@@ -1528,7 +1528,7 @@
   color: var(--color-white);
 }
 
-/* 共通のセレクトボックススタイル（カスタム矢印付き） */
+/* 共通�Eセレクト�EチE��ススタイル�E�カスタム矢印付き�E�E*/
 .settingSelect {
   appearance: none;
   -webkit-appearance: none;
@@ -1547,7 +1547,7 @@
   font-size: 4vmin;
   text-align: center;
   text-align-last: center;
-  /* 中央揃えの補完 */
+  /* 中央揁E��の補宁E*/
   cursor: pointer;
 }
 
@@ -1558,7 +1558,7 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23222' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
-/* 左揃えオプション */
+/* 左揁E��オプション */
 .settingSelect.alignLeft {
   text-align: left;
   text-align-last: left;
@@ -1845,7 +1845,7 @@
   opacity: 0.2;
 }
 
-/* スタンバイセクションではリセットボタンを非表示 */
+/* スタンバイセクションではリセチE��ボタンを非表示 */
 #settingModal[data-section="standby"] [name="resetBtn"] {
   display: none;
 }
@@ -1923,7 +1923,7 @@
   opacity: 0.8;
 }
 
-/* ステップバー */
+/* スチE��プバー */
 #endsSetting {
   display: flex;
   justify-content: center;
@@ -1933,7 +1933,7 @@
   overflow: hidden;
 }
 
-#endsSetting .step-list {
+#endsSetting .stepList {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1948,7 +1948,7 @@
   padding-right: 0;
 }
 
-#endsSetting .step-item {
+#endsSetting .stepItem {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1958,7 +1958,7 @@
   overflow: visible;
 }
 
-#endsSetting .step-item.step-has-line::after {
+#endsSetting .stepItem.stepHasLine::after {
   content: '';
   position: absolute;
   left: calc(50% + 0.6vmin);
@@ -1972,15 +1972,15 @@
   overflow: hidden;
 }
 
-#endsSetting .step-item:first-child::before {
+#endsSetting .stepItem:first-child::before {
   display: none;
 }
 
-#endsSetting .step-item:last-child::after {
+#endsSetting .stepItem:last-child::after {
   display: none;
 }
 
-#endsSetting .step-item.step-completed::before {
+#endsSetting .stepItem.stepCompleted::before {
   content: '';
   position: absolute;
   left: 0;
@@ -1994,21 +1994,21 @@
   overflow: hidden;
 }
 
-#endsSetting .step-item.step-completed.step-has-line::after {
+#endsSetting .stepItem.stepCompleted.stepHasLine::after {
   background-color: #FFF;
   z-index: 1;
   top: calc(0.6vh + 0.6vmin);
   height: 0.4vh;
 }
 
-#endsSetting .step-item.step-current.step-has-line::after {
+#endsSetting .stepItem.stepCurrent.stepHasLine::after {
   background-color: var(--color-gray-light);
   z-index: 1;
   top: calc(0.6vh + 0.6vmin);
   height: 0.4vh;
 }
 
-#endsSetting .step-button {
+#endsSetting .stepButton {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2027,7 +2027,7 @@
   isolation: isolate;
 }
 
-#endsSetting .step-indicator {
+#endsSetting .stepIndicator {
   width: 1.2vmin;
   height: 1.2vmin;
   border-radius: 50%;
@@ -2043,7 +2043,7 @@
   margin-top: 0.6vh;
 }
 
-#endsSetting .step-indicator-fill {
+#endsSetting .stepIndicatorFill {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -2053,7 +2053,7 @@
   left: 0;
 }
 
-#endsSetting .step-label {
+#endsSetting .stepLabel {
   font-size: 0.9vw;
   white-space: nowrap;
   text-align: center;
@@ -2063,16 +2063,16 @@
   margin-top: 0.5vh;
 }
 
-#endsSetting .step-item.step-completed .step-indicator {
+#endsSetting .stepItem.stepCompleted .stepIndicator {
   border: none;
   background-color: #FFF;
 }
 
-#endsSetting .step-item.step-completed .step-label {
+#endsSetting .stepItem.stepCompleted .stepLabel {
   color: var(--color-gray-light);
 }
 
-#endsSetting .step-item.step-current .step-indicator {
+#endsSetting .stepItem.stepCurrent .stepIndicator {
   width: 1.2vmin;
   height: 1.2vmin;
   border: none;
@@ -2081,27 +2081,27 @@
   transform: scale(2);
 }
 
-#endsSetting .step-item.step-current .step-label {
+#endsSetting .stepItem.stepCurrent .stepLabel {
   color: var(--color-white);
   font-weight: bold;
   transform: scale(1.2);
 }
 
-#endsSetting .step-item.step-future .step-indicator {
+#endsSetting .stepItem.stepFuture .stepIndicator {
   border: none;
   background-color: var(--color-gray-light);
 }
 
-#endsSetting .step-item.step-future .step-label {
+#endsSetting .stepItem.stepFuture .stepLabel {
   color: var(--color-gray-light);
   font-weight: normal;
 }
 
-#endsSetting .step-button:focus {
+#endsSetting .stepButton:focus {
   outline: none;
 }
 
-#endsSetting .step-button:active {
+#endsSetting .stepButton:active {
   transform: none;
   position: relative;
   top: auto;
@@ -2110,7 +2110,7 @@
   padding: 0;
 }
 
-#endsSetting .step-button:active .step-indicator {
+#endsSetting .stepButton:active .stepIndicator {
   transform: scale(1);
   position: relative;
   top: auto;
@@ -2119,12 +2119,12 @@
   margin-bottom: 0.8vh;
 }
 
-#endsSetting .step-item.step-current .step-button:active .step-indicator {
+#endsSetting .stepItem.stepCurrent .stepButton:active .stepIndicator {
   transform: scale(2);
   margin-top: 0.6vh;
 }
 
-#endsSetting .step-item:active::after {
+#endsSetting .stepItem:active::after {
   position: absolute;
   left: calc(50% + 0.6vmin);
   top: calc(0.6vh + 0.6vmin);
@@ -2133,7 +2133,7 @@
   transform: translateY(-50%);
 }
 
-#endsSetting .step-item.step-current:active::after {
+#endsSetting .stepItem.stepCurrent:active::after {
   top: calc(0.6vh + 0.6vmin);
   height: 0.4vh;
 }
@@ -2303,7 +2303,7 @@
 
 @media screen and (max-width: 800px) {
 
-  /* ステップバーを横スクロール可能にする */
+  /* スチE��プバーを横スクロール可能にする */
   #endsSetting {
     overflow-x: auto;
     overflow-y: hidden;
@@ -2311,82 +2311,82 @@
     justify-content: flex-start;
   }
 
-  #endsSetting .step-list {
+  #endsSetting .stepList {
     width: 800px;
     min-width: 800px;
     flex-shrink: 0;
   }
 
-  /* 線の太さを固定 */
-  #endsSetting .step-item.step-has-line::after {
+  /* 線�E太さを固宁E*/
+  #endsSetting .stepItem.stepHasLine::after {
     height: 2px;
   }
 
-  #endsSetting .step-item.step-completed::before {
+  #endsSetting .stepItem.stepCompleted::before {
     height: 2px;
   }
 
-  #endsSetting .step-item.step-completed.step-has-line::after {
+  #endsSetting .stepItem.stepCompleted.stepHasLine::after {
     height: 2px;
   }
 
-  #endsSetting .step-item.step-current.step-has-line::after {
+  #endsSetting .stepItem.stepCurrent.stepHasLine::after {
     height: 2px;
   }
 
-  #endsSetting .step-item:active::after {
+  #endsSetting .stepItem:active::after {
     height: 2px;
   }
 
-  #endsSetting .step-item.step-current:active::after {
+  #endsSetting .stepItem.stepCurrent:active::after {
     height: 2px;
   }
 
-  /* 円のサイズを固定 */
-  #endsSetting .step-indicator {
+  /* 冁E�Eサイズを固宁E*/
+  #endsSetting .stepIndicator {
     width: 6px;
     height: 6px;
     margin-top: 3px;
     margin-bottom: 4px;
   }
 
-  #endsSetting .step-item.step-current .step-indicator {
+  #endsSetting .stepItem.stepCurrent .stepIndicator {
     width: 6px;
     height: 6px;
     margin-top: 3px;
   }
 
-  /* 線の位置を固定 */
-  #endsSetting .step-item.step-has-line::after {
+  /* 線�E位置を固宁E*/
+  #endsSetting .stepItem.stepHasLine::after {
     left: calc(50% + 3px);
     top: calc(3px + 3px);
     width: calc(100% - 6px);
   }
 
-  #endsSetting .step-item.step-completed::before {
+  #endsSetting .stepItem.stepCompleted::before {
     top: calc(3px + 3px);
   }
 
-  #endsSetting .step-item.step-completed.step-has-line::after {
+  #endsSetting .stepItem.stepCompleted.stepHasLine::after {
     top: calc(3px + 3px);
   }
 
-  #endsSetting .step-item.step-current.step-has-line::after {
+  #endsSetting .stepItem.stepCurrent.stepHasLine::after {
     top: calc(3px + 3px);
   }
 
-  #endsSetting .step-item:active::after {
+  #endsSetting .stepItem:active::after {
     left: calc(50% + 3px);
     top: calc(3px + 3px);
     width: calc(100% - 6px);
   }
 
-  #endsSetting .step-item.step-current:active::after {
+  #endsSetting .stepItem.stepCurrent:active::after {
     top: calc(3px + 3px);
   }
 
-  /* 文字サイズを固定 */
-  #endsSetting .step-label {
+  /* 斁E��サイズを固宁E*/
+  #endsSetting .stepLabel {
     font-size: 9px;
     margin-top: 2.5px;
   }
@@ -2763,7 +2763,7 @@
   opacity: 0.8;
 }
 
-/* タイムアウトタイマーモーダル */
+/* タイムアウトタイマ�Eモーダル */
 #timeoutTimerModal {
   position: fixed;
   top: 0;
@@ -2935,7 +2935,7 @@
   opacity: 0.5;
 }
 
-/* 言語選択・表示設定モーダル (dialog対応) */
+/* 言語選択�E表示設定モーダル (dialog対忁E */
 #languageModal,
 #customModal {
   position: fixed;
@@ -2946,7 +2946,7 @@
   max-height: none;
   margin: 0;
   background-color: transparent;
-  /* 背景は .customModalBox または backdrop で管理 */
+  /* 背景は .customModalBox また�E backdrop で管琁E*/
   border: none;
   padding: 0;
   z-index: 1002;
@@ -2973,7 +2973,7 @@
   box-sizing: border-box;
 }
 
-/* 言語モーダルの位置 (右上) */
+/* 言語モーダルの位置 (右丁E */
 .languageModalBox {
   top: 12vh;
   right: 3vw;
@@ -3033,7 +3033,7 @@
   border-color: var(--color-green-base, #2E7D32);
 }
 
-/* ボタンのホバー（main内を除く） */
+/* ボタンのホバー�E�Eain冁E��除く！E*/
 #scoreboard button:not(main button):hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
@@ -3043,11 +3043,11 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Customization Modal & Team Icons (カスタマイズモーダルとチームアイコン)      */
+/*  Customization Modal & Team Icons (カスタマイズモーダルとチ�Eムアイコン)      */
 /* -------------------------------------------------------------------------- */
 
 
-/* 設定項目の横並びコンテナ */
+/* 設定頁E��の横並びコンチE�� */
 .customSettingRow {
   display: flex;
   gap: 4vw;
@@ -3055,13 +3055,13 @@
   align-items: flex-start;
 }
 
-/* 各チームの設定コラム */
+/* 吁E��ームの設定コラム */
 .customSettingCol {
   flex: 1;
   text-align: center;
 }
 
-/* チームラベル（赤） */
+/* チ�Eムラベル�E�赤�E�E*/
 .labelRed {
   color: var(--color-red);
   font-size: 2.5vmin;
@@ -3070,7 +3070,7 @@
   margin-bottom: 2vmin;
 }
 
-/* チームラベル（青） */
+/* チ�Eムラベル�E�青�E�E*/
 .labelBlue {
   color: var(--color-blue);
   font-size: 2.5vmin;
@@ -3079,7 +3079,7 @@
   margin-bottom: 2vmin;
 }
 
-/* 国旗プレビュー画像 */
+/* 国旗�Eレビュー画僁E*/
 .flagPreview {
   width: 15vmin;
   height: 10vmin;
@@ -3088,7 +3088,7 @@
   margin-bottom: 2vmin;
 }
 
-/* スコアボード上の試合名コンテナ */
+/* スコアボ�Eド上�E試合名コンチE�� */
 #matchNameContainer {
   display: flex;
   align-items: center;
@@ -3096,13 +3096,13 @@
   gap: 3vmin;
 }
 
-/* モーダル内のセレクトボックスは幅いっぱいにする */
+/* モーダル冁E�Eセレクト�EチE��スは幁E��っぱぁE��する */
 .customSettingCol .settingSelect {
   width: 100%;
   margin-top: 1vmin;
 }
 
-/* 選手名の横に表示するアイコン/国旗の枠 */
+/* 選手名の横に表示するアイコン/国旗�E枠 */
 .teamIconBox {
   width: 10vmin;
   height: 10vmin;
@@ -3112,36 +3112,36 @@
   overflow: hidden;
 }
 
-/* 国旗の場合は角を少し丸める */
+/* 国旗�E場合�E角を少し丸める */
 .teamIconBox.isFlag {
   border-radius: 1vmin;
 }
 
-/* カスタム画像の場合は円形または元の形を維持（現在はそのまま） */
+/* カスタム画像�E場合�E冁E��また�E允E�E形を維持E��現在はそ�Eまま�E�E*/
 .teamIconBox.isProfile {
   border-radius: 0;
 }
 
 
-/* 確定ボタンのコンテナ */
+/* 確定�EタンのコンチE�� */
 .confirmBtnBox {
   text-align: center;
   margin-top: 5vmin;
 }
 
-/* 確定ボタン（OKボタン）のサイズ調整 */
+/* 確定�Eタン�E�EKボタン�E��Eサイズ調整 */
 .confirmBtnBox .languageSelectBtn {
   width: 20vmin;
   margin: 0 auto;
 }
 
-/* ボタン内のアイコン画像（リセット、言語、設定など共通） */
+/* ボタン冁E�Eアイコン画像（リセチE��、言語、設定など共通！E*/
 .btnIcon {
   width: 100%;
   height: auto;
 }
 
-/* アイコン画像自体のスタイル */
+/* アイコン画像�E体�Eスタイル */
 .teamIconBox img {
   width: 100%;
   height: auto;

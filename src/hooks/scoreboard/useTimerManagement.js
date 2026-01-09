@@ -146,6 +146,26 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
         timerRef.current = setInterval(() => {
           const newRemainingMs = calculateRemainingTime(startTimeRef.current, initialRemainingMs);
           
+          // タイマー終了チェック（先に実行して、0になったら即座に処理）
+          if (newRemainingMs <= 0) {
+            setRemainingMs(0);
+            setDisplayTime(formatTime(0));
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+            
+            // タイマー終了時に0を通知（データを0に更新するため）
+            if (onTimeUpdate) {
+              onTimeUpdate(0);
+            }
+            
+            // 終了音を再生（タイム音）- フラグで1回のみ再生を保証
+            if (enableAudio && !hasPlayedTime.current) {
+              hasPlayedTime.current = true;
+              playAudio(AUDIO_FILES.TIME_UP);
+            }
+            return; // タイマーが0になったら、以降の処理をスキップ
+          }
+          
           // 表示時間が変わった時のみ更新
           const displayTimeSeconds = Math.floor(newRemainingMs / 1000);
           if (displayTimeSeconds !== lastDisplayTimeRef.current) {
@@ -158,27 +178,9 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
               onTimeUpdate(newRemainingMs);
             }
             
-            // 音声警告の再生
-            if (enableAudio) {
+            // 音声警告の再生（タイマーが0でない場合のみ）
+            if (enableAudio && newRemainingMs > 0) {
               handleAudioWarnings(newRemainingMs);
-            }
-          }
-          
-          // タイマー終了
-          if (newRemainingMs <= 0) {
-            setRemainingMs(0);
-            setDisplayTime(formatTime(0));
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-            
-            // タイマー終了時に0を通知（データを0に更新するため）
-            if (onTimeUpdate) {
-              onTimeUpdate(0);
-            }
-            
-            // 終了音を再生（タイム音）
-            if (enableAudio) {
-              playAudio(AUDIO_FILES.TIME_UP);
             }
           }
         }, 100);
