@@ -1,11 +1,11 @@
 {
   "matchID": "",
   "match": {
-    "totalEnds": 4,
-    "sectionID": 0,
-    "section": "standby",
-    "end": 0,
-    "tieBreak": "extraEnd",
+    "totalEnds": 6,
+    "sectionID": 2,
+    "section": "end1",
+    "end": 1,
+    "tieBreak": "finalShot",
     "sections": [
       "standby",
       "warmup",
@@ -16,6 +16,10 @@
       "end3",
       "interval",
       "end4",
+      "interval",
+      "end5",
+      "interval",
+      "end6",
       "matchFinished",
       "resultApproval"
     ],
@@ -23,11 +27,7 @@
       "red": false,
       "referee": false,
       "blue": false
-    },
-    "warmup": "simultaneous",
-    "interval": "enabled",
-    "rules": "worldBoccia",
-    "resultApproval": "enabled"
+    }
   },
   "screen": {
     "active": "",
@@ -49,41 +49,39 @@
     "name": "Red",
     "score": 0,
     "scores": [],
-    "limit": 210000,
-    "ball": 6,
+    "limit": 300000,
+    "ball": 7,
     "isRunning": false,
-    "time": 270000,
+    "time": 300000,
     "isTieBreak": false,
     "result": "",
-    "country": "Ireland",
+    "country": "",
     "profilePic": "",
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
-    "redCard": 0,
-    "tieBreak": false
+    "redCard": 0
   },
   "blue": {
     "name": "Blue",
     "score": 0,
     "scores": [],
-    "limit": 210000,
+    "limit": 300000,
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 300000,
     "isTieBreak": false,
     "result": "",
-    "country": "United Arab Emirates",
+    "country": "",
     "profilePic": "",
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
-    "redCard": 0,
-    "tieBreak": false
+    "redCard": 0
   },
   "courtId": "",
-  "classification": "IND BC2 Male",
+  "classification": "",
   "category": "",
-  "matchName": "第1回戦",
-  "lastUpdated": "2026-01-09T01:37:35.124Z"
+  "matchName": "",
+  "lastUpdated": ""
 }
