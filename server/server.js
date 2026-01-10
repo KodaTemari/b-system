@@ -40,8 +40,33 @@ app.put('/api/game/:eventId/court/:courtId', async (req, res) => {
     // ディレクトリが存在しない場合は作成
     await fs.ensureDir(path.dirname(filePath));
     
+    // 一度標準的なインデントでJSON文字列を作成
+    let jsonString = JSON.stringify(gameData, null, 2);
+
+    // shotHistory 配列内の各オブジェクトを1行にまとめる
+    jsonString = jsonString.replace(
+      /\{\s+"end":\s+(\d+),[\s\S]*?"shots":\s+\[([\s\S]*?)\]\s+\}/g,
+      (match, endNum, shotsContent) => {
+        const cleanedShots = shotsContent
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s)
+          .join(', ');
+
+        return `{ "end": ${endNum}, "shots": [${cleanedShots}] }`;
+      }
+    );
+
+    // scores 配列内の各オブジェクトを1行にまとめる
+    jsonString = jsonString.replace(
+      /\{\s+"end":\s+(\d+),\s+"score":\s+(\d+)\s+\}/g,
+      (match, endNum, scoreNum) => {
+        return `{ "end": ${endNum}, "score": ${scoreNum} }`;
+      }
+    );
+    
     // ファイルに書き込み
-    await fs.writeJson(filePath, gameData, { spaces: 2 });
+    await fs.writeFile(filePath, jsonString, 'utf8');
     
     res.json({ success: true, message: 'Game data updated successfully' });
   } catch (error) {

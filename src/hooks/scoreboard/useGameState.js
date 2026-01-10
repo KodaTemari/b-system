@@ -10,14 +10,15 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
   // Initial state (merged with initialData)
   const [gameData, setGameData] = useState(() => {
     // Default values (fallback)
-    const defaultData = {
+      const defaultData = {
       matchID: '',
       match: {
         totalEnds: 2,
         sectionID: 0,
         section: 'standby',
         end: 0,
-        tieBreak: 'finalShot'
+        tieBreak: 'finalShot',
+        shotHistory: []
       },
       screen: {
         active: '',
@@ -102,11 +103,12 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           ...(initialData.match || {}),
           sectionID,
           section,
-          end,
-          tieBreak,
-          sections,
-          totalEnds: initialData.match?.totalEnds || defaultData.match.totalEnds
-        },
+        end,
+        tieBreak,
+        sections,
+        totalEnds: initialData.match?.totalEnds || defaultData.match.totalEnds,
+        shotHistory: initialData.match?.shotHistory || []
+      },
         red: {
           ...defaultData.red,
           ...(initialData.red || {}),
@@ -457,7 +459,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
               };
               const section = initialData.match?.section ?? prevData.match?.section;
               return extractEndNumber(section);
-            })()
+            })(),
+            shotHistory: initialData.match?.shotHistory ?? prevData.match?.shotHistory ?? []
           },
           screen: {
             ...prevData.screen,

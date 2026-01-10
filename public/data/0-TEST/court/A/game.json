@@ -2,10 +2,14 @@
   "matchID": "",
   "match": {
     "totalEnds": 4,
-    "sectionID": 4,
-    "section": "end2",
-    "end": 2,
+    "sectionID": 6,
+    "section": "end3",
+    "end": 3,
     "tieBreak": "extraEnd",
+    "shotHistory": [
+      { "end": 1, "shots": ["R", "R", "B"] },
+      { "end": 2, "shots": ["R", "B", "B"] }
+    ],
     "sections": [
       "standby",
       "warmup",
@@ -48,23 +52,18 @@
   },
   "red": {
     "name": "Blue",
-    "score": 0,
+    "score": 2,
     "scores": [
-      {
-        "end": 1,
-        "score": 0,
-        "penalties": [
-          "retractionAndPenaltyBall"
-        ]
-      }
+      { "end": 1, "score": 0 },
+      { "end": 2, "score": 2 }
     ],
-    "limit": 210000,
-    "ball": 6,
+    "limit": 270000,
+    "ball": 7,
     "isRunning": false,
-    "time": 210000,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
-    "country": "Armenia",
+    "country": "Aruba",
     "profilePic": "",
     "playerID": "",
     "yellowCard": 0,
@@ -74,34 +73,28 @@
   },
   "blue": {
     "name": "Red",
-    "score": 0,
+    "score": 1,
     "scores": [
-      {
-        "end": 1,
-        "score": 0,
-        "penalties": [
-          "retractionAndPenaltyBall"
-        ]
-      }
+      { "end": 1, "score": 1 },
+      { "end": 2, "score": 0 }
     ],
-    "limit": 210000,
-    "ball": 0,
+    "limit": 270000,
+    "ball": 6,
     "isRunning": false,
-    "time": 207977,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
-    "country": "United Arab Emirates",
+    "country": "Aruba",
     "profilePic": "",
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0,
-    "tieBreak": false,
-    "isRun": false
+    "tieBreak": false
   },
   "courtId": "",
-  "classification": "IND BC2 Male",
+  "classification": "IND BC1 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-09T01:37:35.124Z"
+  "lastUpdated": "2026-01-10T02:41:59.419Z"
 }

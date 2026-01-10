@@ -61,7 +61,9 @@ const SystemSettings = ({
     const customDialog = document.getElementById('customModal');
     if (customDialog) {
       if (showCustomModal) {
-        if (!customDialog.open) customDialog.showModal();
+        if (!customDialog.open) {
+          customDialog.showModal();
+        }
       } else {
         if (customDialog.open) customDialog.close();
       }
@@ -130,34 +132,47 @@ const SystemSettings = ({
       {/* Customization Modal */}
       <dialog
         id="customModal"
-        onClose={() => setShowCustomModal(false)}
+        onClose={(e) => {
+          e.stopPropagation();
+          setShowCustomModal(false);
+        }}
         onClick={(e) => handleDialogClick(e, 'customModal', setShowCustomModal)}
       >
         <div
-          className="customModalBox centered"
+          className="customModalBox"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* OKボタンをDOMの先頭に配置（初期フォーカス対策） */}
+          <div className="confirmBtnBox">
+            <button
+              className="languageSelectBtn selected"
+              onClick={() => setShowCustomModal(false)}
+            >
+              OK
+            </button>
+          </div>
 
-
-          <div className="customSettingRow">
+          <div id="countrySetting">
             {/* RED Side */}
-            <div className="customSettingCol">
-              <label className="labelRed" htmlFor="redCountrySelect">
-                {lang === 'ja' ? '赤 / RED' : 'RED Side'}
+            <div>
+              <label htmlFor="redCountrySelect">
+                <span>{lang === 'ja' ? '赤：国' : 'Red: Country'}</span>
+                {(() => {
+                  const country = COUNTRIES.find(c => c.en === (pendingChanges['red.country'] !== undefined ? pendingChanges['red.country'] : (gameData?.red?.country || '')));
+                  return (country && country.code !== 'xx') ? (
+                    <span>
+                      <img
+                        src={`/img/flags/${country.code}.svg`}
+                        alt="Red Flag"
+                        className="flagPreview"
+                      />
+                    </span>
+                  ) : null;
+                })()}
               </label>
-              <div>
-                <img
-                  src={COUNTRIES.find(c => c.en === (pendingChanges['red.country'] !== undefined ? pendingChanges['red.country'] : (gameData?.red?.country || '')))?.code !== 'xx'
-                    ? `/img/flags/${COUNTRIES.find(c => c.en === (pendingChanges['red.country'] !== undefined ? pendingChanges['red.country'] : (gameData?.red?.country || '')))?.code}.svg`
-                    : `/img/flags/xx.svg`
-                  }
-                  alt="Red Flag"
-                  className="flagPreview"
-                />
-              </div>
               <select
                 id="redCountrySelect"
-                className="settingSelect alignLeft"
+                className="settingSelect"
                 value={COUNTRIES.find(c => c.en === (pendingChanges['red.country'] !== undefined ? pendingChanges['red.country'] : (gameData?.red?.country || '')))?.id || 'none'}
                 onChange={(e) => handleFlagUpdate('red', e.target.value)}
               >
@@ -170,23 +185,25 @@ const SystemSettings = ({
             </div>
 
             {/* BLUE Side */}
-            <div className="customSettingCol">
-              <label className="labelBlue" htmlFor="blueCountrySelect">
-                {lang === 'ja' ? '青 / BLUE' : 'BLUE Side'}
+            <div>
+              <label htmlFor="blueCountrySelect">
+                <span>{lang === 'ja' ? '青：国' : 'Blue: Country'}</span>
+                {(() => {
+                  const country = COUNTRIES.find(c => c.en === (pendingChanges['blue.country'] !== undefined ? pendingChanges['blue.country'] : (gameData?.blue?.country || '')));
+                  return (country && country.code !== 'xx') ? (
+                    <span>
+                      <img
+                        src={`/img/flags/${country.code}.svg`}
+                        alt="Blue Flag"
+                        className="flagPreview"
+                      />
+                    </span>
+                  ) : null;
+                })()}
               </label>
-              <div>
-                <img
-                  src={COUNTRIES.find(c => c.en === (pendingChanges['blue.country'] !== undefined ? pendingChanges['blue.country'] : (gameData?.blue?.country || '')))?.code !== 'xx'
-                    ? `/img/flags/${COUNTRIES.find(c => c.en === (pendingChanges['blue.country'] !== undefined ? pendingChanges['blue.country'] : (gameData?.blue?.country || '')))?.code}.svg`
-                    : `/img/flags/xx.svg`
-                  }
-                  alt="Blue Flag"
-                  className="flagPreview"
-                />
-              </div>
               <select
                 id="blueCountrySelect"
-                className="settingSelect alignLeft"
+                className="settingSelect"
                 value={COUNTRIES.find(c => c.en === (pendingChanges['blue.country'] !== undefined ? pendingChanges['blue.country'] : (gameData?.blue?.country || '')))?.id || 'none'}
                 onChange={(e) => handleFlagUpdate('blue', e.target.value)}
               >
@@ -198,24 +215,16 @@ const SystemSettings = ({
               </select>
             </div>
           </div>
-
-          <div className="confirmBtnBox">
-            <button
-              className="languageSelectBtn selected"
-              onClick={() => setShowCustomModal(false)}
-            >
-              OK
-            </button>
-          </div>
-
-
         </div>
       </dialog>
 
       {/* Language Selection Modal */}
       <dialog
         id="languageModal"
-        onClose={() => setShowLanguageModal(false)}
+        onClose={(e) => {
+          e.stopPropagation();
+          setShowLanguageModal(false);
+        }}
         onClick={(e) => handleDialogClick(e, 'languageModal', setShowLanguageModal)}
       >
         <div

@@ -48,6 +48,7 @@ export const DEFAULT_GAME_DATA = {
     sectionID: 0,
     section: 'standby',
     end: 0,
+    shotHistory: [],
     sections: [
       'standby',
       'warmup',

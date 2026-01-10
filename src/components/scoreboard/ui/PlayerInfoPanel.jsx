@@ -241,7 +241,7 @@ const PlayerInfoPanel = ({
           name={timerBtnName} 
           className="timer"
           onClick={handleTimerToggle}
-          disabled={(otherIsRun && !isRun) || remainingMs === 0 || dataBall === 0}
+          disabled={isRun ? false : (remainingMs <= 0 || dataBall === 0)}
         >
           {time}
         </button>

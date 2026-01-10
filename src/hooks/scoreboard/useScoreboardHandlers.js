@@ -180,7 +180,9 @@ export const useScoreboardHandlers = ({
 
   // タイマー切り替えハンドラー
   const handleTimerToggle = useCallback((color, isRunning, updatedTime = null) => {
-    const currentTime = updatedTime || gameData[color].time;
+    // updatedTimeが渡されている場合はそれを使用（0.1秒単位の正確な値）
+    // 渡されていない場合はgameDataから取得（初期値やリセット時）
+    const currentTime = updatedTime !== null ? updatedTime : gameData[color].time;
     
     if (isRunning) {
       // 他のタイマーが動いている場合は停止
@@ -222,7 +224,29 @@ export const useScoreboardHandlers = ({
       // 開始条件：すべてのボールが0で、ペナルティボールが1以上
       // 終了条件：ボールを投げきる（すべてのボールが0になる）
       const isPenaltyThrow = gameData.screen?.isPenaltyThrow || false;
-      
+
+      // 投球履歴の更新ロジック
+      const currentEnd = gameData.match?.end || 0;
+      const currentBall = gameData[color]?.ball || 0;
+      const isNormalEnd = (gameData.match?.section || '').startsWith('end');
+      const isTieBreak = gameData.match?.section === 'tieBreak';
+      let updatedShotHistory = [...(gameData.match?.shotHistory || [])];
+
+      // ジャック(7)を除外し、カラーボール(6以下)のみ、かつエンド中かタイブレーク中のみ記録
+      // ペナルティスローは除外（必要であれば含めることも可能ですが、通常は12球の順番を指します）
+      if (currentBall <= 6 && (isNormalEnd || isTieBreak) && !isPenaltyThrow) {
+        const shotChar = color === 'red' ? 'R' : 'B';
+        const historyIndex = updatedShotHistory.findIndex(h => h.end === currentEnd);
+
+        if (historyIndex !== -1) {
+          const shots = [...updatedShotHistory[historyIndex].shots, shotChar];
+          updatedShotHistory[historyIndex] = { ...updatedShotHistory[historyIndex], shots };
+        } else {
+          updatedShotHistory.push({ end: currentEnd, shots: [shotChar] });
+        }
+        updateField('match', 'shotHistory', updatedShotHistory);
+      }
+
       // penaltyThrow中の場合、ペナルティボールを-1
       if (isPenaltyThrow && gameData[color].penaltyBall > 0) {
         const newPenaltyBall = gameData[color].penaltyBall - 1;
@@ -245,6 +269,10 @@ export const useScoreboardHandlers = ({
           if (isCtrl && saveData) {
             const updatedGameData = {
               ...gameData,
+              match: {
+                ...gameData.match,
+                shotHistory: updatedShotHistory
+              },
               [color]: {
                 ...gameData[color],
                 isRunning: false,
@@ -264,6 +292,10 @@ export const useScoreboardHandlers = ({
           if (isCtrl && saveData) {
             const updatedGameData = {
               ...gameData,
+              match: {
+                ...gameData.match,
+                shotHistory: updatedShotHistory
+              },
               [color]: {
                 ...gameData[color],
                 isRunning: false,
@@ -289,6 +321,10 @@ export const useScoreboardHandlers = ({
           if (isCtrl && saveData) {
             const updatedGameData = {
               ...gameData,
+              match: {
+                ...gameData.match,
+                shotHistory: updatedShotHistory
+              },
               [color]: {
                 ...gameData[color],
                 isRunning: false,
@@ -307,6 +343,10 @@ export const useScoreboardHandlers = ({
           if (isCtrl && saveData) {
             const updatedGameData = {
               ...gameData,
+              match: {
+                ...gameData.match,
+                shotHistory: updatedShotHistory
+              },
               [color]: {
                 ...gameData[color],
                 isRunning: false,

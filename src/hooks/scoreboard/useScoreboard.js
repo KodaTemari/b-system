@@ -44,56 +44,138 @@ export const useScoreboard = () => {
     resetForFinalShot
   } = useGameState(localData, isCtrl);
 
+  // 表示上の数字が変わった時のみ保存するためのref（秒単位）
+  const lastSavedRedDisplayTimeRef = useRef(null);
+  const lastSavedBlueDisplayTimeRef = useRef(null);
+  const lastSavedWarmupDisplayTimeRef = useRef(null);
+  const lastSavedIntervalDisplayTimeRef = useRef(null);
+
   // タイマー時間更新コールバック（ctrlモードでのみ保存）
+  // 0.1秒ごとに呼ばれるが、表示上の数字が変わった時（1秒ごと）のみ保存
   const handleRedTimeUpdate = useCallback((newTime) => {
     if (isCtrl && saveData) {
-      const updatedGameData = {
-        ...gameData,
-        red: {
-          ...gameData.red,
-          time: newTime
-        }
-      };
-      saveData(updatedGameData);
+      // 表示上の数字（秒単位）を計算
+      const displayTimeSeconds = Math.floor(newTime / 1000);
+      
+      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
+      if (lastSavedRedDisplayTimeRef.current !== displayTimeSeconds) {
+        lastSavedRedDisplayTimeRef.current = displayTimeSeconds;
+        
+        const updatedGameData = {
+          ...gameData,
+          red: {
+            ...gameData.red,
+            time: newTime
+          }
+        };
+        saveData(updatedGameData);
+      }
     }
   }, [isCtrl, saveData, gameData]);
 
   const handleBlueTimeUpdate = useCallback((newTime) => {
     if (isCtrl && saveData) {
-      const updatedGameData = {
-        ...gameData,
-        blue: {
-          ...gameData.blue,
-          time: newTime
-        }
-      };
-      saveData(updatedGameData);
+      // 表示上の数字（秒単位）を計算
+      const displayTimeSeconds = Math.floor(newTime / 1000);
+      
+      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
+      if (lastSavedBlueDisplayTimeRef.current !== displayTimeSeconds) {
+        lastSavedBlueDisplayTimeRef.current = displayTimeSeconds;
+        
+        const updatedGameData = {
+          ...gameData,
+          blue: {
+            ...gameData.blue,
+            time: newTime
+          }
+        };
+        saveData(updatedGameData);
+      }
     }
   }, [isCtrl, saveData, gameData]);
 
-  const handleWarmupTimeUpdate = useCallback((newTime) => {
+  // タイマー停止時のコールバック（0.1秒単位で保存）
+  // gameDataの依存を避けるため、refを使用して最新の値を取得
+  const gameDataRef = useRef(gameData);
+  useEffect(() => {
+    gameDataRef.current = gameData;
+  }, [gameData]);
+
+  const handleRedTimerStop = useCallback((newTime) => {
     if (isCtrl && saveData) {
+      // refから最新のgameDataを取得
+      const currentGameData = gameDataRef.current;
       const updatedGameData = {
-        ...gameData,
-        warmup: {
-          ...gameData.warmup,
-          time: newTime
+        ...currentGameData,
+        red: {
+          ...currentGameData.red,
+          time: newTime,
+          isRunning: false
         }
       };
       saveData(updatedGameData);
+      // 保存済み表示時間のrefを更新
+      lastSavedRedDisplayTimeRef.current = Math.floor(newTime / 1000);
+    }
+  }, [isCtrl, saveData]);
+
+  const handleBlueTimerStop = useCallback((newTime) => {
+    if (isCtrl && saveData) {
+      // refから最新のgameDataを取得
+      const currentGameData = gameDataRef.current;
+      const updatedGameData = {
+        ...currentGameData,
+        blue: {
+          ...currentGameData.blue,
+          time: newTime,
+          isRunning: false
+        }
+      };
+      saveData(updatedGameData);
+      // 保存済み表示時間のrefを更新
+      lastSavedBlueDisplayTimeRef.current = Math.floor(newTime / 1000);
+    }
+  }, [isCtrl, saveData]);
+
+  const handleWarmupTimeUpdate = useCallback((newTime) => {
+    if (isCtrl && saveData) {
+      // 表示上の数字（秒単位）を計算
+      const displayTimeSeconds = Math.floor(newTime / 1000);
+      
+      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
+      if (lastSavedWarmupDisplayTimeRef.current !== displayTimeSeconds) {
+        lastSavedWarmupDisplayTimeRef.current = displayTimeSeconds;
+        
+        const updatedGameData = {
+          ...gameData,
+          warmup: {
+            ...gameData.warmup,
+            time: newTime
+          }
+        };
+        saveData(updatedGameData);
+      }
     }
   }, [isCtrl, saveData, gameData]);
 
   const handleIntervalTimeUpdate = useCallback((newTime) => {
     if (isCtrl && saveData) {
-      const updatedGameData = {
-        ...gameData,
-        interval: {
-          ...gameData.interval,
-          time: newTime
-        }
-      };
-      saveData(updatedGameData);
+      // 表示上の数字（秒単位）を計算
+      const displayTimeSeconds = Math.floor(newTime / 1000);
+      
+      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
+      if (lastSavedIntervalDisplayTimeRef.current !== displayTimeSeconds) {
+        lastSavedIntervalDisplayTimeRef.current = displayTimeSeconds;
+        
+        const updatedGameData = {
+          ...gameData,
+          interval: {
+            ...gameData.interval,
+            time: newTime
+          }
+        };
+        saveData(updatedGameData);
+      }
     }
   }, [isCtrl, saveData, gameData]);
 
@@ -103,6 +185,7 @@ export const useScoreboard = () => {
     isRunning: gameData.red.isRunning || false,
     enableAudio: true,
     onTimeUpdate: handleRedTimeUpdate,
+    onTimerStop: handleRedTimerStop,
     isViewMode: !isCtrl,
     timerType: 'red'
   });
@@ -112,9 +195,35 @@ export const useScoreboard = () => {
     isRunning: gameData.blue.isRunning || false,
     enableAudio: true,
     onTimeUpdate: handleBlueTimeUpdate,
+    onTimerStop: handleBlueTimerStop,
     isViewMode: !isCtrl,
     timerType: 'blue'
   });
+
+  // initialTimeが変更されたときに、保存済み表示時間のrefをリセット
+  useEffect(() => {
+    if (gameData.red.time !== undefined) {
+      lastSavedRedDisplayTimeRef.current = Math.floor(gameData.red.time / 1000);
+    }
+  }, [gameData.red.time]);
+
+  useEffect(() => {
+    if (gameData.blue.time !== undefined) {
+      lastSavedBlueDisplayTimeRef.current = Math.floor(gameData.blue.time / 1000);
+    }
+  }, [gameData.blue.time]);
+
+  useEffect(() => {
+    if (gameData.warmup.time !== undefined) {
+      lastSavedWarmupDisplayTimeRef.current = Math.floor(gameData.warmup.time / 1000);
+    }
+  }, [gameData.warmup.time]);
+
+  useEffect(() => {
+    if (gameData.interval.time !== undefined) {
+      lastSavedIntervalDisplayTimeRef.current = Math.floor(gameData.interval.time / 1000);
+    }
+  }, [gameData.interval.time]);
 
   const warmupTimer = useTimerManagement({
     initialTime: gameData.warmup.time !== undefined ? gameData.warmup.time : gameData.warmup.limit,
@@ -187,6 +296,8 @@ export const useScoreboard = () => {
         }
       };
       saveData(updatedGameData);
+      // 保存済み表示時間のrefを更新
+      lastSavedWarmupDisplayTimeRef.current = Math.floor(currentTime / 1000);
     }
   }, [gameData, warmupTimer.remainingMs, updateTimer, isCtrl, saveData]);
 
@@ -213,6 +324,8 @@ export const useScoreboard = () => {
         }
       };
       saveData(updatedGameData);
+      // 保存済み表示時間のrefを更新
+      lastSavedIntervalDisplayTimeRef.current = Math.floor(currentTime / 1000);
     }
   }, [gameData, intervalTimer.remainingMs, updateTimer, isCtrl, saveData]);
 
@@ -366,8 +479,8 @@ export const useScoreboard = () => {
       updateTimer('red', 0, false);
       updateBall('red', 0);
       
-      // screen.activeを空にする（ctrlモードのみ）
-      if (isCtrl) {
+      // 他のタイマーが動いていない場合のみscreen.activeを空にする
+      if (isCtrl && !gameData.blue.isRunning) {
         updateScreenActive('');
       }
       
@@ -377,22 +490,25 @@ export const useScoreboard = () => {
           ...gameData,
           red: {
             ...gameData.red,
-            isRun: false,
+            isRunning: false,
             time: 0,
             ball: 0
-          },
-          screen: {
-            ...gameData.screen,
-            active: ''
           }
         };
+        // 他のタイマーが動いていない場合のみscreen.activeを空にする
+        if (!gameData.blue.isRunning) {
+          updatedGameData.screen = {
+            ...gameData.screen,
+            active: ''
+          };
+        }
         saveData(updatedGameData);
       }
     } else if (gameData.red.isRunning && redTimer.remainingMs > 0) {
       // タイマーが再開されたらフラグをリセット
       redTimerEndedRef.current = false;
     }
-  }, [redTimer.remainingMs, gameData.red.isRunning, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
+  }, [redTimer.remainingMs, gameData.red.isRunning, gameData.blue.isRunning, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
 
   useEffect(() => {
     if (blueTimer.remainingMs <= 0 && gameData.blue.isRunning && !blueTimerEndedRef.current) {
@@ -402,8 +518,8 @@ export const useScoreboard = () => {
       updateTimer('blue', 0, false);
       updateBall('blue', 0);
       
-      // screen.activeを空にする（ctrlモードのみ）
-      if (isCtrl) {
+      // 他のタイマーが動いていない場合のみscreen.activeを空にする
+      if (isCtrl && !gameData.red.isRunning) {
         updateScreenActive('');
       }
       
@@ -413,22 +529,25 @@ export const useScoreboard = () => {
           ...gameData,
           blue: {
             ...gameData.blue,
-            isRun: false,
+            isRunning: false,
             time: 0,
             ball: 0
-          },
-          screen: {
-            ...gameData.screen,
-            active: ''
           }
         };
+        // 他のタイマーが動いていない場合のみscreen.activeを空にする
+        if (!gameData.red.isRunning) {
+          updatedGameData.screen = {
+            ...gameData.screen,
+            active: ''
+          };
+        }
         saveData(updatedGameData);
       }
     } else if (gameData.blue.isRunning && blueTimer.remainingMs > 0) {
       // タイマーが再開されたらフラグをリセット
       blueTimerEndedRef.current = false;
     }
-  }, [blueTimer.remainingMs, gameData.blue.isRunning, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
+  }, [blueTimer.remainingMs, gameData.blue.isRunning, gameData.red.isRunning, handlers, updateTimer, updateBall, updateScreenActive, isCtrl, saveData, gameData]);
 
   // ペナルティースロー表示の判定（ボール数が0で、ペナルティーボールが1以上）
   useEffect(() => {

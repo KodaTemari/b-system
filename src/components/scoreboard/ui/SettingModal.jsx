@@ -771,6 +771,13 @@ const SettingModal = ({
 
   // ダイアログが閉じるときのハンドラー
   const handleDialogClose = (e) => {
+    // 子要素（カスタム設定モーダルなど）からのcloseイベント伝播を防止
+    if (e) {
+      e.stopPropagation();
+      // イベントの発生元がこのダイアログ自身でない場合は何もしない
+      if (e.target !== e.currentTarget) return;
+    }
+
     // 保存されずに閉じられた場合（キャンセル時）、親コンポーネントのpendingChangesをクリア
     if (!savedRef.current) {
       if (onPendingChangesChange) {
@@ -783,6 +790,17 @@ const SettingModal = ({
 
     if (onClose) {
       onClose(e);
+    }
+  };
+
+  // タイムアウトや反則のボタンが押されたときの処理
+  // これらは例外として、設定画面ごと閉じて試合画面に戻る
+  const handleImmediateAction = (actionFn) => {
+    if (actionFn) {
+      actionFn();
+    }
+    if (onClose) {
+      onClose();
     }
   };
   // Section visibility controls
@@ -1026,7 +1044,7 @@ const SettingModal = ({
                 type="button"
                 name="redPenaltyBtn"
                 className="btn penalty"
-                onClick={() => onPenaltyClick && onPenaltyClick('red')}
+                onClick={() => handleImmediateAction(() => onPenaltyClick && onPenaltyClick('red'))}
               >
                 {getLocalizedText('buttons.penalty', getCurrentLanguage()) || 'Penalty'}
               </button>
@@ -1034,13 +1052,7 @@ const SettingModal = ({
                 type="button"
                 name="redTimeoutBtn"
                 className="btn timeout"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (onTimeoutClick) {
-                    onTimeoutClick('red');
-                  }
-                }}
+                onClick={() => handleImmediateAction(() => onTimeoutClick && onTimeoutClick('red'))}
               >
                 {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'Timeout'}
               </button>
@@ -1050,7 +1062,7 @@ const SettingModal = ({
                 type="button"
                 name="bluePenaltyBtn"
                 className="btn penalty"
-                onClick={() => onPenaltyClick && onPenaltyClick('blue')}
+                onClick={() => handleImmediateAction(() => onPenaltyClick && onPenaltyClick('blue'))}
               >
                 {getLocalizedText('buttons.penalty', getCurrentLanguage()) || 'Penalty'}
               </button>
@@ -1058,13 +1070,7 @@ const SettingModal = ({
                 type="button"
                 name="blueTimeoutBtn"
                 className="btn timeout"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (onTimeoutClick) {
-                    onTimeoutClick('blue');
-                  }
-                }}
+                onClick={() => handleImmediateAction(() => onTimeoutClick && onTimeoutClick('blue'))}
               >
                 {getLocalizedText('buttons.timeout', getCurrentLanguage()) || 'Timeout'}
               </button>
