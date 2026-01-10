@@ -63,13 +63,6 @@
       "timer": 240000,
       "hasGender": false
     },
-    "PairFriendly": {
-      "name": "フレンドリー",
-      "type": "pair",
-      "ends": 2,
-      "timer": 300000,
-      "hasGender": false
-    },
     "TeamsBC1BC2": {
       "name": "BC1/BC2",
       "type": "team",
@@ -84,9 +77,16 @@
       "timer": 300000,
       "hasGender": false
     },
-    "Recreation": {
+    "IndividualRecreation": {
       "name": "レクリエーション",
-      "type": "recreation",
+      "type": "individual",
+      "ends": 2,
+      "timer": 240000,
+      "hasGender": false
+    },
+    "TeamRecreation": {
+      "name": "レクリエーション",
+      "type": "team",
       "ends": 2,
       "timer": 300000,
       "hasGender": false

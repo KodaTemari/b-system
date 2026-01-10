@@ -1,5 +1,5 @@
 {
-  "classification": "IND BC2 Male",
+  "classification": "",
   "category": "",
   "matchName": "第1回戦",
   "match": {
@@ -24,16 +24,16 @@
     ]
   },
   "red": {
-    "name": "Red",
-    "limit": 210000,
-    "country": "Great Britain",
-    "profilePic": "/img/flags/gb.svg"
+    "name": "Blue",
+    "limit": 270000,
+    "country": "",
+    "profilePic": "/img/flags/xx.svg"
   },
   "blue": {
-    "name": "Blue",
-    "limit": 210000,
-    "country": "Armenia",
-    "profilePic": "/img/flags/am.svg"
+    "name": "Red",
+    "limit": 270000,
+    "country": "Great Britain",
+    "profilePic": "/img/flags/gb.svg"
   },
   "warmup": {
     "limit": 120000

@@ -98,8 +98,11 @@ const SectionNavigation = React.memo(({
 
     // Localize class name using classNames map
     let localizedClassName = className;
-    const classNames = ['BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'Friendly',
-      'PairBC3', 'PairBC4', 'PairFriendly', 'TeamsBC1BC2', 'TeamFriendly', 'Recreation'];
+    const classNames = ['BC1', 'BC2', 'BC3', 'BC4',
+      'PairBC3', 'PairBC4',
+      'TeamsBC1BC2',
+      'TeamFriendly', 'Friendly', 'OPSeated', 'OPStanding',
+      'IndividualRecreation', 'TeamRecreation'];
 
     // Find matching key (check English name and Localized name)
     let found = false;

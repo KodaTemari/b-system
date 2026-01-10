@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage, setLanguage } from '../../../locales';
 import setting2Icon from '../img/icon_setting_2.png';
 import { MatchGeneralSettings, MatchRuleSettings } from './settings/MatchSettings';
@@ -67,6 +67,284 @@ const SettingModal = ({
 
   // Language modal state
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
+
+  // Scene from gameData (for filtering classification options)
+  const currentScene = gameData?.scene || 'official';
+
+  // Filter classification options based on scene
+  const filteredClassificationOptions = useMemo(() => {
+    if (!classificationOptions || classificationOptions.length === 0) return [];
+
+    switch (currentScene) {
+      case 'official': // BC公式試合: BCが含まれる選択肢のみ
+        return classificationOptions.filter(opt => 
+          opt.classId && opt.classId.startsWith('BC') || 
+          opt.classId && (opt.classId.startsWith('PairBC') || opt.classId.startsWith('TeamsBC'))
+        );
+      case 'general': // 一般競技・オープン: フレンドリーとOP
+        return classificationOptions.filter(opt =>
+          opt.classId && (
+            opt.classId.includes('Friendly') || 
+            opt.classId.includes('OP')
+          )
+        );
+      case 'recreation': // レクリエーション: 個人レク、チームレク
+        return classificationOptions.filter(opt =>
+          opt.classId === 'IndividualRecreation' || opt.classId === 'TeamRecreation'
+        );
+      default:
+        return classificationOptions;
+    }
+  }, [classificationOptions, currentScene]);
+
+  // Get settings for specific class (wrapped in useCallback for useEffect dependency)
+  const getClassSettings = useCallback((classId) => {
+    const settings = {
+      // Default values
+      redLimit: 270000, // 4:30
+      blueLimit: 270000, // 4:30
+      warmup: 'simultaneous', // 2:00
+      interval: 'enabled', // 1:00
+      totalEnds: 4,
+      tieBreak: 'extraEnd',
+      rules: 'worldBoccia',
+      resultApproval: 'enabled'
+    };
+
+    switch (classId) {
+      case 'BC1':
+        settings.redLimit = 270000;
+        settings.blueLimit = 270000;
+        break;
+      case 'BC2':
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
+        break;
+      case 'BC3':
+        settings.redLimit = 360000;
+        settings.blueLimit = 360000;
+        break;
+      case 'BC4':
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
+        break;
+      case 'OPStanding':
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
+        break;
+      case 'OPSeated':
+        settings.redLimit = 210000;
+        settings.blueLimit = 210000;
+        break;
+      case 'Friendly':
+        settings.redLimit = 240000;
+        settings.blueLimit = 240000;
+        settings.totalEnds = 2;
+        settings.tieBreak = 'finalShot';
+        settings.rules = 'friendlyMatch';
+        settings.resultApproval = 'none';
+        break;
+      case 'PairBC3':
+        settings.redLimit = 420000;
+        settings.blueLimit = 420000;
+        settings.warmup = 'separate';
+        break;
+      case 'PairBC4':
+        settings.redLimit = 240000;
+        settings.blueLimit = 240000;
+        settings.warmup = 'separate';
+        break;
+      case 'TeamsBC1BC2':
+        settings.redLimit = 300000;
+        settings.blueLimit = 300000;
+        settings.warmup = 'separate';
+        settings.totalEnds = 6;
+        break;
+      case 'TeamFriendly':
+        settings.redLimit = 300000;
+        settings.blueLimit = 300000;
+        settings.totalEnds = 2;
+        settings.tieBreak = 'finalShot';
+        settings.rules = 'friendlyMatch';
+        settings.resultApproval = 'none';
+        break;
+      case 'IndividualRecreation':
+        settings.redLimit = 240000; // 4:00
+        settings.blueLimit = 240000; // 4:00
+        settings.warmup = 'none';
+        settings.interval = 'none';
+        settings.totalEnds = 2;
+        settings.tieBreak = 'none';
+        settings.rules = 'recreation';
+        settings.resultApproval = 'none';
+        break;
+      case 'TeamRecreation':
+        settings.redLimit = 300000; // 5:00
+        settings.blueLimit = 300000; // 5:00
+        settings.warmup = 'none';
+        settings.interval = 'none';
+        settings.totalEnds = 2;
+        settings.tieBreak = 'none';
+        settings.rules = 'recreation';
+        settings.resultApproval = 'none';
+        break;
+      default:
+        break;
+    }
+
+    return settings;
+  }, []);
+
+  const updateClassificationValue = useCallback((classId, gender, skipSave = false) => {
+    if (!classId) {
+      if (!skipSave && onUpdateField) {
+        onUpdateField('classification', null, '');
+      } else {
+        setPendingChanges(prev => ({
+          ...prev,
+          'classification': ''
+        }));
+      }
+      return;
+    }
+
+    try {
+      const apiUrl = 'http://localhost:3001';
+      const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+      fetch(classDefUrl)
+        .then(response => response.json())
+        .then(data => {
+          const classDef = data.classifications?.[classId];
+          if (!classDef) return;
+
+          let prefix = '';
+          if (classDef.type === 'individual') {
+            prefix = 'IND ';
+          } else if (classDef.type === 'pair') {
+            prefix = 'PAIR ';
+          } else if (classDef.type === 'team') {
+            prefix = 'TEAM ';
+          } else if (classDef.type === 'recreation') {
+            prefix = '';
+          }
+
+          // Use English class name for storage
+          const className = getLocalizedText(`classNames.${classId}`, 'en') || classDef.name;
+
+          let displayName = `${prefix}${className}`;
+          if (gender === 'M') {
+            displayName = `${prefix}${className} Male`;
+          } else if (gender === 'F') {
+            displayName = `${prefix}${className} Female`;
+          }
+
+          if (!skipSave && onUpdateField) {
+            onUpdateField('classification', null, displayName);
+          } else {
+            setPendingChanges(prev => ({
+              ...prev,
+              'classification': displayName
+            }));
+          }
+        })
+        .catch(error => {
+          console.error('Class def load error:', error);
+        });
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }, [onUpdateField, setPendingChanges]);
+
+  // Check if current classification is valid for the current scene
+  // If scene changes, automatically set default classification for that scene
+  useEffect(() => {
+    if (filteredClassificationOptions.length === 0) return;
+
+    const isValidForScene = selectedClassId && filteredClassificationOptions.some(opt => opt.value === selectedClassId);
+    
+    // If current classification is not valid for the scene, set default classification
+    if (!isValidForScene) {
+      let defaultClassId = '';
+      let defaultGender = '';
+      
+      // Set default classification based on scene
+      switch (currentScene) {
+        case 'official': // BC公式試合: 個人 BC1 男子
+          defaultClassId = 'BC1';
+          defaultGender = 'M';
+          break;
+        case 'general': // 一般競技・オープン: チーム フレンドリー
+          defaultClassId = 'TeamFriendly';
+          defaultGender = '';
+          break;
+        case 'recreation': // レクリエーション: 個人 レクリエーション
+          defaultClassId = 'IndividualRecreation';
+          defaultGender = '';
+          break;
+        default:
+          // If no default, just clear
+          setSelectedClassId('');
+          setSelectedGender('');
+          setPendingChanges(prev => {
+            const newChanges = { ...prev };
+            delete newChanges.classification;
+            newChanges.classification = '';
+            return newChanges;
+          });
+          return;
+      }
+      
+      // Check if default classification exists in filtered options
+      const defaultExists = filteredClassificationOptions.some(opt => opt.value === defaultClassId);
+      
+      if (defaultExists) {
+        // Apply default classification and its settings
+        setSelectedClassId(defaultClassId);
+        setSelectedGender(defaultGender);
+        
+        // Apply class settings
+        const settings = getClassSettings(defaultClassId);
+        
+        // Update UI state
+        currentLimitsRef.current.red = settings.redLimit;
+        currentLimitsRef.current.blue = settings.blueLimit;
+        setSelectedRedLimit(settings.redLimit);
+        setSelectedBlueLimit(settings.blueLimit);
+        setSelectedWarmup(settings.warmup);
+        setSelectedInterval(settings.interval);
+        setSelectedTieBreak(settings.tieBreak);
+        setSelectedRules(settings.rules);
+        setSelectedResultApproval(settings.resultApproval);
+        setSelectedEnds(settings.totalEnds);
+        
+        // Record changes in pendingChanges
+        setPendingChanges(prev => ({
+          ...prev,
+          'red.limit': settings.redLimit,
+          'blue.limit': settings.blueLimit,
+          'match.warmup': settings.warmup,
+          'match.interval': settings.interval,
+          'match.totalEnds': settings.totalEnds,
+          'match.tieBreak': settings.tieBreak,
+          'match.rules': settings.rules,
+          'match.resultApproval': settings.resultApproval
+        }));
+        
+        // Update classification display value
+        updateClassificationValue(defaultClassId, defaultGender, true);
+      } else {
+        // If default doesn't exist, clear classification
+        setSelectedClassId('');
+        setSelectedGender('');
+        setPendingChanges(prev => {
+          const newChanges = { ...prev };
+          delete newChanges.classification;
+          newChanges.classification = '';
+          return newChanges;
+        });
+      }
+    }
+  }, [currentScene, selectedClassId, filteredClassificationOptions, getClassSettings, updateClassificationValue, currentLimitsRef, setSelectedRedLimit, setSelectedBlueLimit, setSelectedWarmup, setSelectedInterval, setSelectedTieBreak, setSelectedRules, setSelectedResultApproval, setSelectedEnds, setPendingChanges]);
 
   // Language change handler
   const handleLanguageChange = (lang) => {
@@ -385,10 +663,11 @@ const SettingModal = ({
         const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];
 
         const classOrder = [
-          'BC1', 'BC2', 'BC3', 'BC4', 'OPStanding', 'OPSeated', 'Friendly',
-          'PairBC3', 'PairBC4', 'PairFriendly',
-          'TeamsBC1BC2', 'TeamFriendly',
-          'Recreation'
+          'BC1', 'BC2', 'BC3', 'BC4',
+          'PairBC3', 'PairBC4',
+          'TeamsBC1BC2',
+          'TeamFriendly', 'Friendly', 'OPSeated', 'OPStanding',
+          'IndividualRecreation', 'TeamRecreation'
         ];
 
         const sortedClassIds = classOrder.filter(id => uniqueClassIds.includes(id));
@@ -414,7 +693,8 @@ const SettingModal = ({
             value: classId,
             label: `${prefix}${className}`,
             hasGender: classDef.hasGender || false,
-            type: classDef.type
+            type: classDef.type,
+            classId: classId // 追加：フィルタリング用
           };
         }).filter(option => option !== null);
 
@@ -429,102 +709,7 @@ const SettingModal = ({
     }
   }, [id, section, currentLang]);
 
-  // Get settings for specific class
-  const getClassSettings = (classId) => {
-    const settings = {
-      // Default values
-      redLimit: 270000, // 4:30
-      blueLimit: 270000, // 4:30
-      warmup: 'simultaneous', // 2:00
-      interval: 'enabled', // 1:00
-      totalEnds: 4,
-      tieBreak: 'extraEnd',
-      rules: 'worldBoccia',
-      resultApproval: 'enabled'
-    };
-
-    switch (classId) {
-      case 'BC1':
-        settings.redLimit = 270000;
-        settings.blueLimit = 270000;
-        break;
-      case 'BC2':
-        settings.redLimit = 210000;
-        settings.blueLimit = 210000;
-        break;
-      case 'BC3':
-        settings.redLimit = 360000;
-        settings.blueLimit = 360000;
-        break;
-      case 'BC4':
-        settings.redLimit = 210000;
-        settings.blueLimit = 210000;
-        break;
-      case 'OPStanding':
-        settings.redLimit = 210000;
-        settings.blueLimit = 210000;
-        break;
-      case 'OPSeated':
-        settings.redLimit = 210000;
-        settings.blueLimit = 210000;
-        break;
-      case 'Friendly':
-        settings.redLimit = 240000;
-        settings.blueLimit = 240000;
-        settings.totalEnds = 2;
-        settings.tieBreak = 'finalShot';
-        settings.rules = 'friendlyMatch';
-        settings.resultApproval = 'none';
-        break;
-      case 'PairBC3':
-        settings.redLimit = 420000;
-        settings.blueLimit = 420000;
-        settings.warmup = 'separate';
-        break;
-      case 'PairBC4':
-        settings.redLimit = 240000;
-        settings.blueLimit = 240000;
-        settings.warmup = 'separate';
-        break;
-      case 'PairFriendly':
-        settings.redLimit = 300000;
-        settings.blueLimit = 300000;
-        settings.totalEnds = 2;
-        settings.tieBreak = 'finalShot';
-        settings.rules = 'friendlyMatch';
-        settings.resultApproval = 'none';
-        break;
-      case 'TeamsBC1BC2':
-        settings.redLimit = 300000;
-        settings.blueLimit = 300000;
-        settings.warmup = 'separate';
-        settings.totalEnds = 6;
-        break;
-      case 'TeamFriendly':
-        settings.redLimit = 300000;
-        settings.blueLimit = 300000;
-        settings.totalEnds = 2;
-        settings.tieBreak = 'finalShot';
-        settings.rules = 'friendlyMatch';
-        settings.resultApproval = 'none';
-        break;
-      case 'Recreation':
-        settings.redLimit = 300000;
-        settings.blueLimit = 300000;
-        settings.warmup = 'none';
-        settings.interval = 'none';
-        settings.totalEnds = 2;
-        settings.tieBreak = 'none';
-        settings.rules = 'recreation';
-        settings.resultApproval = 'none';
-        break;
-      default:
-        break;
-    }
-
-    return settings;
-  };
-
+  // Get settings for specific class (wrapped in useCallback for useEffect dependency)
   // Handle class/gender changes
   const handleClassificationChange = (classId) => {
     setSelectedClassId(classId);
@@ -609,66 +794,6 @@ const SettingModal = ({
     }
 
     updateClassificationValue(selectedClassId, gender, true);
-  };
-
-  const updateClassificationValue = (classId, gender, skipSave = false) => {
-    if (!classId) {
-      if (!skipSave && onUpdateField) {
-        onUpdateField('classification', null, '');
-      } else {
-        setPendingChanges(prev => ({
-          ...prev,
-          'classification': ''
-        }));
-      }
-      return;
-    }
-
-    try {
-      const apiUrl = 'http://localhost:3001';
-      const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
-      fetch(classDefUrl)
-        .then(response => response.json())
-        .then(data => {
-          const classDef = data.classifications?.[classId];
-          if (!classDef) return;
-
-          let prefix = '';
-          if (classDef.type === 'individual') {
-            prefix = 'IND ';
-          } else if (classDef.type === 'pair') {
-            prefix = 'PAIR ';
-          } else if (classDef.type === 'team') {
-            prefix = 'TEAM ';
-          } else if (classDef.type === 'recreation') {
-            prefix = '';
-          }
-
-          // Use English class name for storage
-          const className = getLocalizedText(`classNames.${classId}`, 'en') || classDef.name;
-
-          let displayName = `${prefix}${className}`;
-          if (gender === 'M') {
-            displayName = `${prefix}${className} Male`;
-          } else if (gender === 'F') {
-            displayName = `${prefix}${className} Female`;
-          }
-
-          if (!skipSave && onUpdateField) {
-            onUpdateField('classification', null, displayName);
-          } else {
-            setPendingChanges(prev => ({
-              ...prev,
-              'classification': displayName
-            }));
-          }
-        })
-        .catch(error => {
-          console.error('Class def load error:', error);
-        });
-    } catch (error) {
-      console.error('Error:', error);
-    }
   };
 
   // Recalculate sections array
@@ -774,7 +899,6 @@ const SettingModal = ({
     });
 
     // 一度に保持
-    const savedClassification = finalChanges.classification;
     saveData(updatedGameData);
 
 
@@ -842,9 +966,10 @@ const SettingModal = ({
     if (section === 'matchFinished') return false;
     if (section === 'resultApproval') return false;
 
-    // Hide penalty/timeout if rules are 'recreation'
+    // Hide penalty/timeout if rules are 'recreation' OR scene is 'recreation'
     const rules = gameData?.match?.rules || 'worldBoccia';
-    if (rules === 'recreation') return false;
+    const scene = gameData?.scene || 'official';
+    if (rules === 'recreation' || scene === 'recreation') return false;
 
     return true;
   };
@@ -989,7 +1114,7 @@ const SettingModal = ({
         {section === 'standby' && (
           <div id="standbySetting">
             <MatchGeneralSettings
-              classificationOptions={classificationOptions}
+              classificationOptions={filteredClassificationOptions}
               selectedClassId={selectedClassId}
               handleClassificationChange={handleClassificationChange}
               selectedGender={selectedGender}
@@ -1014,6 +1139,7 @@ const SettingModal = ({
                 selectedInterval={selectedInterval}
                 setSelectedInterval={setSelectedInterval}
                 setPendingChanges={setPendingChanges}
+                scene={gameData?.scene || 'official'}
               />
               <MatchRuleSettings
                 selectedEnds={selectedEnds}
@@ -1025,6 +1151,7 @@ const SettingModal = ({
                 selectedResultApproval={selectedResultApproval}
                 setSelectedResultApproval={setSelectedResultApproval}
                 setPendingChanges={setPendingChanges}
+                scene={gameData?.scene || 'official'}
               />
             </div>
           </div>

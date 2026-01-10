@@ -21,7 +21,6 @@ export const MatchGeneralSettings = ({
         value={selectedClassId}
         onChange={(e) => handleClassificationChange(e.target.value)}
       >
-        <option value="">{getLocalizedText('labels.classification', currentLang) || 'Class'}</option>
         {classificationOptions.map((option, index) => (
           <option key={index} value={option.value}>
             {option.label}
@@ -65,9 +64,11 @@ export const MatchRuleSettings = ({
   setSelectedRules,
   selectedResultApproval,
   setSelectedResultApproval,
-  setPendingChanges
+  setPendingChanges,
+  scene
 }) => {
   const currentLang = getCurrentLanguage();
+  const isRecreation = scene === 'recreation';
 
   return (
     <>
@@ -101,65 +102,70 @@ export const MatchRuleSettings = ({
           <option value="6">6</option>
         </select>
       </div>
-      <div className="detailSettingItem">
-        <label htmlFor="tieBreakInput" className="detailSettingLabel">{getLocalizedText('labels.tieBreak', currentLang)}</label>
-        <select
-          id="tieBreakInput"
-          className="settingSelect"
-          value={selectedTieBreak}
-          onChange={(e) => {
-            const value = e.target.value;
-            setSelectedTieBreak(value);
-            setPendingChanges(prev => ({
-              ...prev,
-              'match.tieBreak': value
-            }));
-          }}
-        >
-          <option value="extraEnd">{getLocalizedText('options.tieBreak.extraEnd', currentLang)}</option>
-          <option value="finalShot">{getLocalizedText('options.tieBreak.finalShot', currentLang)}</option>
-          <option value="none">{getLocalizedText('options.tieBreak.none', currentLang)}</option>
-        </select>
-      </div>
-      <div className="detailSettingItem">
-        <label htmlFor="rulesInput" className="detailSettingLabel">{getLocalizedText('labels.rules', currentLang)}</label>
-        <select
-          id="rulesInput"
-          className="settingSelect"
-          value={selectedRules}
-          onChange={(e) => {
-            const value = e.target.value;
-            setSelectedRules(value);
-            setPendingChanges(prev => ({
-              ...prev,
-              'match.rules': value
-            }));
-          }}
-        >
-          <option value="worldBoccia">{getLocalizedText('options.rules.worldBoccia', currentLang)}</option>
-          <option value="friendlyMatch">{getLocalizedText('options.rules.friendlyMatch', currentLang)}</option>
-          <option value="recreation">{getLocalizedText('options.rules.recreation', currentLang)}</option>
-        </select>
-      </div>
-      <div className="detailSettingItem">
-        <label htmlFor="resultApprovalInput" className="detailSettingLabel">{getLocalizedText('labels.resultApproval', currentLang)}</label>
-        <select
-          id="resultApprovalInput"
-          className="settingSelect"
-          value={selectedResultApproval}
-          onChange={(e) => {
-            const value = e.target.value;
-            setSelectedResultApproval(value);
-            setPendingChanges(prev => ({
-              ...prev,
-              'match.resultApproval': value
-            }));
-          }}
-        >
-          <option value="enabled">{getLocalizedText('options.resultApproval.enabled', currentLang)}</option>
-          <option value="none">{getLocalizedText('options.resultApproval.none', currentLang)}</option>
-        </select>
-      </div>
+
+      {!isRecreation && (
+        <>
+          <div className="detailSettingItem">
+            <label htmlFor="tieBreakInput" className="detailSettingLabel">{getLocalizedText('labels.tieBreak', currentLang)}</label>
+            <select
+              id="tieBreakInput"
+              className="settingSelect"
+              value={selectedTieBreak}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedTieBreak(value);
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'match.tieBreak': value
+                }));
+              }}
+            >
+              <option value="extraEnd">{getLocalizedText('options.tieBreak.extraEnd', currentLang)}</option>
+              <option value="finalShot">{getLocalizedText('options.tieBreak.finalShot', currentLang)}</option>
+              <option value="none">{getLocalizedText('options.tieBreak.none', currentLang)}</option>
+            </select>
+          </div>
+          <div className="detailSettingItem">
+            <label htmlFor="rulesInput" className="detailSettingLabel">{getLocalizedText('labels.rules', currentLang)}</label>
+            <select
+              id="rulesInput"
+              className="settingSelect"
+              value={selectedRules}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedRules(value);
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'match.rules': value
+                }));
+              }}
+            >
+              <option value="worldBoccia">{getLocalizedText('options.rules.worldBoccia', currentLang)}</option>
+              <option value="friendlyMatch">{getLocalizedText('options.rules.friendlyMatch', currentLang)}</option>
+              <option value="recreation">{getLocalizedText('options.rules.recreation', currentLang)}</option>
+            </select>
+          </div>
+          <div className="detailSettingItem">
+            <label htmlFor="resultApprovalInput" className="detailSettingLabel">{getLocalizedText('labels.resultApproval', currentLang)}</label>
+            <select
+              id="resultApprovalInput"
+              className="settingSelect"
+              value={selectedResultApproval}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedResultApproval(value);
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'match.resultApproval': value
+                }));
+              }}
+            >
+              <option value="enabled">{getLocalizedText('options.resultApproval.enabled', currentLang)}</option>
+              <option value="none">{getLocalizedText('options.resultApproval.none', currentLang)}</option>
+            </select>
+          </div>
+        </>
+      )}
     </>
   );
 };

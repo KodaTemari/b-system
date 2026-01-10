@@ -64,16 +64,16 @@
       "id": "PairBC4"
     },
     {
-      "id": "PairFriendly"
-    },
-    {
       "id": "TeamsBC1BC2"
     },
     {
       "id": "TeamFriendly"
     },
     {
-      "id": "Recreation"
+      "id": "IndividualRecreation"
+    },
+    {
+      "id": "TeamRecreation"
     }
   ],
   "courts": [

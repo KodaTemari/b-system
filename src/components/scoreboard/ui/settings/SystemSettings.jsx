@@ -156,74 +156,10 @@ const SystemSettings = ({
             </button>
           </div>
 
-          <div id="countrySetting">
-            {/* RED Side */}
-            <div>
-              <label htmlFor="redCountrySelect">
-                <span>{lang === 'ja' ? '赤：国' : 'Red: Country'}</span>
-                {(() => {
-                  const country = COUNTRIES.find(c => c.en === (pendingChanges['red.country'] !== undefined ? pendingChanges['red.country'] : (gameData?.red?.country || '')));
-                  return (country && country.code !== 'xx') ? (
-                    <span>
-                      <img
-                        src={`/img/flags/${country.code}.svg`}
-                        alt="Red Flag"
-                        className="flagPreview"
-                      />
-                    </span>
-                  ) : null;
-                })()}
-              </label>
-              <select
-                id="redCountrySelect"
-                className="settingSelect"
-                value={COUNTRIES.find(c => c.en === (pendingChanges['red.country'] !== undefined ? pendingChanges['red.country'] : (gameData?.red?.country || '')))?.id || 'none'}
-                onChange={(e) => handleFlagUpdate('red', e.target.value)}
-              >
-                {sortedCountries.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {lang === 'ja' ? c.ja : c.en}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* BLUE Side */}
-            <div>
-              <label htmlFor="blueCountrySelect">
-                <span>{lang === 'ja' ? '青：国' : 'Blue: Country'}</span>
-                {(() => {
-                  const country = COUNTRIES.find(c => c.en === (pendingChanges['blue.country'] !== undefined ? pendingChanges['blue.country'] : (gameData?.blue?.country || '')));
-                  return (country && country.code !== 'xx') ? (
-                    <span>
-                      <img
-                        src={`/img/flags/${country.code}.svg`}
-                        alt="Blue Flag"
-                        className="flagPreview"
-                      />
-                    </span>
-                  ) : null;
-                })()}
-              </label>
-              <select
-                id="blueCountrySelect"
-                className="settingSelect"
-                value={COUNTRIES.find(c => c.en === (pendingChanges['blue.country'] !== undefined ? pendingChanges['blue.country'] : (gameData?.blue?.country || '')))?.id || 'none'}
-                onChange={(e) => handleFlagUpdate('blue', e.target.value)}
-              >
-                {sortedCountries.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {lang === 'ja' ? c.ja : c.en}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
           <div id="sceneSetting" className="detailSettingItem">
             <label className="detailSettingLabel">{getLocalizedText('labels.scene', lang)}</label>
             <div className="settingRadioGroup">
-              {['official', 'recreation', 'general'].map((s) => (
+              {['official', 'general', 'recreation'].map((s) => (
                 <label key={s} className="radioLabel">
                   <input
                     type="radio"

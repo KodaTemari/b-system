@@ -110,7 +110,7 @@
     "scene": {
       "recreation": "Recreation",
       "official": "BC Official",
-      "general": "General Match"
+      "general": "Standard / Open"
     },
     "warmup": {
       "simultaneous": "2:00 Simultaneous",
@@ -151,10 +151,10 @@
     "Friendly": "Friendly",
     "PairBC3": "BC3",
     "PairBC4": "BC4",
-    "PairFriendly": "Friendly",
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "Friendly",
-    "Recreation": "Recreation"
+    "IndividualRecreation": "Recreation",
+    "TeamRecreation": "Recreation"
   },
   "match": {
     "red": "Red",

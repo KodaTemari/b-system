@@ -17,7 +17,7 @@
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
-  "scene": "official",
+  "scene": "recreation",
   "warmup": {},
   "interval": {},
   "red": {
@@ -49,5 +49,5 @@
     "redCard": 0
   },
   "courtId": "",
-  "lastUpdated": "2026-01-10T11:57:44.618Z"
+  "lastUpdated": "2026-01-10T16:25:20.600Z"
 }

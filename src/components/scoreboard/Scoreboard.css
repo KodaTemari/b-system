@@ -572,7 +572,7 @@
   transform: scaleX(var(--textScale, 1));
 }
 
-.profilePic {
+h2 .profilePic {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -580,7 +580,7 @@
   overflow: hidden;
 }
 
-.profilePic img {
+h2 .profilePic img {
   width: 100%;
   height: auto;
   border-radius: 0.5vmin;
@@ -1624,17 +1624,66 @@
   width: 29vw;
 }
 
-#standbySetting #redNameInput,
-#standbySetting #blueNameInput {
+#standbySetting #playerInput {
+  position: absolute;
+  display: flex;
   top: 25vh;
+  width: 100%;
+}
+
+#redPlayerInput,
+#bluePlayerInput {
+  display: flex;
+  width: 45vw;
+  justify-content: space-between;
+}
+
+#redPlayerInput > div,
+#bluePlayerInput > div {
+  width: 45%;
+}
+
+.profilePic label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3vmin;
+  width: 100%;
+  color: var(--color-white);
+  font-size: 4vmin;
+  margin-bottom: 1vmin;
+  cursor: pointer;
+}
+
+.profilePic [for="redCountrySelect"] {
+  flex-direction: row-reverse;
+}
+
+.profilePic .flagPreview {
+  width: 5vmin;
+  height: auto;
+  vertical-align: text-bottom;
+}
+
+.profilePic .settingSelect {
+  width: 100%;
+  text-align: left;
+}
+
+[data-scene="recreation"] #standbySetting #redNameInput,
+[data-scene="recreation"] #standbySetting #blueNameInput {
   font-size: 7vmin;
   left: 1vw;
   width: 45.7vw;
 }
 
-#standbySetting #blueNameInput {
+[data-scene="recreation"] #standbySetting #blueNameInput {
   left: inherit;
   right: 1vw;
+}
+
+[data-scene="recreation"] .profilePic {
+  display: none !important;
 }
 
 /* タイブレークボタンのスタイル */
@@ -2940,43 +2989,6 @@
 
 .confirmBtnBox {
   order: 2;
-}
-
-#countrySetting {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  order: 1; 
-}
-
-#countrySetting > div {
-  width: 45%;
-}
-
-#countrySetting label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3vmin;
-  width: 100%;
-  color: var(--color-white);
-  font-size: 4vmin;
-  margin-bottom: 1vmin;
-}
-
-#countrySetting [for="redCountrySelect"] {
-  flex-direction: row-reverse;
-}
-
-#countrySetting .flagPreview {
-  width: 5vmin;
-  height: auto;
-  vertical-align: text-bottom;
-}
-
-#countrySetting .settingSelect {
-  width: 100%;
-  text-align: left;
 }
 
 /* スコアボード上の試合名コンテナ */

@@ -111,7 +111,7 @@
     "scene": {
       "recreation": "レクリエーション",
       "official": "BC公式試合",
-      "general": "その他の試合"
+      "general": "一般競技・オープン"
     },
     "warmup": {
       "simultaneous": "2:00 同時",
@@ -152,10 +152,10 @@
     "Friendly": "フレンドリー",
     "PairBC3": "BC3",
     "PairBC4": "BC4",
-    "PairFriendly": "フレンドリー",
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "フレンドリー",
-    "Recreation": "レクリエーション"
+    "IndividualRecreation": "レクリエーション",
+    "TeamRecreation": "レクリエーション"
   },
   "match": {
     "red": "赤",
