@@ -50,14 +50,14 @@ const ConfirmModal = ({
         <div className="confirmModalButtons">
           <button
             type="button"
-            className="btn confirmModalBtn confirmModalBtn-ok"
+            className="btn confirmModalBtn confirmModalBtnOk"
             onClick={handleConfirm}
           >
             {getLocalizedText('buttons.ok', getCurrentLanguage()) || 'OK'}
           </button>
           <button
             type="button"
-            className="btn confirmModalBtn confirmModalBtn-cancel"
+            className="btn confirmModalBtn confirmModalBtnCancel"
             onClick={handleCancel}
           >
             {getLocalizedText('buttons.cancel', getCurrentLanguage()) || 'キャンセル'}

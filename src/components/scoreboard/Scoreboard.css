@@ -465,6 +465,51 @@
   padding: 0;
   text-align: center;
   border: 0.4vmin solid var(--color-gray-dark);
+  position: relative;
+}
+
+.penaltyRef {
+  position: absolute;
+  right: 0.5vmin;
+  bottom: 0.5vmin;
+  font-size: 2vmin;
+  line-height: 1;
+  color: var(--color-white-light);
+}
+
+#resultTableFooter {
+  margin-top: 2vh;
+  padding: 1vh;
+  background-color: var(--color-black-medium);
+  border-radius: 1vmin;
+  font-size: 1.5vmin;
+  color: var(--color-white-light);
+}
+
+.penaltyLegend {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5vw;
+  width: 100%;
+}
+
+.penaltyGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  flex: 1;
+}
+
+.penaltyGroup.red {
+  text-align: left;
+}
+
+.penaltyGroup.blue {
+  text-align: right;
+}
+
+.legendItem {
+  white-space: nowrap;
 }
 
 #resultTable td:first-child,
@@ -483,7 +528,7 @@
   font-size: 3vmin;
 }
 
-#resultTable tbody td:first-child.hasScore {
+#resultTable tbody td:first-child.isHasScore {
   background-color: var(--color-red-base);
 }
 
@@ -494,7 +539,7 @@
   font-size: 3vmin;
 }
 
-#resultTable tbody td:last-child.hasScore {
+#resultTable tbody td:last-child.isHasScore {
   background-color: var(--color-blue-base);
 }
 
@@ -519,6 +564,7 @@
 #scoreboard main section h2 .name {
   transform-origin: center;
   transition: transform 0.3s ease;
+  transform: scaleX(var(--textScale, 1));
 }
 
 #scoreboard main #red h2 {
@@ -641,11 +687,11 @@
     0 -0.1vmin 0 var(--color-gray-dark);
 }
 
-#scoreboard .score .penaltyIcon.penaltyIcon-clickable {
+#scoreboard .score .penaltyIcon.penaltyIconClickable {
   cursor: pointer;
 }
 
-#scoreboard .score .penaltyIcon .penaltyIcon-delete {
+#scoreboard .score .penaltyIcon .penaltyIconDelete {
   position: absolute;
   top: -1vmin;
   right: -1vmin;
@@ -975,13 +1021,13 @@
   position: relative;
 }
 
-#resultApproval .approvalButtons .btn.approval.approved {
+#resultApproval .approvalButtons .btn.approval.isApproved {
   background-color: var(--color-green-light);
   border-color: var(--color-green-base);
   position: relative;
 }
 
-#resultApproval .approvalButtons .btn.approval.approved::before {
+#resultApproval .approvalButtons .btn.approval.isApproved::before {
   content: '✓';
   position: absolute;
   top: 50%;
@@ -1128,28 +1174,28 @@
   box-sizing: border-box;
 }
 
-[data-section="warmup"] #sec-warmup,
-[data-section="warmup1"] #sec-warmup,
-[data-section="warmup2"] #sec-warmup {
+[data-section="warmup"] #secWarmup,
+[data-section="warmup1"] #secWarmup,
+[data-section="warmup2"] #secWarmup {
   height: 82vh;
   padding-top: 8vh;
 }
 
 /* warmup1からwarmup2への切り替わり時にフェードイン */
-[data-section="warmup2"] #sec-warmup {
+[data-section="warmup2"] #secWarmup {
   animation: fadeIn 0.5s ease-in-out forwards;
   opacity: 0;
 }
 
-[data-mode="ctrl"] [data-section="warmup"] #sec-warmup,
-[data-mode="ctrl"] [data-section="warmup1"] #sec-warmup,
-[data-mode="ctrl"] [data-section="warmup2"] #sec-warmup {
+[data-mode="ctrl"] [data-section="warmup"] #secWarmup,
+[data-mode="ctrl"] [data-section="warmup1"] #secWarmup,
+[data-mode="ctrl"] [data-section="warmup2"] #secWarmup {
   padding-top: 0;
 }
 
-[data-section="warmup"] #sec-warmup .warmupLabel,
-[data-section="warmup1"] #sec-warmup .warmupLabel,
-[data-section="warmup2"] #sec-warmup .warmupLabel {
+[data-section="warmup"] #secWarmup .warmupLabel,
+[data-section="warmup1"] #secWarmup .warmupLabel,
+[data-section="warmup2"] #secWarmup .warmupLabel {
   font-size: 8vmin;
   color: var(--color-white);
   text-align: center;
@@ -1206,8 +1252,8 @@
 }
 
 /* エンドセクションのスタイル */
-#sec-end,
-#sec-lastEnd {
+#secEnd,
+#secLastEnd {
   height: 50vh;
   padding-top: 28vh;
 }
@@ -1373,13 +1419,13 @@
   font-size: 7vmin;
 }
 
-#sec-matchFinished .btn.matchFinished,
-#sec-tieBreak .btn.matchFinished {
+#secMatchFinished .btn.matchFinished,
+#secTieBreak .btn.matchFinished {
   margin: 2.5vh 0;
   font-size: 7vmin;
 }
 
-[data-mode="view"] #sec-interval {
+[data-mode="view"] #secInterval {
   margin: 10vh 0 11vh
 }
 
@@ -1717,18 +1763,18 @@
 .settingOpen .score,
 .settingOpen .ball,
 .settingOpen .win img,
-.settingOpen #sec-standby,
+.settingOpen #secStandby,
 .settingOpen .finishInterval,
 .settingOpen .finishWarmup,
 .settingOpen .startInterval,
-.settingOpen #sec-matchFinished,
+.settingOpen #secMatchFinished,
 .settingOpen #resultApproval .approvalButtons,
 .settingOpen #resultTable,
 .settingOpen .warmupLabel {
   opacity: 0.1;
 }
 
-[data-section="tieBreak"] #sec-standby {
+[data-section="tieBreak"] #secStandby {
   display: none;
 }
 
@@ -1843,7 +1889,7 @@
   transition: background-color 0.2s;
 }
 
-#scoreboard .languageOption.active {
+#scoreboard .languageOption.isActive {
   background-color: var(--color-gray-base);
   font-weight: bold;
 }
@@ -2036,7 +2082,7 @@
   outline: none;
 }
 
-#endsSetting .stepButton:active {
+#endsSetting .stepButton:isActive {
   transform: none;
   position: relative;
   top: auto;
@@ -2045,7 +2091,7 @@
   padding: 0;
 }
 
-#endsSetting .stepButton:active .stepIndicator {
+#endsSetting .stepButton:isActive .stepIndicator {
   transform: scale(1);
   position: relative;
   top: auto;
@@ -2054,12 +2100,12 @@
   margin-bottom: 0.8vh;
 }
 
-#endsSetting .stepItem.stepCurrent .stepButton:active .stepIndicator {
+#endsSetting .stepItem.stepCurrent .stepButton:isActive .stepIndicator {
   transform: scale(2);
   margin-top: 0.6vh;
 }
 
-#endsSetting .stepItem:active::after {
+#endsSetting .stepItem:isActive::after {
   position: absolute;
   left: calc(50% + 0.6vmin);
   top: calc(0.6vh + 0.6vmin);
@@ -2068,7 +2114,7 @@
   transform: translateY(-50%);
 }
 
-#endsSetting .stepItem.stepCurrent:active::after {
+#endsSetting .stepItem.stepCurrent:isActive::after {
   top: calc(0.6vh + 0.6vmin);
   height: 0.4vh;
 }
@@ -2205,8 +2251,8 @@
   #endsSetting .stepItem.stepCompleted::before,
   #endsSetting .stepItem.stepCompleted.stepHasLine::after,
   #endsSetting .stepItem.stepCurrent.stepHasLine::after,
-  #endsSetting .stepItem:active::after,
-  #endsSetting .stepItem.stepCurrent:active::after {
+  #endsSetting .stepItem:isActive::after,
+  #endsSetting .stepItem.stepCurrent:isActive::after {
     height: 2px;
   }
 
@@ -2232,11 +2278,11 @@
   #endsSetting .stepItem.stepCompleted::before,
   #endsSetting .stepItem.stepCompleted.stepHasLine::after,
   #endsSetting .stepItem.stepCurrent.stepHasLine::after,
-  #endsSetting .stepItem.stepCurrent:active::after {
+  #endsSetting .stepItem.stepCurrent:isActive::after {
     top: calc(3px + 3px);
   }
 
-  #endsSetting .stepItem:active::after {
+  #endsSetting .stepItem:isActive::after {
     left: calc(50% + 3px);
     top: calc(3px + 3px);
     width: calc(100% - 6px);
@@ -2334,7 +2380,7 @@
   cursor: pointer;
 }
 
-#penaltyModal .penaltyItem.penaltyItem-fullWidth {
+#penaltyModal .penaltyItem.penaltyItemFullWidth {
   grid-column: 1 / -1;
 }
 
@@ -2478,7 +2524,7 @@
   cursor: not-allowed;
 }
 
-#timeoutModal .timeoutItem.timeoutItem-running {
+#timeoutModal .timeoutItem.timeoutItemRunning {
   border-color: var(--color-yellow-base, #FFD700);
 }
 
@@ -2490,7 +2536,7 @@
   font-family: monospace;
 }
 
-#timeoutModal .timeoutItem.timeoutItem-fullWidth {
+#timeoutModal .timeoutItem.timeoutItemFullWidth {
   grid-column: 1 / -1;
 }
 
@@ -2603,19 +2649,19 @@
   flex: 0 0 30vw;
 }
 
-#confirmModal .confirmModalBtn-ok {
+#confirmModal .confirmModalBtnOk {
   border-color: var(--color-white);
 }
 
-#confirmModal .confirmModalBtn-ok:hover {
+#confirmModal .confirmModalBtnOk:hover {
   opacity: 0.8;
 }
 
-#confirmModal .confirmModalBtn-cancel {
+#confirmModal .confirmModalBtnCancel {
   border-color: var(--color-white);
 }
 
-#confirmModal .confirmModalBtn-cancel:hover {
+#confirmModal .confirmModalBtnCancel:hover {
   opacity: 0.8;
 }
 
@@ -2849,7 +2895,7 @@
   box-sizing: border-box;
 }
 
-#languageModal .languageSelectBtn.selected {
+#languageModal .languageSelectBtn.isSelected {
   background-color: var(--color-green-base, #2E7D32);
   border-color: var(--color-green-base, #2E7D32);
 }
@@ -2858,7 +2904,7 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-#languageModal .languageSelectBtn.selected:hover {
+#languageModal .languageSelectBtn.isSelected:hover {
   background-color: var(--color-green-light, rgba(46, 125, 50, 0.7));
 }
 

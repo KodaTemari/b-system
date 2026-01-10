@@ -1,33 +1,24 @@
 {
   "matchID": "",
   "match": {
-    "totalEnds": 4,
-    "sectionID": 6,
-    "section": "end3",
-    "end": 3,
-    "tieBreak": "extraEnd",
-    "shotHistory": [
-      { "end": 1, "shots": ["R", "R", "B"] },
-      { "end": 2, "shots": ["R", "B", "B"] }
-    ],
-    "sections": [
-      "standby",
-      "warmup",
-      "end1",
-      "interval",
-      "end2",
-      "interval",
-      "end3",
-      "interval",
-      "end4",
-      "matchFinished",
-      "resultApproval"
-    ],
+    "end": 0,
+    "ends": [],
+    "totalEnds": 1,
+    "sectionID": 0,
+    "section": "standby",
     "approvals": {
       "red": false,
       "referee": false,
       "blue": false
     },
+    "tieBreak": "extraEnd",
+    "sections": [
+      "standby",
+      "warmup",
+      "end1",
+      "matchFinished",
+      "resultApproval"
+    ],
     "warmup": "simultaneous",
     "interval": "enabled",
     "rules": "worldBoccia",
@@ -37,8 +28,7 @@
     "active": "",
     "isColorSet": false,
     "isScoreAdjusting": false,
-    "isPenaltyThrow": false,
-    "penaltyThrow": false
+    "isPenaltyThrow": false
   },
   "warmup": {
     "limit": 120000,
@@ -52,19 +42,16 @@
   },
   "red": {
     "name": "Blue",
-    "score": 2,
-    "scores": [
-      { "end": 1, "score": 0 },
-      { "end": 2, "score": 2 }
-    ],
+    "score": 0,
     "limit": 270000,
-    "ball": 7,
+    "ball": 6,
     "isRunning": false,
     "time": 270000,
     "isTieBreak": false,
     "result": "",
-    "country": "Aruba",
+    "country": "",
     "profilePic": "",
+    "scores": [],
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
@@ -73,19 +60,16 @@
   },
   "blue": {
     "name": "Red",
-    "score": 1,
-    "scores": [
-      { "end": 1, "score": 1 },
-      { "end": 2, "score": 0 }
-    ],
+    "score": 0,
     "limit": 270000,
     "ball": 6,
     "isRunning": false,
     "time": 270000,
     "isTieBreak": false,
     "result": "",
-    "country": "Aruba",
+    "country": "",
     "profilePic": "",
+    "scores": [],
     "playerID": "",
     "yellowCard": 0,
     "penaltyBall": 0,
@@ -96,5 +80,5 @@
   "classification": "IND BC1 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-10T02:41:59.419Z"
+  "lastUpdated": "2026-01-10T06:20:23.862Z"
 }

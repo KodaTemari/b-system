@@ -234,14 +234,14 @@ const SystemSettings = ({
 
           <button
             onClick={() => onSelectLanguage('ja')}
-            className={`languageSelectBtn ${lang === 'ja' ? 'selected' : ''}`}
+            className={`languageSelectBtn ${lang === 'ja' ? 'isSelected' : ''}`}
           >
             日本語
           </button>
 
           <button
             onClick={() => onSelectLanguage('en')}
-            className={`languageSelectBtn ${lang === 'en' ? 'selected' : ''}`}
+            className={`languageSelectBtn ${lang === 'en' ? 'isSelected' : ''}`}
           >
             English
           </button>

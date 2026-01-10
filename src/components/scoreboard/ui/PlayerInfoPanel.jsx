@@ -139,7 +139,7 @@ const PlayerInfoPanel = ({
         <span 
           className="name" 
           ref={nameElementRef} 
-          style={{ transform: `scaleX(${textScale})` }}
+          style={{ '--textScale': textScale }}
         >
           {playerName}
         </span>
@@ -148,13 +148,13 @@ const PlayerInfoPanel = ({
         <div className="penaltyIcons">
           {penaltyBall > 0 && (
             <span 
-              className={`penaltyIcon penaltyBall ${isCtrl ? 'penaltyIcon-clickable' : ''} ${showDeleteIcon.penaltyBall ? 'penaltyIcon-delete-mode' : ''}`}
+              className={`penaltyIcon penaltyBall ${isCtrl ? 'penaltyIconClickable' : ''} ${showDeleteIcon.penaltyBall ? 'penaltyIconDeleteMode' : ''}`}
               data-count={penaltyBall}
               onClick={() => isCtrl && handlePenaltyIconClick('penaltyBall')}
             >
               {isCtrl && showDeleteIcon.penaltyBall && (
                 <span 
-                  className="penaltyIcon-delete"
+                  className="penaltyIconDelete"
                   onClick={(e) => handlePenaltyDelete(e, 'penaltyBall')}
                 >
                   ×
@@ -164,13 +164,13 @@ const PlayerInfoPanel = ({
           )}
           {yellowCard > 0 && (
             <span 
-              className={`penaltyIcon yellowCard ${isCtrl ? 'penaltyIcon-clickable' : ''} ${showDeleteIcon.yellowCard ? 'penaltyIcon-delete-mode' : ''}`}
+              className={`penaltyIcon yellowCard ${isCtrl ? 'penaltyIconClickable' : ''} ${showDeleteIcon.yellowCard ? 'penaltyIconDeleteMode' : ''}`}
               data-count={yellowCard}
               onClick={() => isCtrl && handlePenaltyIconClick('yellowCard')}
             >
               {isCtrl && showDeleteIcon.yellowCard && (
                 <span 
-                  className="penaltyIcon-delete"
+                  className="penaltyIconDelete"
                   onClick={(e) => handlePenaltyDelete(e, 'yellowCard')}
                 >
                   ×
@@ -180,13 +180,13 @@ const PlayerInfoPanel = ({
           )}
           {redCard > 0 && (
             <span 
-              className={`penaltyIcon redCard ${isCtrl ? 'penaltyIcon-clickable' : ''} ${showDeleteIcon.redCard ? 'penaltyIcon-delete-mode' : ''}`}
+              className={`penaltyIcon redCard ${isCtrl ? 'penaltyIconClickable' : ''} ${showDeleteIcon.redCard ? 'penaltyIconDeleteMode' : ''}`}
               data-count={redCard}
               onClick={() => isCtrl && handlePenaltyIconClick('redCard')}
             >
               {isCtrl && showDeleteIcon.redCard && (
                 <span 
-                  className="penaltyIcon-delete"
+                  className="penaltyIconDelete"
                   onClick={(e) => handlePenaltyDelete(e, 'redCard')}
                 >
                   ×

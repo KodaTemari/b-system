@@ -58,16 +58,12 @@ const SettingModal = ({
   // Tracks pending changes (applied on OK)
   const [pendingChanges, setPendingChanges] = useState({});
 
-  // Notify parent of changes (specifically classification)
+  // Notify parent of changes
   useEffect(() => {
     if (onPendingChangesChange) {
-      // Notify instant classification changes if needed
-      const classificationOnly = pendingChanges.classification !== undefined
-        ? { classification: pendingChanges.classification }
-        : {};
-      onPendingChangesChange(classificationOnly);
+      onPendingChangesChange(pendingChanges);
     }
-  }, [pendingChanges.classification, onPendingChangesChange]);
+  }, [pendingChanges, onPendingChangesChange]);
 
   // Language modal state
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
@@ -118,12 +114,17 @@ const SettingModal = ({
     }
   }, [totalEnds, pendingChanges]);
 
-  // Reset pendingChanges (keep classification) when modal opens
+  // Reset pendingChanges (keep classification) only when section changes (e.g. from standby to end1)
+  // But NOT when just opening/closing the modal in the same section
+  const lastSectionRef = useRef(section);
   useEffect(() => {
-    setPendingChanges(prev => {
-      const classification = prev.classification;
-      return classification ? { classification } : {};
-    });
+    if (lastSectionRef.current !== section) {
+      setPendingChanges(prev => {
+        const classification = prev.classification;
+        return classification ? { classification } : {};
+      });
+      lastSectionRef.current = section;
+    }
   }, [section]);
 
   // Ensure gender is reset if class doesn't support it
@@ -230,21 +231,40 @@ const SettingModal = ({
     }
   }, [classParam, genderParam, section]);
 
-  // Clear pendingChanges.classification if it matches gameData (Optimistic UI sync)
+  // Clear pendingChanges items if they match gameData (Optimistic UI sync)
   useEffect(() => {
-    if (pendingChanges.classification && gameData?.classification) {
-      if (pendingChanges.classification === gameData.classification) {
-        setPendingChanges(prev => {
-          const newChanges = { ...prev };
-          delete newChanges.classification;
-          return newChanges;
-        });
-        if (onPendingChangesChange) {
+    if (Object.keys(pendingChanges).length === 0) return;
+
+    setPendingChanges(prev => {
+      const newChanges = { ...prev };
+      let hasChanged = false;
+
+      Object.entries(newChanges).forEach(([key, pendingValue]) => {
+        const [parent, child] = key.split('.');
+        let gameValue;
+
+        if (child) {
+          gameValue = gameData?.[parent]?.[child];
+        } else {
+          gameValue = gameData?.[parent];
+        }
+
+        // Compare values
+        if (gameValue !== undefined && gameValue === pendingValue) {
+          delete newChanges[key];
+          hasChanged = true;
+        }
+      });
+
+      if (hasChanged) {
+        if (Object.keys(newChanges).length === 0 && onPendingChangesChange) {
           onPendingChangesChange({});
         }
+        return newChanges;
       }
-    }
-  }, [gameData?.classification, pendingChanges.classification, onPendingChangesChange]);
+      return prev;
+    });
+  }, [gameData, pendingChanges, onPendingChangesChange]);
 
   // Parse class ID and gender from current classification string
   useEffect(() => {
@@ -756,14 +776,6 @@ const SettingModal = ({
     const savedClassification = finalChanges.classification;
     saveData(updatedGameData);
 
-
-    // pendingChangesをクリア（classificationは保持して、gameDataの更新を待つ）
-    const newPendingChanges = {};
-    // classificationが保存された場合、保持する（gameDataの更新を待つ）
-    if (savedClassification) {
-      newPendingChanges.classification = savedClassification;
-    }
-    setPendingChanges(newPendingChanges);
 
     // 保存済みフラグを立てる
     savedRef.current = true;

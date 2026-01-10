@@ -98,55 +98,54 @@ export const useScoreboardHandlers = ({
     }
     
     if (endNumber > 0) {
-      // 両チームのscores配列を更新（0点のチームも必ずエントリを作成）
-      const redScores = [...(gameData.red?.scores || [])];
-      const blueScores = [...(gameData.blue?.scores || [])];
+      // match.ends配列を更新
+      const ends = [...(gameData.match?.ends || [])];
       
-      // 両チームのエンドエントリを確認・作成（存在しない場合は0点で初期化）
-      const ensureEndEntry = (scores, endNum) => {
-        const index = scores.findIndex(s => typeof s === 'object' && s.end === endNum);
-        if (index === -1) {
-          scores.push({ end: endNum, score: 0 });
-          return scores.length - 1;
-        }
-        return index;
-      };
+      // 当該エンドのエントリを確認・作成
+      let endEntryIndex = ends.findIndex(e => e.end === endNumber);
+      if (endEntryIndex === -1) {
+        ends.push({ 
+          end: endNumber, 
+          shots: [], 
+          redScore: 0, 
+          blueScore: 0
+        });
+        endEntryIndex = ends.length - 1;
+      }
       
-      const redEndEntryIndex = ensureEndEntry(redScores, endNumber);
-      const blueEndEntryIndex = ensureEndEntry(blueScores, endNumber);
-      
-      // スコアを調整したチームのスコアを更新
+      // スコアを更新
       if (color === 'red') {
-        const currentEndScore = redScores[redEndEntryIndex].score || 0;
-        redScores[redEndEntryIndex] = {
-          ...redScores[redEndEntryIndex],
-          score: Math.max(0, currentEndScore + delta)
+        const currentEndScore = ends[endEntryIndex].redScore || 0;
+        ends[endEntryIndex] = {
+          ...ends[endEntryIndex],
+          redScore: Math.max(0, currentEndScore + delta)
         };
       } else {
-        const currentEndScore = blueScores[blueEndEntryIndex].score || 0;
-        blueScores[blueEndEntryIndex] = {
-          ...blueScores[blueEndEntryIndex],
-          score: Math.max(0, currentEndScore + delta)
+        const currentEndScore = ends[endEntryIndex].blueScore || 0;
+        ends[endEntryIndex] = {
+          ...ends[endEntryIndex],
+          blueScore: Math.max(0, currentEndScore + delta)
         };
       }
       
-      // 両チームのスコア配列を更新
-      updateField('red', 'scores', redScores);
-      updateField('blue', 'scores', blueScores);
+      // match.endsを更新
+      updateField('match', 'ends', ends);
       
-      // スコア調整後、データを保存（scores配列も含める）
+      // スコア調整後、データを保存（ends配列も含める）
       if (isCtrl && saveData) {
         const updatedGameData = {
           ...gameData,
+          match: {
+            ...gameData.match,
+            ends: ends
+          },
           red: {
             ...gameData.red,
-            score: color === 'red' ? newScore : gameData.red?.score || 0,
-            scores: redScores
+            score: color === 'red' ? newScore : gameData.red?.score || 0
           },
           blue: {
             ...gameData.blue,
-            score: color === 'blue' ? newScore : gameData.blue?.score || 0,
-            scores: blueScores
+            score: color === 'blue' ? newScore : gameData.blue?.score || 0
           },
           screen: {
             ...gameData.screen,
@@ -230,21 +229,25 @@ export const useScoreboardHandlers = ({
       const currentBall = gameData[color]?.ball || 0;
       const isNormalEnd = (gameData.match?.section || '').startsWith('end');
       const isTieBreak = gameData.match?.section === 'tieBreak';
-      let updatedShotHistory = [...(gameData.match?.shotHistory || [])];
+      let updatedEnds = [...(gameData.match?.ends || [])];
 
       // ジャック(7)を除外し、カラーボール(6以下)のみ、かつエンド中かタイブレーク中のみ記録
-      // ペナルティスローは除外（必要であれば含めることも可能ですが、通常は12球の順番を指します）
       if (currentBall <= 6 && (isNormalEnd || isTieBreak) && !isPenaltyThrow) {
         const shotChar = color === 'red' ? 'R' : 'B';
-        const historyIndex = updatedShotHistory.findIndex(h => h.end === currentEnd);
+        const endEntryIndex = updatedEnds.findIndex(e => e.end === currentEnd);
 
-        if (historyIndex !== -1) {
-          const shots = [...updatedShotHistory[historyIndex].shots, shotChar];
-          updatedShotHistory[historyIndex] = { ...updatedShotHistory[historyIndex], shots };
+        if (endEntryIndex !== -1) {
+          const shots = [...(updatedEnds[endEntryIndex].shots || []), shotChar];
+          updatedEnds[endEntryIndex] = { ...updatedEnds[endEntryIndex], shots };
         } else {
-          updatedShotHistory.push({ end: currentEnd, shots: [shotChar] });
+          updatedEnds.push({ 
+            end: currentEnd, 
+            shots: [shotChar],
+            redScore: 0,
+            blueScore: 0
+          });
         }
-        updateField('match', 'shotHistory', updatedShotHistory);
+        updateField('match', 'ends', updatedEnds);
       }
 
       // penaltyThrow中の場合、ペナルティボールを-1
@@ -271,7 +274,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               match: {
                 ...gameData.match,
-                shotHistory: updatedShotHistory
+                ends: updatedEnds
               },
               [color]: {
                 ...gameData[color],
@@ -294,7 +297,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               match: {
                 ...gameData.match,
-                shotHistory: updatedShotHistory
+                ends: updatedEnds
               },
               [color]: {
                 ...gameData[color],
@@ -323,7 +326,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               match: {
                 ...gameData.match,
-                shotHistory: updatedShotHistory
+                ends: updatedEnds
               },
               [color]: {
                 ...gameData[color],
@@ -345,7 +348,7 @@ export const useScoreboardHandlers = ({
               ...gameData,
               match: {
                 ...gameData.match,
-                shotHistory: updatedShotHistory
+                ends: updatedEnds
               },
               [color]: {
                 ...gameData[color],
@@ -644,35 +647,23 @@ export const useScoreboardHandlers = ({
       }
       
       // エンド開始時に両チームのスコアエントリを作成（エンドセクションに移行する際）
-      let recordedRedScores = null;
-      let recordedBlueScores = null;
+      let recordedEnds = null;
       
       if (nextSection && nextSection.startsWith('end')) {
         const nextEndNumber = parseInt(nextSection.replace('end', ''), 10);
         if (nextEndNumber > 0) {
-          const ensureEndEntry = (scores, endNum) => {
-            const index = scores.findIndex(s => typeof s === 'object' && s.end === endNum);
-            if (index === -1) {
-              scores.push({ end: endNum, score: 0 });
-              return true; // エントリが作成された
-            }
-            return false; // エントリが既に存在
-          };
+          const ends = [...(gameData.match?.ends || [])];
+          const endEntryIndex = ends.findIndex(e => e.end === nextEndNumber);
           
-          const redScores = [...(gameData.red?.scores || [])];
-          const blueScores = [...(gameData.blue?.scores || [])];
-          
-          const redCreated = ensureEndEntry(redScores, nextEndNumber);
-          const blueCreated = ensureEndEntry(blueScores, nextEndNumber);
-          
-          // エントリが作成された場合のみ更新
-          if (redCreated) {
-            recordedRedScores = redScores;
-            updateField('red', 'scores', redScores);
-          }
-          if (blueCreated) {
-            recordedBlueScores = blueScores;
-            updateField('blue', 'scores', blueScores);
+          if (endEntryIndex === -1) {
+            ends.push({ 
+              end: nextEndNumber, 
+              shots: [],
+              redScore: 0,
+              blueScore: 0
+            });
+            recordedEnds = ends;
+            updateField('match', 'ends', ends);
           }
         }
       }
@@ -707,15 +698,8 @@ export const useScoreboardHandlers = ({
             ...gameData.match,
             sectionID: nextSectionID,
             section: nextSection,
-            end: endNumber
-          },
-          red: {
-            ...gameData.red,
-            scores: recordedRedScores || (gameData.red?.scores || [])
-          },
-          blue: {
-            ...gameData.blue,
-            scores: recordedBlueScores || (gameData.blue?.scores || [])
+            end: endNumber,
+            ends: recordedEnds || (gameData.match?.ends || [])
           },
           screen: {
             ...gameData.screen,
@@ -1187,138 +1171,80 @@ export const useScoreboardHandlers = ({
     setTimeout(() => setShowTimeModal(false), UI_CONSTANTS.TIME_MODAL_DISPLAY_DURATION);
   }, [setShowTimeModal]);
 
-  // リセットハンドラー（次の試合のためのリセット）
+  // リセットハンドラー（試合をやりなおすためのリセット）
   const handleReset = useCallback(async () => {
-    // constants.jsからデフォルト値を生成してリセット
-    if (!id || !court || !saveData) return;
+    if (!id || !court || !saveData || !gameData) return;
     
     try {
-      const apiUrl = 'http://localhost:3001';
-      
-      // デフォルトデータを生成
-      const resetData = JSON.parse(JSON.stringify(DEFAULT_GAME_DATA));
-      
-      // init.jsonからsectionsとtieBreakを取得（存在する場合）
-      try {
-        const initUrl = `${apiUrl}/data/${id}/init.json`;
-        const initResponse = await fetch(initUrl);
-        if (initResponse.ok) {
-          const initData = await initResponse.json();
-          if (initData.match?.sections) {
-            resetData.match.sections = initData.match.sections;
+      // 現在の設定を維持しつつ、試合進行データのみをリセットする
+      const resetGameData = {
+        ...gameData,
+        match: {
+          ...gameData.match,
+          end: 0,
+          ends: [],
+          sectionID: 0,
+          section: 'standby',
+          approvals: {
+            red: false,
+            referee: false,
+            blue: false
           }
-          if (initData.match?.tieBreak || initData.tieBreak) {
-            resetData.match.tieBreak = initData.match?.tieBreak || initData.tieBreak;
-          }
-        }
-      } catch (initError) {
-        console.warn('init.jsonの読み込みに失敗しました（デフォルト値を使用）:', initError);
+        },
+        screen: {
+          active: '',
+          isColorSet: false,
+          isScoreAdjusting: false,
+          isPenaltyThrow: false
+        },
+        warmup: {
+          ...gameData.warmup,
+          time: gameData.warmup?.limit || TIMER_LIMITS.WARMUP,
+          isRunning: false
+        },
+        interval: {
+          ...gameData.interval,
+          time: gameData.interval?.limit || TIMER_LIMITS.INTERVAL,
+          isRunning: false
+        },
+        red: {
+          ...gameData.red,
+          score: 0,
+          scores: [],
+          time: gameData.red?.limit || TIMER_LIMITS.GAME,
+          isRunning: false,
+          ball: 6,
+          isTieBreak: false,
+          result: '',
+          yellowCard: 0,
+          penaltyBall: 0,
+          redCard: 0
+        },
+        blue: {
+          ...gameData.blue,
+          score: 0,
+          scores: [],
+          time: gameData.blue?.limit || TIMER_LIMITS.GAME,
+          isRunning: false,
+          ball: 6,
+          isTieBreak: false,
+          result: '',
+          yellowCard: 0,
+          penaltyBall: 0,
+          redCard: 0
+        },
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // DOM属性をリセット（勝敗・タイブレーク・反則負けの表示をクリア）
+      const scoreboardElement = document.getElementById('scoreboard');
+      if (scoreboardElement) {
+        scoreboardElement.removeAttribute('data-win');
+        scoreboardElement.removeAttribute('data-tieBreak');
+        scoreboardElement.removeAttribute('data-forfeit');
       }
       
-      // 現在のgameDataから設定を維持（ユーザー設定）
-        const preservedSettings = {
-          classification: gameData?.classification || '',
-          category: gameData?.category || '',
-          matchName: gameData?.matchName || '',
-          red: {
-            name: gameData?.red?.name || '',
-            limit: gameData?.red?.limit || TIMER_LIMITS.GAME
-          },
-          blue: {
-            name: gameData?.blue?.name || '',
-            limit: gameData?.blue?.limit || TIMER_LIMITS.GAME
-          },
-          match: {
-            warmup: gameData?.match?.warmup || 'simultaneous',
-            interval: gameData?.match?.interval || 'enabled',
-            totalEnds: gameData?.match?.totalEnds || 4,
-            rules: gameData?.match?.rules || 'worldBoccia',
-            resultApproval: gameData?.match?.resultApproval || 'enabled',
-            sections: gameData?.match?.sections || resetData.match?.sections,
-            tieBreak: gameData?.match?.tieBreak || resetData.match?.tieBreak || 'extraEnd'
-          }
-        };
-        
-        // preservedSettingsにsectionsとtieBreakがない場合、resetDataから取得
-        if (!preservedSettings.match.sections) {
-          preservedSettings.match.sections = resetData.match?.sections;
-        }
-        if (!preservedSettings.match.tieBreak) {
-          preservedSettings.match.tieBreak = resetData.match?.tieBreak || 'extraEnd';
-        }
-        
-        // リセットデータに設定を適用
-        const resetGameData = {
-          ...resetData,
-          ...preservedSettings,
-          match: {
-            ...resetData.match,
-            sectionID: 0,
-            section: 'standby',
-            end: 0,
-            ...preservedSettings.match,
-            approvals: {
-              red: false,
-              referee: false,
-              blue: false
-            }
-          },
-          red: {
-            ...resetData.red,
-            score: 0,
-            scores: [],
-            tieBreak: false,
-            result: '',
-            yellowCard: 0,
-            redCard: 0,
-            ...preservedSettings.red,
-            ball: 6,
-            isRunning: false,
-            time: preservedSettings.red.limit,
-            penaltyBall: 0
-          },
-          blue: {
-            ...resetData.blue,
-            score: 0,
-            scores: [],
-            tieBreak: false,
-            result: '',
-            yellowCard: 0,
-            redCard: 0,
-            ...preservedSettings.blue,
-            ball: 6,
-            isRunning: false,
-            time: preservedSettings.blue.limit,
-            penaltyBall: 0
-          },
-          warmup: {
-            ...resetData.warmup,
-            time: resetData.warmup?.limit || TIMER_LIMITS.WARMUP,
-            isRunning: false
-          },
-          interval: {
-            ...resetData.interval,
-            time: resetData.interval?.limit || TIMER_LIMITS.INTERVAL,
-            isRunning: false
-          },
-          screen: {
-            active: '',
-            isColorSet: false,
-            isScoreAdjusting: false,
-            isPenaltyThrow: false
-          },
-          lastUpdated: new Date().toISOString()
-        };
-        
-        // DOM属性をリセット（勝敗・タイブレーク・反則負けの表示をクリア）
-        const scoreboardElement = document.getElementById('scoreboard');
-        if (scoreboardElement) {
-          scoreboardElement.removeAttribute('data-win');
-          scoreboardElement.removeAttribute('data-tieBreak');
-          scoreboardElement.removeAttribute('data-forfeit');
-        }
-        
-        saveData(resetGameData);
+      saveData(resetGameData);
     } catch (error) {
       console.error('リセット処理エラー:', error);
     }

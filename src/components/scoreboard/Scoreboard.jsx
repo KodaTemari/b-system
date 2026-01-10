@@ -110,12 +110,31 @@ const Scoreboard = () => {
 
   // Clear settingPendingChanges when gameData updates to match (Optimistic UI sync)
   useEffect(() => {
-    if (settingPendingChanges.classification && gameData?.classification) {
-      if (settingPendingChanges.classification === gameData.classification) {
-        setSettingPendingChanges({});
-      }
-    }
-  }, [gameData?.classification, settingPendingChanges.classification]);
+    if (Object.keys(settingPendingChanges).length === 0) return;
+
+    setSettingPendingChanges(prev => {
+      const newPending = { ...prev };
+      let changed = false;
+
+      Object.entries(newPending).forEach(([key, pendingValue]) => {
+        const [parent, child] = key.split('.');
+        let gameValue;
+
+        if (child) {
+          gameValue = gameData?.[parent]?.[child];
+        } else {
+          gameValue = gameData?.[parent];
+        }
+
+        if (gameValue !== undefined && gameValue === pendingValue) {
+          delete newPending[key];
+          changed = true;
+        }
+      });
+
+      return changed ? newPending : prev;
+    });
+  }, [gameData, settingPendingChanges]);
 
   const handleSettingModalOpen = () => {
     setSettingOpen(true);
@@ -385,81 +404,37 @@ const Scoreboard = () => {
 
     // Record penalty in current end
     const currentEnd = gameData.match?.end || 0;
+    const ends = [...(gameData.match?.ends || [])];
+
     if (currentEnd > 0) {
       // List of penalties to record (excluding restartedEnd and forfeit)
       const recordablePenalties = ['lineCross', 'throwBeforeInstruction', 'retraction', 'penaltyBall',
         'retractionAndPenaltyBall', 'penaltyBallAndYellowCard', 'yellowCard', 'redCard'];
 
       if (recordablePenalties.includes(penaltyId)) {
-        // Update fouling team's scores array
-        const teamScores = [...(updatedTeamData.scores || [])];
-        let teamEndEntryIndex = teamScores.findIndex(s => {
-          if (typeof s === 'number') return false; // 後方互換性
-          return s.end === currentEnd;
-        });
+        // Update match.ends array
+        let endEntryIndex = ends.findIndex(e => e.end === currentEnd);
 
-        if (teamEndEntryIndex === -1) {
+        if (endEntryIndex === -1) {
           // エンドエントリが存在しない場合、新規作成
-          teamScores.push({
+          ends.push({
             end: currentEnd,
-            score: updatedTeamData.score || 0,
-            penalties: [penaltyId]
+            shots: [],
+            redScore: teamColor === 'red' ? updatedTeamData.score : updatedOpponentData.score,
+            blueScore: teamColor === 'blue' ? updatedTeamData.score : updatedOpponentData.score,
+            [teamColor === 'red' ? 'redPenalties' : 'bluePenalties']: [penaltyId]
           });
         } else {
-          // エンドエントリが存在する場合、penalties配列に追加
-          const existingPenalties = teamScores[teamEndEntryIndex].penalties || [];
-          // 既存のpenaltiesが文字列（ローカライズされたテキスト）の場合も考慮
-          // penaltyIdが既に存在するか、または既存のpenaltyIdから逆引きできるか確認
-          const penaltyExists = existingPenalties.some(p => {
-            // 既にpenaltyId（英語のキー）として保存されている場合
-            if (p === penaltyId) return true;
-            // 後方互換性: ローカライズされたテキストの場合、penaltyIdから逆引き
-            const localizedText = getText(`penalties.${penaltyId}`, currentLang);
-            return p === localizedText;
-          });
-
-          if (!penaltyExists) {
-            teamScores[teamEndEntryIndex] = {
-              ...teamScores[teamEndEntryIndex],
-              penalties: [...existingPenalties, penaltyId]
+          // エンドエントリが存在する場合
+          const penaltyField = teamColor === 'red' ? 'redPenalties' : 'bluePenalties';
+          const existingPenalties = ends[endEntryIndex][penaltyField] || [];
+          
+          if (!existingPenalties.includes(penaltyId)) {
+            ends[endEntryIndex] = {
+              ...ends[endEntryIndex],
+              [penaltyField]: [...existingPenalties, penaltyId]
             };
           }
-        }
-        updatedTeamData.scores = teamScores;
-
-        // ペナルティーボールが相手チームに追加される場合、相手チームのscores配列も更新
-        if (penaltyId === 'penaltyBall' || penaltyId === 'retractionAndPenaltyBall' || penaltyId === 'penaltyBallAndYellowCard') {
-          const opponentScores = [...(updatedOpponentData.scores || [])];
-          let opponentEndEntryIndex = opponentScores.findIndex(s => {
-            if (typeof s === 'number') return false; // 後方互換性
-            return s.end === currentEnd;
-          });
-
-          if (opponentEndEntryIndex === -1) {
-            // エンドエントリが存在しない場合、新規作成
-            opponentScores.push({
-              end: currentEnd,
-              score: updatedOpponentData.score || 0,
-              penalties: [penaltyId]
-            });
-          } else {
-            // エンドエントリが存在する場合、penalties配列に追加
-            const existingPenalties = opponentScores[opponentEndEntryIndex].penalties || [];
-            // 既存のpenaltiesが文字列（ローカライズされたテキスト）の場合も考慮
-            const penaltyExists = existingPenalties.some(p => {
-              if (p === penaltyId) return true;
-              const localizedText = getText(`penalties.${penaltyId}`, currentLang);
-              return p === localizedText;
-            });
-
-            if (!penaltyExists) {
-              opponentScores[opponentEndEntryIndex] = {
-                ...opponentScores[opponentEndEntryIndex],
-                penalties: [...existingPenalties, penaltyId]
-              };
-            }
-          }
-          updatedOpponentData.scores = opponentScores;
         }
       }
     }
@@ -467,6 +442,10 @@ const Scoreboard = () => {
     // Update and save gameData
     const updatedGameData = {
       ...gameData,
+      match: {
+        ...gameData.match,
+        ends: ends
+      },
       [teamColor]: updatedTeamData,
       [opponentColor]: updatedOpponentData
     };
@@ -844,7 +823,7 @@ const Scoreboard = () => {
   // ローディング表示
   if (isLoading) {
     return (
-      <div className="loading">
+      <div className="isLoading">
         <div>データを読み込み中...</div>
       </div>
     );
@@ -853,7 +832,7 @@ const Scoreboard = () => {
   // エラー表示
   if (error) {
     return (
-      <div className="error">
+      <div className="isError">
         <div>エラーが発生しました: {error}</div>
       </div>
     );
@@ -930,8 +909,7 @@ const Scoreboard = () => {
       {/* 結果表 - resultApprovalセクションの時のみ表示 */}
       {section === 'resultApproval' && (
         <ResultTable
-          redScores={red?.scores || []}
-          blueScores={blue?.scores || []}
+          ends={match?.ends || []}
         />
       )}
 
@@ -942,21 +920,21 @@ const Scoreboard = () => {
           <div className="approvalButtons">
             <button
               type="button"
-              className={`btn approval ${approvals.red ? 'approved' : ''}`}
+              className={`btn approval ${approvals.red ? 'isApproved' : ''}`}
               onClick={() => handleApproval('red')}
             >
               {getLocalizedText('buttons.redApproval', getCurrentLanguage())}
             </button>
             <button
               type="button"
-              className={`btn approval ${approvals.referee ? 'approved' : ''}`}
+              className={`btn approval ${approvals.referee ? 'isApproved' : ''}`}
               onClick={() => handleApproval('referee')}
             >
               {getLocalizedText('buttons.refereeApproval', getCurrentLanguage())}
             </button>
             <button
               type="button"
-              className={`btn approval ${approvals.blue ? 'approved' : ''}`}
+              className={`btn approval ${approvals.blue ? 'isApproved' : ''}`}
               onClick={() => handleApproval('blue')}
             >
               {getLocalizedText('buttons.blueApproval', getCurrentLanguage())}
@@ -977,7 +955,7 @@ const Scoreboard = () => {
         tieBreak={gameData.match?.tieBreak}
         sections={gameData.match?.sections}
         category={gameData.category}
-        matchName={gameData.matchName}
+        matchName={settingPendingChanges.matchName !== undefined ? settingPendingChanges.matchName : matchName}
         classification={settingPendingChanges.classification !== undefined ? settingPendingChanges.classification : classification}
         warmup={warmup}
         warmupEnabled={gameData.match?.warmup !== 'none'}

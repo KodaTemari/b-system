@@ -145,5 +145,10 @@
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "フレンドリー",
     "Recreation": "レクリエーション"
+  },
+  "match": {
+    "red": "赤",
+    "blue": "青",
+    "end": "エンド"
   }
 }

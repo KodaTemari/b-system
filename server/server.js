@@ -43,25 +43,11 @@ app.put('/api/game/:eventId/court/:courtId', async (req, res) => {
     // 一度標準的なインデントでJSON文字列を作成
     let jsonString = JSON.stringify(gameData, null, 2);
 
-    // shotHistory 配列内の各オブジェクトを1行にまとめる
+    // match.ends 配列内の各エンドオブジェクト（"shots"を含むもの）だけを1行にまとめる
     jsonString = jsonString.replace(
-      /\{\s+"end":\s+(\d+),[\s\S]*?"shots":\s+\[([\s\S]*?)\]\s+\}/g,
-      (match, endNum, shotsContent) => {
-        const cleanedShots = shotsContent
-          .split(',')
-          .map(s => s.trim())
-          .filter(s => s)
-          .join(', ');
-
-        return `{ "end": ${endNum}, "shots": [${cleanedShots}] }`;
-      }
-    );
-
-    // scores 配列内の各オブジェクトを1行にまとめる
-    jsonString = jsonString.replace(
-      /\{\s+"end":\s+(\d+),\s+"score":\s+(\d+)\s+\}/g,
-      (match, endNum, scoreNum) => {
-        return `{ "end": ${endNum}, "score": ${scoreNum} }`;
+      /(\s+)\{\s+"end":\s+(\d+),\s+"shots":[\s\S]+?\}/g,
+      (match, indent) => {
+        return indent + match.replace(/\n/g, '').replace(/\s\s+/g, ' ').trim();
       }
     );
     

@@ -5,23 +5,17 @@ import { getText as getLocalizedText, getCurrentLanguage } from '../../../locale
  * 結果表コンポーネント
  * resultApprovalセクションで各エンドのスコアを表示
  */
-const ResultTable = ({ redScores = [], blueScores = [] }) => {
+const ResultTable = ({ ends = [] }) => {
+  const currentLang = getCurrentLanguage();
+
   // エンド番号の最大値を取得
   const getMaxEnd = () => {
     let maxEnd = 0;
-    
-    // 新しい構造（オブジェクト配列）の場合
-    [...redScores, ...blueScores].forEach(score => {
-      if (typeof score === 'object' && score.end) {
-        maxEnd = Math.max(maxEnd, score.end);
+    ends.forEach(entry => {
+      if (entry.end) {
+        maxEnd = Math.max(maxEnd, entry.end);
       }
     });
-    
-    // 後方互換性: 数値配列の場合、配列の長さから最大エンド番号を取得
-    if (maxEnd === 0) {
-      maxEnd = Math.max(redScores.length, blueScores.length);
-    }
-    
     return maxEnd;
   };
 
@@ -32,83 +26,129 @@ const ResultTable = ({ redScores = [], blueScores = [] }) => {
     return null;
   }
 
-  // エンドごとのスコアと反則を取得するヘルパー関数
-  const getScoreData = (scores, endNumber) => {
-    // 後方互換性: 数値配列の場合
-    if (scores.length > 0 && typeof scores[0] === 'number') {
-      const index = endNumber - 1;
-      return {
-        score: scores[index] ?? 0,
-        penalties: []
-      };
+  // 全エンドを通じて発生した反則の発生順リストを作成（注釈用）
+  const penaltyOccurrences = [];
+  ends.forEach(e => {
+    // 赤の反則を追加
+    if (e.redPenalties && e.redPenalties.length > 0) {
+      e.redPenalties.forEach(p => {
+        penaltyOccurrences.push({
+          end: e.end,
+          color: 'red',
+          colorName: getLocalizedText('match.red', currentLang),
+          penaltyId: p
+        });
+      });
     }
-    
-    // 新しい構造: オブジェクト配列の場合
-    const endEntry = scores.find(s => typeof s === 'object' && s.end === endNumber);
+    // 青の反則を追加
+    if (e.bluePenalties && e.bluePenalties.length > 0) {
+      e.bluePenalties.forEach(p => {
+        penaltyOccurrences.push({
+          end: e.end,
+          color: 'blue',
+          colorName: getLocalizedText('match.blue', currentLang),
+          penaltyId: p
+        });
+      });
+    }
+  });
+
+  // 注釈番号を割り振る
+  const penaltyLegend = penaltyOccurrences.map((occ, index) => ({
+    ...occ,
+    index: index + 1
+  }));
+
+  // 特定のエンド・色のチームに対する注釈番号の配列を取得するヘルパー
+  const getPenaltyIndices = (endNumber, color) => {
+    return penaltyLegend
+      .filter(p => p.end === endNumber && p.color === color)
+      .map(p => p.index);
+  };
+
+  // エンドごとのスコアと反則を取得するヘルパー関数
+  const getEndData = (endNumber) => {
+    const endEntry = ends.find(e => e.end === endNumber);
     if (endEntry) {
       return {
-        score: endEntry.score ?? 0,
-        penalties: endEntry.penalties || []
+        redScore: endEntry.redScore ?? 0,
+        blueScore: endEntry.blueScore ?? 0,
+        redPenalties: endEntry.redPenalties || [],
+        bluePenalties: endEntry.bluePenalties || []
       };
     }
-    
-    return { score: 0, penalties: [] };
+    return { redScore: 0, blueScore: 0, redPenalties: [], bluePenalties: [] };
   };
 
   return (
-    <div id="resultTable">
-      <table>
-        <thead>
-          <tr>
-            <th>赤</th>
-            <th>エンド</th>
-            <th>青</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: maxEnd }, (_, index) => {
-            const endNumber = index + 1;
-            const redData = getScoreData(redScores, endNumber);
-            const blueData = getScoreData(blueScores, endNumber);
-            
-            return (
-              <tr key={endNumber}>
-                <td className={redData.score >= 1 ? 'hasScore' : ''}>
-                  {redData.score}
-                  {redData.penalties.length > 0 && (
-                    <div className="penalties">
-                      {redData.penalties.map((penalty, i) => {
-                        // penaltyがpenaltyId（英語のキー）か、ローカライズされたテキストかを判定
-                        const currentLang = getCurrentLanguage();
-                        const penaltyText = getLocalizedText(`penalties.${penalty}`, currentLang) || penalty;
-                        return (
-                          <span key={i} className="penalty-badge">{penaltyText}</span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </td>
-                <td>{endNumber}</td>
-                <td className={blueData.score >= 1 ? 'hasScore' : ''}>
-                  {blueData.score}
-                  {blueData.penalties.length > 0 && (
-                    <div className="penalties">
-                      {blueData.penalties.map((penalty, i) => {
-                        // penaltyがpenaltyId（英語のキー）か、ローカライズされたテキストかを判定
-                        const currentLang = getCurrentLanguage();
-                        const penaltyText = getLocalizedText(`penalties.${penalty}`, currentLang) || penalty;
-                        return (
-                          <span key={i} className="penalty-badge">{penaltyText}</span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div id="resultTableContainer">
+      <div id="resultTable">
+        <table>
+          <thead>
+            <tr>
+              <th>{getLocalizedText('match.red', currentLang)}</th>
+              <th>{getLocalizedText('match.end', currentLang)}</th>
+              <th>{getLocalizedText('match.blue', currentLang)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: maxEnd }, (_, index) => {
+              const endNumber = index + 1;
+              const data = getEndData(endNumber);
+              const redPenaltyIndices = getPenaltyIndices(endNumber, 'red');
+              const bluePenaltyIndices = getPenaltyIndices(endNumber, 'blue');
+              
+              return (
+                <tr key={endNumber}>
+                  <td className={data.redScore >= 1 ? 'isHasScore' : ''}>
+                    {data.redScore}
+                    {redPenaltyIndices.length > 0 && (
+                      <span className="penaltyRef">
+                        {redPenaltyIndices.map(i => `*${i}`).join(',')}
+                      </span>
+                    )}
+                  </td>
+                  <td>{endNumber}</td>
+                  <td className={data.blueScore >= 1 ? 'isHasScore' : ''}>
+                    {data.blueScore}
+                    {bluePenaltyIndices.length > 0 && (
+                      <span className="penaltyRef">
+                        {bluePenaltyIndices.map(i => `*${i}`).join(',')}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 補足情報エリア */}
+      {penaltyLegend.length > 0 && (
+        <div id="resultTableFooter">
+          <div className="penaltyLegend">
+            <div className="penaltyGroup red">
+              {penaltyLegend
+                .filter(p => p.color === 'red')
+                .map((p, i) => (
+                  <div key={i} className="legendItem">
+                    *{p.index} 第{p.end}エンド / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
+                  </div>
+                ))}
+            </div>
+            <div className="penaltyGroup blue">
+              {penaltyLegend
+                .filter(p => p.color === 'blue')
+                .map((p, i) => (
+                  <div key={i} className="legendItem">
+                    *{p.index} 第{p.end}エンド / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

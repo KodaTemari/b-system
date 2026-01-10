@@ -98,7 +98,7 @@ const PenaltyModal = ({
               type="button"
               name="penaltyItem"
               value={penalty.id}
-              className={`btn penaltyItem ${penalty.fullWidth ? 'penaltyItem-fullWidth' : ''}`}
+              className={`btn penaltyItem ${penalty.fullWidth ? 'penaltyItemFullWidth' : ''}`}
               onClick={() => handlePenaltySelect(penalty.id)}
             >
               {penalty.name}

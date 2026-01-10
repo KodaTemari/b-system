@@ -44,11 +44,11 @@ export const UI_CONSTANTS = {
 export const DEFAULT_GAME_DATA = {
   matchID: '',
   match: {
+    end: 0,
+    ends: [],
     totalEnds: 6,
     sectionID: 0,
     section: 'standby',
-    end: 0,
-    shotHistory: [],
     sections: [
       'standby',
       'warmup',
@@ -66,12 +66,12 @@ export const DEFAULT_GAME_DATA = {
       'matchFinished',
       'resultApproval'
     ],
-    tieBreak: 'finalShot',
     approvals: {
       red: false,
       referee: false,
       blue: false
-    }
+    },
+    tieBreak: 'finalShot'
   },
   screen: {
     active: '',

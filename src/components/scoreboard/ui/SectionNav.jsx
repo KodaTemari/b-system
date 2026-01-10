@@ -133,24 +133,24 @@ const SectionNavigation = React.memo(({
 
   // Display control per section
   const getCurrentSectionId = () => {
-    if (section === 'standby') return 'sec-standby';
-    if (section === 'warmup' || section === 'warmup1' || section === 'warmup2') return 'sec-warmup';
-    if (section === 'interval') return 'sec-interval';
-    if (section === 'finalShot') return 'sec-finalShot';
-    if (section === 'tieBreak') return 'sec-tieBreak';
-    if (section === 'matchFinished') return 'sec-matchFinished';
+    if (section === 'standby') return 'secStandby';
+    if (section === 'warmup' || section === 'warmup1' || section === 'warmup2') return 'secWarmup';
+    if (section === 'interval') return 'secInterval';
+    if (section === 'finalShot') return 'secFinalShot';
+    if (section === 'tieBreak') return 'secTieBreak';
+    if (section === 'matchFinished') return 'secMatchFinished';
 
     // End sections
     if (section && section.startsWith('end')) {
       const endNumber = parseInt(section.replace('end', ''), 10);
       if (endNumber === totalEnds) {
-        return 'sec-lastEnd'; // Last end
+        return 'secLastEnd'; // Last end
       } else {
-        return 'sec-end'; // Normal end
+        return 'secEnd'; // Normal end
       }
     }
 
-    return 'sec-standby'; // Default
+    return 'secStandby'; // Default
   };
 
   const currentSectionId = getCurrentSectionId();
@@ -161,8 +161,8 @@ const SectionNavigation = React.memo(({
   return (
     <TagName id="sectionNav">
       {/* standby section */}
-      {currentSectionId === 'sec-standby' && section !== 'matchFinished' && section !== 'resultApproval' && (
-        <div id="sec-standby">
+      {currentSectionId === 'secStandby' && section !== 'matchFinished' && section !== 'resultApproval' && (
+        <div id="secStandby">
           {/* Display on both ctrl and view */}
           <div id="matchInfo">
             <p id="classification">{formattedClassification}</p>
@@ -230,8 +230,8 @@ const SectionNavigation = React.memo(({
       )}
 
       {/* warmup section */}
-      {currentSectionId === 'sec-warmup' && warmupEnabled && (
-        <div id="sec-warmup">
+      {currentSectionId === 'secWarmup' && warmupEnabled && (
+        <div id="secWarmup">
           {/* Label above timer */}
           <div className="warmupLabel">
             {section === 'warmup1'
@@ -296,11 +296,11 @@ const SectionNavigation = React.memo(({
         Flow: Warmup -> End 1 -> Interval -> End 2 -> Interval -> ...
       */}
       {isCtrl &&
-        currentSectionId === 'sec-end' &&
+        currentSectionId === 'secEnd' &&
         scoreAdjusting &&
         redPenaltyBall === 0 &&
         bluePenaltyBall === 0 && (
-          <div id="sec-end">
+          <div id="secEnd">
             {/* Show "Start Interval" or "Next End" button */}
             <button
               type="button"
@@ -313,8 +313,8 @@ const SectionNavigation = React.memo(({
         )}
 
       {/* interval section */}
-      {currentSectionId === 'sec-interval' && intervalEnabled && (
-        <div id="sec-interval">
+      {currentSectionId === 'secInterval' && intervalEnabled && (
+        <div id="secInterval">
           <button
             type="button"
             name="intervalTimerBtn"
@@ -348,9 +348,9 @@ const SectionNavigation = React.memo(({
         - If tie, show "Tie Break" or "Final Shot". If score diff, show "Match Finished".
       */}
       {isCtrl &&
-        currentSectionId === 'sec-lastEnd' &&
+        currentSectionId === 'secLastEnd' &&
         scoreAdjusting && (
-          <div id="sec-lastEnd">
+          <div id="secLastEnd">
             {isTie ? (
               // If tie, show button based on tieBreak setting
               tieBreak === 'extraEnd' ? (
@@ -393,8 +393,8 @@ const SectionNavigation = React.memo(({
         )}
 
       {/* tieBreak section (ctrl screen only) */}
-      {isCtrl && currentSectionId === 'sec-tieBreak' && (
-        <div id="sec-tieBreak">
+      {isCtrl && currentSectionId === 'secTieBreak' && (
+        <div id="secTieBreak">
           {scoreAdjusting && (
             <button
               type="button"
@@ -408,8 +408,8 @@ const SectionNavigation = React.memo(({
       )}
 
       {/* finalShot section (ctrl screen only) */}
-      {isCtrl && currentSectionId === 'sec-finalShot' && (
-        <div id="sec-finalShot">
+      {isCtrl && currentSectionId === 'secFinalShot' && (
+        <div id="secFinalShot">
           <button
             type="button"
             className="btn"
@@ -421,8 +421,8 @@ const SectionNavigation = React.memo(({
       )}
 
       {/* matchFinished section (ctrl screen only) */}
-      {isCtrl && currentSectionId === 'sec-matchFinished' && (
-        <div id="sec-matchFinished">
+      {isCtrl && currentSectionId === 'secMatchFinished' && (
+        <div id="secMatchFinished">
           {(() => {
             // Check if last section is resultApproval
             const lastSection = sections && sections.length > 0 ? sections[sections.length - 1] : null;

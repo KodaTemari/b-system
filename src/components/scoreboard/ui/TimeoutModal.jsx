@@ -183,7 +183,7 @@ const TimeoutModal = ({
                   type="button"
                   name="timeoutItem"
                   value={timeout.id}
-                  className={`btn timeoutItem ${isRunning ? 'timeoutItem-running' : ''}`}
+                  className={`btn timeoutItem ${isRunning ? 'timeoutItemRunning' : ''}`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

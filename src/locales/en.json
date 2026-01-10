@@ -144,5 +144,10 @@
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "Friendly",
     "Recreation": "Recreation"
+  },
+  "match": {
+    "red": "Red",
+    "blue": "Blue",
+    "end": "End"
   }
 }
