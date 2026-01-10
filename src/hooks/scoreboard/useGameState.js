@@ -15,7 +15,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       match: {
         end: 0,
         ends: [],
-        totalEnds: 2,
+        totalEnds: 6,
         sectionID: 0,
         section: 'standby',
         approvals: {
@@ -23,6 +23,10 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           referee: false,
           blue: false
         },
+        warmup: 'simultaneous',
+        interval: 'enabled',
+        rules: 'worldBoccia',
+        resultApproval: 'enabled',
         tieBreak: 'finalShot'
       },
       screen: {
@@ -139,7 +143,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           section,
           tieBreak,
           sections,
-          totalEnds: initialData.match?.totalEnds || defaultData.match.totalEnds
+          totalEnds: initialData.match?.totalEnds ?? defaultData.match.totalEnds
         },
         red: {
           ...defaultData.red,
@@ -284,63 +288,108 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
 
   // Game reset (Preserve settings, reset progress)
   const resetGame = useCallback(() => {
-    setGameData(prevData => ({
-      ...prevData,
-      match: {
-        ...prevData.match,
-        end: 0,
-        ends: [],
-        sectionID: 0,
-        section: 'standby',
-        approvals: {
-          red: false,
-          referee: false,
-          blue: false
+    setGameData(prevData => {
+      // DEFAULT_GAME_DATA から初期構造を取得
+      // ユーザー設定（維持したい項目）を抽出
+      const settings = {
+        classification: prevData.classification,
+        category: prevData.category,
+        matchName: prevData.matchName,
+        match: {
+          totalEnds: prevData.match?.totalEnds,
+          warmup: prevData.match?.warmup,
+          interval: prevData.match?.interval,
+          rules: prevData.match?.rules,
+          resultApproval: prevData.match?.resultApproval,
+          tieBreak: prevData.match?.tieBreak,
+          sections: prevData.match?.sections
+        },
+        red: {
+          name: prevData.red?.name,
+          limit: prevData.red?.limit,
+          country: prevData.red?.country,
+          profilePic: prevData.red?.profilePic
+        },
+        blue: {
+          name: prevData.blue?.name,
+          limit: prevData.blue?.limit,
+          country: prevData.blue?.country,
+          profilePic: prevData.blue?.profilePic
+        },
+        warmup: {
+          limit: prevData.warmup?.limit
+        },
+        interval: {
+          limit: prevData.interval?.limit
         }
-      },
-      warmup: {
-        ...prevData.warmup,
-        time: prevData.warmup?.limit || TIMER_LIMITS.WARMUP,
-        isRunning: false
-      },
-      interval: {
-        ...prevData.interval,
-        time: prevData.interval?.limit || TIMER_LIMITS.INTERVAL,
-        isRunning: false
-      },
-      red: {
-        ...prevData.red,
-        score: 0,
-        scores: [],
-        time: prevData.red?.limit || TIMER_LIMITS.GAME,
-        isRunning: false,
-        ball: 6,
-        isTieBreak: false,
-        result: '',
-        yellowCard: 0,
-        penaltyBall: 0,
-        redCard: 0
-      },
-      blue: {
-        ...prevData.blue,
-        score: 0,
-        scores: [],
-        time: prevData.blue?.limit || TIMER_LIMITS.GAME,
-        isRunning: false,
-        ball: 6,
-        isTieBreak: false,
-        result: '',
-        yellowCard: 0,
-        penaltyBall: 0,
-        redCard: 0
-      },
-      screen: {
-        active: '',
-        isColorSet: false,
-        isScoreAdjusting: false,
-        isPenaltyThrow: false
-      }
-    }));
+      };
+
+      // 進行状態のみをリセットした新しいデータを作成
+      return {
+        ...prevData,
+        ...settings,
+        match: {
+          ...prevData.match,
+          ...settings.match,
+          end: 0,
+          ends: [],
+          sectionID: 0,
+          section: 'standby',
+          approvals: {
+            red: false,
+            referee: false,
+            blue: false
+          }
+        },
+        warmup: {
+          ...prevData.warmup,
+          ...settings.warmup,
+          time: settings.warmup.limit || TIMER_LIMITS.WARMUP,
+          isRunning: false
+        },
+        interval: {
+          ...prevData.interval,
+          ...settings.interval,
+          time: settings.interval.limit || TIMER_LIMITS.INTERVAL,
+          isRunning: false
+        },
+        red: {
+          ...prevData.red,
+          ...settings.red,
+          score: 0,
+          scores: [],
+          time: settings.red.limit || TIMER_LIMITS.GAME,
+          isRunning: false,
+          ball: 6,
+          isTieBreak: false,
+          result: '',
+          yellowCard: 0,
+          penaltyBall: 0,
+          redCard: 0
+        },
+        blue: {
+          ...prevData.blue,
+          ...settings.blue,
+          score: 0,
+          scores: [],
+          time: settings.blue.limit || TIMER_LIMITS.GAME,
+          isRunning: false,
+          ball: 6,
+          isTieBreak: false,
+          result: '',
+          yellowCard: 0,
+          penaltyBall: 0,
+          redCard: 0
+        },
+        screen: {
+          active: '',
+          isColorSet: false,
+          isScoreAdjusting: false,
+          isPenaltyThrow: false
+        },
+        lastUpdated: new Date().toISOString()
+      };
+    });
   }, []);
 
   const resetForFinalShot = useCallback(() => {

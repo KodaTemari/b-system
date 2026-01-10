@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_GAME_DATA } from '../../utils/scoreboard/constants';
+import { DEFAULT_GAME_DATA, TIMER_LIMITS } from '../../utils/scoreboard/constants';
 
 /**
  * データ同期のカスタムフック
@@ -20,159 +20,192 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     try {
       const apiUrl = 'http://localhost:3001';
       
-      // まずcourtのgame.jsonを読み込む
-      let url = `${apiUrl}/api/game/${id}/court/${court}`;
-      let response = await fetch(url);
+      // settings.json と game.json を並列で取得
+      const [settingsRes, gameRes] = await Promise.all([
+        fetch(`${apiUrl}/api/data/${id}/court/${court}/settings`),
+        fetch(`${apiUrl}/api/data/${id}/court/${court}/game`)
+      ]);
       
-      let gameData;
-      if (response.ok) {
-        gameData = await response.json();
+      let settingsData = {};
+      let gameDataState = {};
+
+      if (settingsRes.ok) {
+        settingsData = await settingsRes.json();
       } else {
-        // courtのgame.jsonが存在しない場合はconstants.jsからデフォルト値を生成
-        gameData = JSON.parse(JSON.stringify(DEFAULT_GAME_DATA));
-      }
-      
-      if (gameData) {
-        
-        // game.jsonにsectionsとtieBreakがない場合、init.jsonからフォールバック
-        if (!gameData.match?.sections || !gameData.match?.tieBreak) {
-          const initUrl = `${apiUrl}/data/${id}/init.json`;
-          const initResponse = await fetch(initUrl);
-          if (initResponse.ok) {
-            const initData = await initResponse.json();
-            const sectionsData = initData.match?.sections || null;
-            const tieBreakData = initData.match?.tieBreak || initData.tieBreak || null;
-            
-            if (sectionsData || tieBreakData) {
-              let processedSections = sectionsData || gameData.match?.sections;
-              
-              // ウォームアップの設定に応じてセクション配列を更新
-              if (processedSections) {
-                if (gameData.match?.warmup === 'none') {
-                  // ウォームアップが「なし」の場合は、warmupとwarmup1、warmup2を削除
-                  processedSections = processedSections.filter(s => s !== 'warmup' && s !== 'warmup1' && s !== 'warmup2');
-                } else if (gameData.match?.warmup === 'simultaneous') {
-                  // ウォームアップが「同時」の場合は、warmup1とwarmup2を削除し、warmupを追加（存在しない場合）
-                  processedSections = processedSections.filter(s => s !== 'warmup1' && s !== 'warmup2');
-                  if (!processedSections.includes('warmup')) {
-                    const standbyIndex = processedSections.indexOf('standby');
-                    if (standbyIndex !== -1) {
-                      processedSections.splice(standbyIndex + 1, 0, 'warmup');
-                    }
-                  }
-                } else if (gameData.match?.warmup === 'separate') {
-                  // ウォームアップが「別々」の場合は、warmupを削除し、warmup1とwarmup2を追加（存在しない場合）
-                  processedSections = processedSections.filter(s => s !== 'warmup');
-                  if (!processedSections.includes('warmup1') || !processedSections.includes('warmup2')) {
-                    const standbyIndex = processedSections.indexOf('standby');
-                    if (standbyIndex !== -1) {
-                      // warmup1とwarmup2が存在しない場合のみ追加
-                      if (!processedSections.includes('warmup1')) {
-                        processedSections.splice(standbyIndex + 1, 0, 'warmup1');
-                      }
-                      if (!processedSections.includes('warmup2')) {
-                        const warmup1Index = processedSections.indexOf('warmup1');
-                        if (warmup1Index !== -1) {
-                          processedSections.splice(warmup1Index + 1, 0, 'warmup2');
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-              
-              // インターバルが「なし」の場合は、セクション配列からintervalを削除
-              if (gameData.match?.interval === 'none' && processedSections) {
-                processedSections = processedSections.filter(s => s !== 'interval');
-              }
-              
-              // 結果承認が「なし」の場合は、セクション配列からresultApprovalを削除
-              if (gameData.match?.resultApproval === 'none' && processedSections) {
-                processedSections = processedSections.filter(s => s !== 'resultApproval');
-              }
-              
-              gameData.match = {
-                ...gameData.match,
-                ...(processedSections && { sections: processedSections }),
-                ...(tieBreakData && { tieBreak: tieBreakData })
-              };
-            }
-          }
+        // settings.json がない場合は大会設定(init.json)から初期生成を試みる
+        const initUrl = `${apiUrl}/data/${id}/init.json`;
+        const initRes = await fetch(initUrl);
+        if (initRes.ok) {
+          const initData = await initRes.json();
+          settingsData = {
+            classification: '',
+            category: '',
+            matchName: '',
+            match: {
+              totalEnds: initData.match?.totalEnds || 6,
+              warmup: initData.match?.warmup || 'simultaneous',
+              interval: initData.match?.interval || 'enabled',
+              rules: initData.match?.rules || 'worldBoccia',
+              resultApproval: initData.match?.resultApproval || 'enabled',
+              tieBreak: initData.match?.tieBreak || 'finalShot',
+              sections: initData.match?.sections
+            },
+            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
+            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME },
+            warmup: { limit: TIMER_LIMITS.WARMUP },
+            interval: { limit: TIMER_LIMITS.INTERVAL }
+          };
         } else {
-          // game.jsonにsectionsがある場合でも、ウォームアップ・インターバル・結果承認の設定に応じて調整
-          let processedSections = gameData.match.sections;
-          
-          // ウォームアップの設定に応じてセクション配列を更新
-          if (processedSections) {
-            if (gameData.match?.warmup === 'none') {
-              processedSections = processedSections.filter(s => s !== 'warmup' && s !== 'warmup1' && s !== 'warmup2');
-            } else if (gameData.match?.warmup === 'simultaneous') {
-              processedSections = processedSections.filter(s => s !== 'warmup1' && s !== 'warmup2');
-              if (!processedSections.includes('warmup')) {
-                const standbyIndex = processedSections.indexOf('standby');
-                if (standbyIndex !== -1) {
-                  processedSections.splice(standbyIndex + 1, 0, 'warmup');
-                }
-              }
-            } else if (gameData.match?.warmup === 'separate') {
-              processedSections = processedSections.filter(s => s !== 'warmup');
-              if (!processedSections.includes('warmup1') || !processedSections.includes('warmup2')) {
-                const standbyIndex = processedSections.indexOf('standby');
-                if (standbyIndex !== -1) {
-                  if (!processedSections.includes('warmup1')) {
-                    processedSections.splice(standbyIndex + 1, 0, 'warmup1');
-                  }
-                  if (!processedSections.includes('warmup2')) {
-                    const warmup1Index = processedSections.indexOf('warmup1');
-                    if (warmup1Index !== -1) {
-                      processedSections.splice(warmup1Index + 1, 0, 'warmup2');
-                    }
-                  }
-                }
-              }
-            }
-          }
-          
-          // インターバルが「なし」の場合は、セクション配列からintervalを削除
-          if (gameData.match?.interval === 'none' && processedSections) {
-            processedSections = processedSections.filter(s => s !== 'interval');
-          }
-          
-          // 結果承認が「なし」の場合は、セクション配列からresultApprovalを削除
-          if (gameData.match?.resultApproval === 'none' && processedSections) {
-            processedSections = processedSections.filter(s => s !== 'resultApproval');
-          }
-          
-          gameData.match = {
-            ...gameData.match,
-            sections: processedSections
+          // init.json もない場合の最小限のデフォルト
+          settingsData = {
+            match: { totalEnds: 6, warmup: 'simultaneous', interval: 'enabled', rules: 'worldBoccia', resultApproval: 'enabled', tieBreak: 'finalShot' },
+            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
+            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME }
           };
         }
-        
-        setLocalData(gameData);
-        
-        // Local Storageにも保存
-        localStorage.setItem(`scoreboard_${id}_${court}_data`, JSON.stringify(gameData));
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    } catch (err) {
-      console.error('ゲームデータ読み込みエラー:', err);
-      setError('ゲームデータの読み込みに失敗しました');
+
+      if (gameRes.ok) {
+        gameDataState = await gameRes.json();
+      } else {
+        // game.json がない場合はデフォルト値を生成
+        gameDataState = JSON.parse(JSON.stringify(DEFAULT_GAME_DATA));
+      }
       
-      // エラーの場合、Local Storageから復元を試行
-      const storedData = localStorage.getItem(`scoreboard_${id}_${court}_data`);
-      if (storedData) {
-        try {
-          setLocalData(JSON.parse(storedData));
-        } catch (parseErr) {
-          console.error('Local Storage復元エラー:', parseErr);
+      // 設定と進行状態をマージ（設定を優先して適用）
+      const mergedData = {
+        ...gameDataState,
+        ...settingsData,
+        match: {
+          ...gameDataState.match,
+          ...(settingsData.match || {})
+        },
+        red: {
+          ...gameDataState.red,
+          ...(settingsData.red || {})
+        },
+        blue: {
+          ...gameDataState.blue,
+          ...(settingsData.blue || {})
+        }
+      };
+
+      // totalEndsとsectionsの不整合を解消
+      if (mergedData.match?.totalEnds && mergedData.match?.sections) {
+        const currentTotalEnds = mergedData.match.totalEnds;
+        const sections = mergedData.match.sections;
+        const lastEndSection = sections.filter(s => s.startsWith('end')).pop();
+        const lastEndNumber = lastEndSection ? parseInt(lastEndSection.replace('end', ''), 10) : 0;
+        
+        if (lastEndNumber !== currentTotalEnds) {
+          console.log(`不整合を検知: totalEnds=${currentTotalEnds}, sections内の最後のエンド=${lastEndNumber}`);
+          // sectionsを再計算（settings.jsonの内容を信頼するが、sectionsが古い場合のみ）
+          const recalculateSections = (total, warmup, interval, resultApproval) => {
+            const newSections = ['standby'];
+            if (warmup === 'simultaneous') newSections.push('warmup');
+            else if (warmup === 'separate') newSections.push('warmup1', 'warmup2');
+            for (let i = 1; i <= total; i++) {
+              newSections.push(`end${i}`);
+              if (i < total && interval !== 'none') newSections.push('interval');
+            }
+            newSections.push('matchFinished');
+            if (resultApproval !== 'none') newSections.push('resultApproval');
+            return newSections;
+          };
+          
+          mergedData.match.sections = recalculateSections(
+            currentTotalEnds,
+            mergedData.match.warmup || 'simultaneous',
+            mergedData.match.interval || 'enabled',
+            mergedData.match.resultApproval || 'enabled'
+          );
         }
       }
+      
+      setLocalData(mergedData);
+      localStorage.setItem(`scoreboard_${id}_${court}_data`, JSON.stringify(mergedData));
+
+      // 初回のみ：ファイルが存在しなかった場合、作成したデフォルトをサーバーに保存
+      if (!settingsRes.ok || !gameRes.ok) {
+        if (isCtrl) {
+          saveToGameJson(mergedData);
+        }
+      }
+    } catch (err) {
+      console.error('データ読み込みエラー:', err);
+      setError('データの読み込みに失敗しました');
     } finally {
       setIsLoading(false);
     }
   }, [id, court]);
+
+  // データを保存（設定と進行を分離して保存）
+  const saveToGameJson = useCallback(async (data) => {
+    if (!id || !court || !data) return;
+
+    try {
+      const apiUrl = 'http://localhost:3001';
+      
+      // 1. 設定データ (settings.json)
+      const settingsToSave = {
+        classification: data.classification,
+        category: data.category,
+        matchName: data.matchName,
+        match: {
+          totalEnds: data.match?.totalEnds,
+          warmup: data.match?.warmup,
+          interval: data.match?.interval,
+          rules: data.match?.rules,
+          resultApproval: data.match?.resultApproval,
+          tieBreak: data.match?.tieBreak,
+          sections: data.match?.sections
+        },
+        red: {
+          name: data.red?.name,
+          limit: data.red?.limit,
+          country: data.red?.country,
+          profilePic: data.red?.profilePic
+        },
+        blue: {
+          name: data.blue?.name,
+          limit: data.blue?.limit,
+          country: data.blue?.country,
+          profilePic: data.blue?.profilePic
+        },
+        warmup: { limit: data.warmup?.limit },
+        interval: { limit: data.interval?.limit }
+      };
+
+      // 2. 進行データ (game.json)
+      // 設定データに含まれるものは除外して保存（肥大化と競合防止）
+      const gameStateToSave = {
+        ...data,
+        // 設定項目を空にするのではなく、進行状態のみを確実に含むようにする
+        match: {
+          ...data.match,
+          // 設定項目も念のため含めるが、読み込み時はsettings.jsonを優先する
+        }
+      };
+      
+      // 非同期で両方のファイルを更新
+      // （※タイマーなどの頻繁な更新時は game.json のみでも良いが、まずは確実性を優先）
+      await Promise.all([
+        fetch(`${apiUrl}/api/data/${id}/court/${court}/settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settingsToSave)
+        }),
+        fetch(`${apiUrl}/api/data/${id}/court/${court}/game`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gameStateToSave)
+        })
+      ]);
+    } catch (error) {
+      console.error('保存エラー:', error);
+    }
+  }, [id, court]);
+
 
   // Local Storageからデータを取得
   const loadFromLocalStorage = useCallback(() => {
@@ -198,61 +231,6 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       detail: { key, data }
     }));
   }, [id, court]);
-
-  // データをgame.jsonに保存
-  const saveToGameJson = useCallback(async (data) => {
-    if (!id || !court || !data) return;
-
-    try {
-      const apiUrl = 'http://localhost:3001';
-      const url = `${apiUrl}/api/game/${id}/court/${court}`;
-      
-      // タイムアウト関連の項目を除外（ローカルのみで管理）
-      // sectionsとtieBreakはgame.jsonで管理するため保存対象に含める
-      const cleanRed = data.red ? { ...data.red } : {};
-      const cleanBlue = data.blue ? { ...data.blue } : {};
-      
-      // タイムアウト関連の項目を削除
-      delete cleanRed.medicalTimeoutUsed;
-      delete cleanRed.medicalTimeoutTime;
-      delete cleanRed.medicalTimeoutRunning;
-      delete cleanRed.technicalTimeoutUsed;
-      delete cleanRed.technicalTimeoutTime;
-      delete cleanRed.technicalTimeoutRunning;
-      
-      delete cleanBlue.medicalTimeoutUsed;
-      delete cleanBlue.medicalTimeoutTime;
-      delete cleanBlue.medicalTimeoutRunning;
-      delete cleanBlue.technicalTimeoutUsed;
-      delete cleanBlue.technicalTimeoutTime;
-      delete cleanBlue.technicalTimeoutRunning;
-      
-      const dataToSave = {
-        ...data,
-        match: data.match || {
-          sectionID: 0
-        },
-        red: cleanRed,
-        blue: cleanBlue
-      };
-      
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSave)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to save to game.json:', errorData);
-      }
-    } catch (error) {
-      console.error('Error saving to game.json:', error);
-    }
-  }, [id, court]);
-
 
   // データをLocal Storageとgame.jsonの両方に保存
   const saveData = useCallback(async (data) => {

@@ -71,6 +71,10 @@ export const DEFAULT_GAME_DATA = {
       referee: false,
       blue: false
     },
+    warmup: 'simultaneous',
+    interval: 'enabled',
+    rules: 'worldBoccia',
+    resultApproval: 'enabled',
     tieBreak: 'finalShot'
   },
   screen: {

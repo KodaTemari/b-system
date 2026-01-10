@@ -1176,11 +1176,47 @@ export const useScoreboardHandlers = ({
     if (!id || !court || !saveData || !gameData) return;
     
     try {
-      // 現在の設定を維持しつつ、試合進行データのみをリセットする
-      const resetGameData = {
-        ...gameData,
+      // 現在のgameDataから設定項目のみを抽出（状態は含めない）
+      const settings = {
+        classification: gameData.classification,
+        category: gameData.category,
+        matchName: gameData.matchName,
         match: {
-          ...gameData.match,
+          totalEnds: gameData.match?.totalEnds,
+          warmup: gameData.match?.warmup,
+          interval: gameData.match?.interval,
+          rules: gameData.match?.rules,
+          resultApproval: gameData.match?.resultApproval,
+          tieBreak: gameData.match?.tieBreak,
+          sections: gameData.match?.sections
+        },
+        red: {
+          name: gameData.red?.name,
+          limit: gameData.red?.limit,
+          country: gameData.red?.country,
+          profilePic: gameData.red?.profilePic
+        },
+        blue: {
+          name: gameData.blue?.name,
+          limit: gameData.blue?.limit,
+          country: gameData.blue?.country,
+          profilePic: gameData.blue?.profilePic
+        },
+        warmup: {
+          limit: gameData.warmup?.limit
+        },
+        interval: {
+          limit: gameData.interval?.limit
+        }
+      };
+
+      // 試合進行データのみを初期値にリセット
+      const resetGameData = {
+        ...DEFAULT_GAME_DATA, // 構造のベース
+        ...settings, // 設定を上書きして維持
+        match: {
+          ...DEFAULT_GAME_DATA.match,
+          ...settings.match,
           end: 0,
           ends: [],
           sectionID: 0,
@@ -1198,20 +1234,23 @@ export const useScoreboardHandlers = ({
           isPenaltyThrow: false
         },
         warmup: {
-          ...gameData.warmup,
-          time: gameData.warmup?.limit || TIMER_LIMITS.WARMUP,
+          ...DEFAULT_GAME_DATA.warmup,
+          limit: settings.warmup.limit || TIMER_LIMITS.WARMUP,
+          time: settings.warmup.limit || TIMER_LIMITS.WARMUP,
           isRunning: false
         },
         interval: {
-          ...gameData.interval,
-          time: gameData.interval?.limit || TIMER_LIMITS.INTERVAL,
+          ...DEFAULT_GAME_DATA.interval,
+          limit: settings.interval.limit || TIMER_LIMITS.INTERVAL,
+          time: settings.interval.limit || TIMER_LIMITS.INTERVAL,
           isRunning: false
         },
         red: {
-          ...gameData.red,
+          ...DEFAULT_GAME_DATA.red,
+          ...settings.red,
           score: 0,
           scores: [],
-          time: gameData.red?.limit || TIMER_LIMITS.GAME,
+          time: settings.red.limit || TIMER_LIMITS.GAME,
           isRunning: false,
           ball: 6,
           isTieBreak: false,
@@ -1221,10 +1260,11 @@ export const useScoreboardHandlers = ({
           redCard: 0
         },
         blue: {
-          ...gameData.blue,
+          ...DEFAULT_GAME_DATA.blue,
+          ...settings.blue,
           score: 0,
           scores: [],
-          time: gameData.blue?.limit || TIMER_LIMITS.GAME,
+          time: settings.blue.limit || TIMER_LIMITS.GAME,
           isRunning: false,
           ball: 6,
           isTieBreak: false,
@@ -1244,7 +1284,7 @@ export const useScoreboardHandlers = ({
         scoreboardElement.removeAttribute('data-forfeit');
       }
       
-      saveData(resetGameData);
+      await saveData(resetGameData);
     } catch (error) {
       console.error('リセット処理エラー:', error);
     }

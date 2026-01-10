@@ -28,56 +28,69 @@ app.use(express.json());
 // 静的ファイルの提供
 app.use('/data', express.static(path.join(__dirname, '../public/data')));
 
-// game.jsonを更新するAPIエンドポイント
-app.put('/api/game/:eventId/court/:courtId', async (req, res) => {
+// データを更新する汎用APIエンドポイント
+app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
   try {
-    const { eventId, courtId } = req.params;
-    const gameData = req.body;
+    const { eventId, courtId, filename } = req.params;
+    const data = req.body;
 
     // ファイルパスを構築
-    const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, 'game.json');
+    const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, `${filename}.json`);
     
     // ディレクトリが存在しない場合は作成
     await fs.ensureDir(path.dirname(filePath));
     
-    // 一度標準的なインデントでJSON文字列を作成
-    let jsonString = JSON.stringify(gameData, null, 2);
+    // インデント設定
+    let jsonString = JSON.stringify(data, null, 2);
 
-    // match.ends 配列内の各エンドオブジェクト（"shots"を含むもの）だけを1行にまとめる
-    jsonString = jsonString.replace(
-      /(\s+)\{\s+"end":\s+(\d+),\s+"shots":[\s\S]+?\}/g,
-      (match, indent) => {
-        return indent + match.replace(/\n/g, '').replace(/\s\s+/g, ' ').trim();
-      }
-    );
+    // match.ends 配列内の整形（game.jsonの場合のみ）
+    if (filename === 'game') {
+      jsonString = jsonString.replace(
+        /(\s+)\{\s+"end":\s+(\d+),\s+"shots":[\s\S]+?\}/g,
+        (match, indent) => {
+          return indent + match.replace(/\n/g, '').replace(/\s\s+/g, ' ').trim();
+        }
+      );
+    }
     
-    // ファイルに書き込み
     await fs.writeFile(filePath, jsonString, 'utf8');
-    
-    res.json({ success: true, message: 'Game data updated successfully' });
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error updating game.json:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// game.jsonを取得するAPIエンドポイント
-app.get('/api/game/:eventId/court/:courtId', async (req, res) => {
+// データを取得する汎用APIエンドポイント
+app.get('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
   try {
-    const { eventId, courtId } = req.params;
-    const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, 'game.json');
+    const { eventId, courtId, filename } = req.params;
+    const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, `${filename}.json`);
     
-    // ファイルが存在するかチェック
     if (await fs.pathExists(filePath)) {
-      const gameData = await fs.readJson(filePath);
-      res.json(gameData);
+      const data = await fs.readJson(filePath);
+      res.json(data);
     } else {
-      res.status(404).json({ error: 'Game data not found' });
+      res.status(404).json({ error: 'File not found' });
     }
   } catch (error) {
-    console.error('Error reading game.json:', error);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// 後方互換性のための既存エンドポイント
+app.get('/api/game/:eventId/court/:courtId', async (req, res) => {
+  const { eventId, courtId } = req.params;
+  const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, 'game.json');
+  if (await fs.pathExists(filePath)) {
+    res.json(await fs.readJson(filePath));
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
+});
+
+app.put('/api/game/:eventId/court/:courtId', async (req, res) => {
+  // 既存のPUT処理（必要に応じて残す、またはリダイレクト）
+  // ...
 });
 
 

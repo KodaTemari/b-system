@@ -112,28 +112,28 @@ const Scoreboard = () => {
   useEffect(() => {
     if (Object.keys(settingPendingChanges).length === 0) return;
 
-    setSettingPendingChanges(prev => {
-      const newPending = { ...prev };
-      let changed = false;
+    const newPending = { ...settingPendingChanges };
+    let changed = false;
 
-      Object.entries(newPending).forEach(([key, pendingValue]) => {
-        const [parent, child] = key.split('.');
-        let gameValue;
+    Object.entries(newPending).forEach(([key, pendingValue]) => {
+      const [parent, child] = key.split('.');
+      let gameValue;
 
-        if (child) {
-          gameValue = gameData?.[parent]?.[child];
-        } else {
-          gameValue = gameData?.[parent];
-        }
+      if (child) {
+        gameValue = gameData?.[parent]?.[child];
+      } else {
+        gameValue = gameData?.[parent];
+      }
 
-        if (gameValue !== undefined && gameValue === pendingValue) {
-          delete newPending[key];
-          changed = true;
-        }
-      });
-
-      return changed ? newPending : prev;
+      if (gameValue !== undefined && gameValue === pendingValue) {
+        delete newPending[key];
+        changed = true;
+      }
     });
+
+    if (changed) {
+      setSettingPendingChanges(newPending);
+    }
   }, [gameData, settingPendingChanges]);
 
   const handleSettingModalOpen = () => {

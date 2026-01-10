@@ -192,79 +192,80 @@ const SettingModal = ({
 
   // Set class and gender from URL params
   useEffect(() => {
-    if (section === 'standby' && classParam) {
-      setSelectedClassId(classParam);
-
-      const genderValue = genderParam ? (genderParam.toUpperCase() === 'M' ? 'M' : genderParam.toUpperCase() === 'F' ? 'F' : '') : '';
-      setSelectedGender(genderValue);
-
-      // Apply class settings
-      const settings = getClassSettings(classParam);
-      currentLimitsRef.current.red = settings.redLimit;
-      currentLimitsRef.current.blue = settings.blueLimit;
-      setSelectedRedLimit(settings.redLimit);
-      setSelectedBlueLimit(settings.blueLimit);
-      setSelectedWarmup(settings.warmup);
-      setSelectedInterval(settings.interval);
-      setSelectedTieBreak(settings.tieBreak);
-      setSelectedRules(settings.rules);
-      setSelectedResultApproval(settings.resultApproval);
-      setSelectedEnds(settings.totalEnds);
-
-      // Record changes in pendingChanges
-      setPendingChanges(prev => ({
-        ...prev,
-        'red.limit': settings.redLimit,
-        'blue.limit': settings.blueLimit,
-        'match.warmup': settings.warmup,
-        'match.interval': settings.interval,
-        'match.totalEnds': settings.totalEnds,
-        'match.tieBreak': settings.tieBreak,
-        'match.rules': settings.rules,
-        'match.resultApproval': settings.resultApproval
-      }));
-
-      // Update classification display value
-      setTimeout(() => {
-        updateClassificationValue(classParam, genderValue, true);
-      }, 0);
+    // すでに設定がある場合や、standbyセクションでない場合は自動適用しない
+    if (section !== 'standby' || !classParam) return;
+    
+    // 現在のgameDataとURLパラメータが一致している場合は、初期化処理をスキップ
+    // これにより、手動で変更した「エンド数」などがクラスのデフォルト値で上書きされるのを防ぐ
+    if (gameData?.classification && selectedClassId === classParam) {
+      return;
     }
-  }, [classParam, genderParam, section]);
+
+    setSelectedClassId(classParam);
+
+    const genderValue = genderParam ? (genderParam.toUpperCase() === 'M' ? 'M' : genderParam.toUpperCase() === 'F' ? 'F' : '') : '';
+    setSelectedGender(genderValue);
+
+    // Apply class settings
+    const settings = getClassSettings(classParam);
+    currentLimitsRef.current.red = settings.redLimit;
+    currentLimitsRef.current.blue = settings.blueLimit;
+    setSelectedRedLimit(settings.redLimit);
+    setSelectedBlueLimit(settings.blueLimit);
+    setSelectedWarmup(settings.warmup);
+    setSelectedInterval(settings.interval);
+    setSelectedTieBreak(settings.tieBreak);
+    setSelectedRules(settings.rules);
+    setSelectedResultApproval(settings.resultApproval);
+    setSelectedEnds(settings.totalEnds);
+
+    // Record changes in pendingChanges
+    setPendingChanges(prev => ({
+      ...prev,
+      'red.limit': settings.redLimit,
+      'blue.limit': settings.blueLimit,
+      'match.warmup': settings.warmup,
+      'match.interval': settings.interval,
+      'match.totalEnds': settings.totalEnds,
+      'match.tieBreak': settings.tieBreak,
+      'match.rules': settings.rules,
+      'match.resultApproval': settings.resultApproval
+    }));
+
+    // Update classification display value
+    setTimeout(() => {
+      updateClassificationValue(classParam, genderValue, true);
+    }, 0);
+  }, [classParam, genderParam, section, gameData?.classification]); // gameData?.classification を追加して再評価させる
 
   // Clear pendingChanges items if they match gameData (Optimistic UI sync)
   useEffect(() => {
     if (Object.keys(pendingChanges).length === 0) return;
 
-    setPendingChanges(prev => {
-      const newChanges = { ...prev };
-      let hasChanged = false;
+    const newChanges = { ...pendingChanges };
+    let hasChanged = false;
 
-      Object.entries(newChanges).forEach(([key, pendingValue]) => {
-        const [parent, child] = key.split('.');
-        let gameValue;
+    Object.entries(newChanges).forEach(([key, pendingValue]) => {
+      const [parent, child] = key.split('.');
+      let gameValue;
 
-        if (child) {
-          gameValue = gameData?.[parent]?.[child];
-        } else {
-          gameValue = gameData?.[parent];
-        }
-
-        // Compare values
-        if (gameValue !== undefined && gameValue === pendingValue) {
-          delete newChanges[key];
-          hasChanged = true;
-        }
-      });
-
-      if (hasChanged) {
-        if (Object.keys(newChanges).length === 0 && onPendingChangesChange) {
-          onPendingChangesChange({});
-        }
-        return newChanges;
+      if (child) {
+        gameValue = gameData?.[parent]?.[child];
+      } else {
+        gameValue = gameData?.[parent];
       }
-      return prev;
+
+      // Compare values
+      if (gameValue !== undefined && gameValue === pendingValue) {
+        delete newChanges[key];
+        hasChanged = true;
+      }
     });
-  }, [gameData, pendingChanges, onPendingChangesChange]);
+
+    if (hasChanged) {
+      setPendingChanges(newChanges);
+    }
+  }, [gameData, pendingChanges]);
 
   // Parse class ID and gender from current classification string
   useEffect(() => {

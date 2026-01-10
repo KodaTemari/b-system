@@ -3,37 +3,38 @@
   "match": {
     "end": 0,
     "ends": [],
-    "totalEnds": 1,
-    "sectionID": 0,
-    "section": "standby",
+    "totalEnds": 2,
+    "sectionID": 1,
+    "section": "warmup",
     "approvals": {
       "red": false,
       "referee": false,
       "blue": false
     },
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "worldBoccia",
+    "resultApproval": "none",
     "tieBreak": "extraEnd",
     "sections": [
       "standby",
       "warmup",
       "end1",
-      "matchFinished",
-      "resultApproval"
-    ],
-    "warmup": "simultaneous",
-    "interval": "enabled",
-    "rules": "worldBoccia",
-    "resultApproval": "enabled"
+      "interval",
+      "end2",
+      "matchFinished"
+    ]
   },
   "screen": {
     "active": "",
-    "isColorSet": false,
+    "isColorSet": true,
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
   "warmup": {
     "limit": 120000,
-    "time": 120000,
-    "isRunning": false
+    "time": 78353,
+    "isRunning": true
   },
   "interval": {
     "limit": 60000,
@@ -41,12 +42,12 @@
     "isRunning": false
   },
   "red": {
-    "name": "Blue",
+    "name": "Red",
     "score": 0,
-    "limit": 270000,
+    "limit": 210000,
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 210000,
     "isTieBreak": false,
     "result": "",
     "country": "",
@@ -59,12 +60,12 @@
     "tieBreak": false
   },
   "blue": {
-    "name": "Red",
+    "name": "Blue",
     "score": 0,
-    "limit": 270000,
+    "limit": 210000,
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 210000,
     "isTieBreak": false,
     "result": "",
     "country": "",
@@ -77,8 +78,8 @@
     "tieBreak": false
   },
   "courtId": "",
-  "classification": "IND BC1 Male",
+  "classification": "IND BC2 Male",
   "category": "",
   "matchName": "第1回戦",
-  "lastUpdated": "2026-01-10T06:20:23.862Z"
+  "lastUpdated": "2026-01-10T06:58:01.078Z"
 }
