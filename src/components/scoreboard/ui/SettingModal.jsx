@@ -860,6 +860,7 @@ const SettingModal = ({
           setPendingChanges={setPendingChanges}
           pendingChanges={pendingChanges}
           gameData={gameData}
+          onUpdateField={onUpdateField}
         />
 
         {section !== 'standby' && (

@@ -258,6 +258,7 @@ export const useScoreboard = () => {
   const handlers = useScoreboardHandlers({
     gameData,
     updateField,
+    updateDirectField,
     updateScore,
     updateTimer,
     updateBall,
@@ -413,15 +414,18 @@ export const useScoreboard = () => {
     };
   }, [setSearchParams]);
 
-  // bodyのdata-mode属性を設定
+  // bodyのdata-modeとdata-scene属性を設定
   useEffect(() => {
     const dataMode = isCtrl ? 'ctrl' : 'view';
+    const dataScene = gameData.scene || 'official';
     document.body.setAttribute('data-mode', dataMode);
+    document.body.setAttribute('data-scene', dataScene);
     
     return () => {
       document.body.removeAttribute('data-mode');
+      document.body.removeAttribute('data-scene');
     };
-  }, [isCtrl]);
+  }, [isCtrl, gameData.scene]);
 
   // data-mode="view"の時にURLを書き換え
   // 将来的に本部システムと連携する際には不要になる可能性があるため、コメント化

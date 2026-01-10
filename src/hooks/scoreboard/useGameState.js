@@ -7,6 +7,51 @@ import { TIMER_LIMITS, BALL_COUNTS, GAME_SECTIONS } from '../../utils/scoreboard
  * @returns {Object} Game state and control functions
  */
 export const useGameState = (initialData = {}, isCtrl = false) => {
+  // Helper to merge game data consistently
+  const mergeGameData = useCallback((prevData, incomingData) => {
+    if (!incomingData || Object.keys(incomingData).length === 0) {
+      return prevData;
+    }
+
+    const sections = incomingData.match?.sections || prevData.match?.sections || GAME_SECTIONS;
+    const sectionID = incomingData.match?.sectionID !== undefined ? incomingData.match.sectionID : prevData.match.sectionID;
+    const section = sections[sectionID] || 'standby';
+    
+    const extractEndNumber = (sectionName) => {
+      if (sectionName && sectionName.startsWith('end')) {
+        return parseInt(sectionName.replace('end', ''), 10);
+      }
+      if (sectionName === 'tieBreak') return 'TB1';
+      return 0;
+    };
+    
+    const end = extractEndNumber(section);
+
+    return {
+      ...prevData,
+      ...incomingData,
+      scene: incomingData.scene !== undefined ? incomingData.scene : prevData.scene,
+      match: {
+        ...prevData.match,
+        ...(incomingData.match || {}),
+        end,
+        sectionID,
+        section,
+        sections,
+        totalEnds: incomingData.match?.totalEnds ?? prevData.match?.totalEnds,
+        ends: incomingData.match?.ends || prevData.match?.ends || []
+      },
+      red: {
+        ...prevData.red,
+        ...(incomingData.red || {})
+      },
+      blue: {
+        ...prevData.blue,
+        ...(incomingData.blue || {})
+      }
+    };
+  }, []);
+
   // Initial state (merged with initialData)
   const [gameData, setGameData] = useState(() => {
     // Default values (fallback)
@@ -35,6 +80,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         isScoreAdjusting: false,
         isPenaltyThrow: false
       },
+      scene: 'official',
       warmup: {
         limit: TIMER_LIMITS.WARMUP
       },
@@ -50,6 +96,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         time: TIMER_LIMITS.GAME,
         isTieBreak: false,
         result: '',
+        playerID: '',
+        affiliation: '',
         country: '',
         profilePic: ''
       },
@@ -62,6 +110,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         time: TIMER_LIMITS.GAME,
         isTieBreak: false,
         result: '',
+        playerID: '',
+        affiliation: '',
         country: '',
         profilePic: ''
       }
@@ -116,43 +166,42 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       return Object.values(endsMap).sort((a, b) => a.end - b.end);
     };
 
-    // Priority: 1. game.json, 2. LocalStorage, 3. Default
-    if (initialData && initialData !== null && Object.keys(initialData).length > 0) {
-      const sections = initialData.match?.sections || GAME_SECTIONS;
-      const sectionID = initialData.match?.sectionID || defaultData.match.sectionID;
+    // Priority: 1. incoming data (game.json), 2. Default
+    if (initialData && Object.keys(initialData).length > 0) {
+      const dataWithConsolidatedEnds = {
+        ...initialData,
+        match: {
+          ...initialData.match,
+          ends: consolidateEnds(initialData)
+        }
+      };
+      
+      // We use a simplified version of merge logic here for initial state
+      const sections = dataWithConsolidatedEnds.match?.sections || GAME_SECTIONS;
+      const sectionID = dataWithConsolidatedEnds.match?.sectionID || defaultData.match.sectionID;
       const section = sections[sectionID] || 'standby';
-      const tieBreak = initialData.match?.tieBreak || initialData.tieBreak || defaultData.match.tieBreak;
-      const ends = consolidateEnds(initialData);
-
+      
       const extractEndNumber = (sectionName) => {
         if (sectionName && sectionName.startsWith('end')) {
           return parseInt(sectionName.replace('end', ''), 10);
         }
         return 0;
       };
-      const end = extractEndNumber(section);
-
+      
       return {
         ...defaultData,
-        ...initialData,
+        ...dataWithConsolidatedEnds,
+        scene: dataWithConsolidatedEnds.scene || defaultData.scene,
         match: {
-          end,
-          ends,
-          ...(initialData.match || {}),
+          ...defaultData.match,
+          ...dataWithConsolidatedEnds.match,
+          end: extractEndNumber(section),
           sectionID,
           section,
-          tieBreak,
-          sections,
-          totalEnds: initialData.match?.totalEnds ?? defaultData.match.totalEnds
+          sections
         },
-        red: {
-          ...defaultData.red,
-          ...(initialData.red || {})
-        },
-        blue: {
-          ...defaultData.blue,
-          ...(initialData.blue || {})
-        }
+        red: { ...defaultData.red, ...(dataWithConsolidatedEnds.red || {}) },
+        blue: { ...defaultData.blue, ...(dataWithConsolidatedEnds.blue || {}) }
       };
     }
 
@@ -405,58 +454,21 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
 
   // Sync with initialData changes
   useEffect(() => {
-    if (initialData && initialData !== null && Object.keys(initialData).length > 0) {
+    if (initialData && Object.keys(initialData).length > 0) {
       setGameData(prevData => {
-        // Deep compare to avoid unnecessary re-renders, but ensure all fields are covered
-        // Using a simple JSON stringify for comparison as a robust way to detect ANY change
-        const prevString = JSON.stringify(prevData);
-        const nextString = JSON.stringify({
-          ...prevData,
-          ...initialData,
-          match: {
-            ...prevData.match,
-            ...(initialData.match || {}),
-          },
-          red: {
-            ...prevData.red,
-            ...(initialData.red || {})
-          },
-          blue: {
-            ...prevData.blue,
-            ...(initialData.blue || {})
-          }
-        });
+        // Deep compare using JSON stringify to detect any relevant change
+        const currentDataString = JSON.stringify(prevData);
+        const mergedData = mergeGameData(prevData, initialData);
+        const mergedDataString = JSON.stringify(mergedData);
 
-        if (prevString === nextString) {
+        if (currentDataString === mergedDataString) {
           return prevData;
         }
 
-        const section = initialData.match?.section || prevData.match?.section;
-        const endNum = extractEndNumber(section);
-
-        return {
-          ...prevData,
-          ...initialData,
-          match: {
-            ...prevData.match,
-            ...(initialData.match || {}),
-            sectionID: initialData.match?.sectionID !== undefined ? initialData.match.sectionID : prevData.match.sectionID,
-            end: endNum,
-            totalEnds: initialData.match?.totalEnds ?? prevData.match?.totalEnds,
-            ends: initialData.match?.ends || prevData.match?.ends || []
-          },
-          red: {
-            ...prevData.red,
-            ...(initialData.red || {})
-          },
-          blue: {
-            ...prevData.blue,
-            ...(initialData.blue || {})
-          }
-        };
+        return mergedData;
       });
     }
-  }, [initialData, extractEndNumber]);
+  }, [initialData, mergeGameData]);
 
   return {
     gameData,

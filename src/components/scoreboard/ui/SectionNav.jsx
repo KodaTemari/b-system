@@ -167,27 +167,7 @@ const SectionNavigation = React.memo(({
           <div id="matchInfo">
             <p id="classification">{formattedClassification}</p>
             <div id="matchNameContainer">
-              {/* RED Flag/Icon */}
-              {(redProfilePic || redCountry) && (
-                <div className={`teamIconBox ${redProfilePic ? 'isProfile' : 'isFlag'}`}>
-                  <img
-                    src={redProfilePic || `/img/flags/${COUNTRIES.find(c => c.en === redCountry)?.code}.svg`}
-                    alt={redCountry}
-                  />
-                </div>
-              )}
-
               <h1 id="matchName">{matchName}</h1>
-
-              {/* BLUE Flag/Icon */}
-              {(blueProfilePic || blueCountry) && (
-                <div className={`teamIconBox ${blueProfilePic ? 'isProfile' : 'isFlag'}`}>
-                  <img
-                    src={blueProfilePic || `/img/flags/${COUNTRIES.find(c => c.en === blueCountry)?.code}.svg`}
-                    alt={blueCountry}
-                  />
-                </div>
-              )}
             </div>
           </div>
 

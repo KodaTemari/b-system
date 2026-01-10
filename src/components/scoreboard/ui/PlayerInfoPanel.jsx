@@ -7,6 +7,7 @@ import winIcon from '../img/icon_win.png';
 const PlayerInfoPanel = ({ 
   color, 
   playerName, 
+  profilePic,
   score, 
   onSelect, 
   onAdjust, 
@@ -135,7 +136,11 @@ const PlayerInfoPanel = ({
   return (
     <section id={color}>
       <h2 ref={h2ElementRef}>
-        <span className="profilePic"></span>
+        <span className="profilePic">
+          {profilePic && (
+            <img src={profilePic} alt="" />
+          )}
+        </span>
         <span 
           className="name" 
           ref={nameElementRef} 

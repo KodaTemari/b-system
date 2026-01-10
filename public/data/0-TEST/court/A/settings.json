@@ -1,34 +1,39 @@
 {
-  "classification": "Recreation",
+  "classification": "IND BC2 Male",
   "category": "",
   "matchName": "第1回戦",
   "match": {
-    "totalEnds": 2,
-    "warmup": "none",
-    "interval": "none",
-    "rules": "recreation",
+    "totalEnds": 4,
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "worldBoccia",
     "resultApproval": "enabled",
     "tieBreak": "extraEnd",
     "sections": [
       "standby",
+      "warmup",
       "end1",
+      "interval",
       "end2",
-      "tieBreak",
+      "interval",
+      "end3",
+      "interval",
+      "end4",
       "matchFinished",
       "resultApproval"
     ]
   },
   "red": {
     "name": "Red",
-    "limit": 300000,
-    "country": "",
-    "profilePic": ""
+    "limit": 210000,
+    "country": "Great Britain",
+    "profilePic": "/img/flags/gb.svg"
   },
   "blue": {
     "name": "Blue",
-    "limit": 300000,
-    "country": "",
-    "profilePic": ""
+    "limit": 210000,
+    "country": "Armenia",
+    "profilePic": "/img/flags/am.svg"
   },
   "warmup": {
     "limit": 120000

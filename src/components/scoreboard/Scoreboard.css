@@ -553,6 +553,7 @@
   align-items: center;
   position: relative;
   height: 13vh;
+  gap: 2vmin;
   padding: 0 4vw;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -561,10 +562,28 @@
   font-weight: normal;
 }
 
+#scoreboard #blue h2 {
+  flex-direction: row-reverse;
+}
+
 #scoreboard main section h2 .name {
   transform-origin: center;
   transition: transform 0.3s ease;
   transform: scaleX(var(--textScale, 1));
+}
+
+.profilePic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 7vmin;
+  overflow: hidden;
+}
+
+.profilePic img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5vmin;
 }
 
 #scoreboard main #red h2 {
@@ -998,7 +1017,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2vh 0;
+  padding-top: 8vh;
 }
 
 #resultApproval .approvalButtons {
@@ -1039,12 +1058,12 @@
   z-index: 1;
 }
 
-#resultApproval .matchCompleted {
-  font-size: 6vmin;
+#resultApproval .matchCompleted { 
+  font-size: 4vmin;
   color: var(--color-white);
   font-weight: bold;
   text-align: center;
-  padding: 2vh 0;
+  padding: 1vh 0;
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -2968,27 +2987,6 @@
   gap: 3vmin;
 }
 
-/* 選手名の横に表示するアイコン/国旗の枠 */
-.teamIconBox {
-  width: 10vmin;
-  height: 10vmin;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* 国旗の場合、角を少し丸める */
-.teamIconBox.isFlag {
-  border-radius: 1vmin;
-}
-
-/* カスタム画像の場合、円形または正方形を維持（現在はそのまま） */
-.teamIconBox.isProfile {
-  border-radius: 0;
-}
-
-
 /* 確定ボタンのコンテナ */
 .confirmBtnBox {
   text-align: center;
@@ -3007,8 +3005,48 @@
   height: auto;
 }
 
-/* アイコン画像の全体のスタイル */
-.teamIconBox img {
-  width: 100%;
-  height: auto;
+/* カスタム設定モーダル内のラジオボタン設定 */
+.customModalBox .settingRadioGroup {
+  display: flex;
+  gap: 3vmin;
+  padding: 1vmin 0;
+  justify-content: center;
 }
+
+.customModalBox .radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 1vmin;
+  cursor: pointer;
+  font-size: 3vmin;
+  color: white;
+}
+
+.customModalBox .radioLabel input[type="radio"] {
+  width: 3.5vmin;
+  height: 3.5vmin;
+  cursor: pointer;
+}
+
+.customModalBox #sceneSetting {
+  order: 2;
+  margin-top: 4vmin;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 3vmin;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.customModalBox .detailSettingLabel {
+  font-size: 4vmin;
+  color: var(--color-white);
+  margin-bottom: 2vmin;
+  font-weight: bold;
+}
+
+.customModalBox .confirmBtnBox {
+  order: 3;
+}
+

@@ -9,6 +9,7 @@ import { calculateBallCount } from '../../utils/scoreboard/gameLogic';
 export const useScoreboardHandlers = ({
   gameData,
   updateField,
+  updateDirectField,
   updateScore,
   updateTimer,
   updateBall,
@@ -1499,39 +1500,46 @@ export const useScoreboardHandlers = ({
     return getLocalizedText(key, currentLang);
   }, [currentLang]);
 
-  // チーム名を入れ替えるハンドラー
+  // チーム名と選手情報を入れ替えるハンドラー
   const handleSwapTeamNames = useCallback(() => {
     if (!gameData || !gameData.red || !gameData.blue) {
       return;
     }
     
-    const redName = gameData.red.name || '';
-    const blueName = gameData.blue.name || '';
+    // 入れ替える対象のフィールドリスト
+    const playerFields = ['name', 'playerID', 'affiliation', 'country', 'profilePic', 'limit'];
     
-    // 名前を入れ替える
+    const newRed = { ...gameData.red };
+    const newBlue = { ...gameData.blue };
+    
+    // 各フィールドを入れ替え
+    playerFields.forEach(field => {
+      const temp = newRed[field];
+      newRed[field] = newBlue[field];
+      newBlue[field] = temp;
+    });
+
+    // タイマーの時間も制限時間に合わせてリセット（スタンバイ時を想定）
+    newRed.time = newRed.limit;
+    newBlue.time = newBlue.limit;
+    
     const updatedGameData = {
       ...gameData,
-      red: {
-        ...gameData.red,
-        name: blueName
-      },
-      blue: {
-        ...gameData.blue,
-        name: redName
-      }
+      red: newRed,
+      blue: newBlue
     };
     
-    // updateFieldで名前を更新
-    if (updateField) {
-      updateField('red', 'name', blueName);
-      updateField('blue', 'name', redName);
+    // 全フィールドを一括更新
+    if (updateDirectField) {
+      updateDirectField('red', newRed);
+      updateDirectField('blue', newBlue);
     }
     
     // ctrlモードの場合のみ保存
     if (isCtrl && saveData) {
       saveData(updatedGameData);
     }
-  }, [gameData, updateField, saveData, isCtrl]);
+  }, [gameData, updateDirectField, saveData, isCtrl]);
 
   return {
     handleSelect,

@@ -127,5 +127,6 @@ export const DEFAULT_GAME_DATA = {
   classification: '',
   category: '',
   matchName: '',
+  scene: 'official',
   lastUpdated: ''
 };

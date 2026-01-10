@@ -90,6 +90,11 @@
     "matchName": "Match Name",
     "redName": "Red Name",
     "blueName": "Blue Name",
+    "playerID": "Player ID",
+    "affiliation": "Affiliation",
+    "country": "Country",
+    "redTeam": "Red Team",
+    "blueTeam": "Blue Team",
     "redTimer": "Red Timer",
     "blueTimer": "Blue Timer",
     "warmup": "Warmup",
@@ -98,9 +103,15 @@
     "tieBreak": "Tie Break",
     "rules": "Rules",
     "resultApproval": "Result Approval",
-    "gender": "Gender"
+    "gender": "Gender",
+    "scene": "Match Scene"
   },
   "options": {
+    "scene": {
+      "recreation": "Recreation",
+      "official": "BC Official",
+      "general": "General Match"
+    },
     "warmup": {
       "simultaneous": "2:00 Simultaneous",
       "separate": "2:00 Separate",

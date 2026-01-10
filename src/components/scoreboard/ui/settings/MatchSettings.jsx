@@ -39,6 +39,7 @@ export const MatchGeneralSettings = ({
         <option value="F">{getLocalizedText('options.gender.female', currentLang)}</option>
         <option value="">{getLocalizedText('options.gender.mixed', currentLang)}</option>
       </select>
+
       <input
         id="matchNameInput"
         type="text"

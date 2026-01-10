@@ -857,6 +857,7 @@ const Scoreboard = () => {
         <PlayerInfoPanel
           color="red"
           playerName={redName}
+          profilePic={red?.profilePic}
           score={red.score}
           time={redTimer.displayTime}
           remainingMs={redTimer.remainingMs}
@@ -879,6 +880,7 @@ const Scoreboard = () => {
         <PlayerInfoPanel
           color="blue"
           playerName={blueName}
+          profilePic={blue?.profilePic}
           score={blue.score}
           time={blueTimer.displayTime}
           remainingMs={blueTimer.remainingMs}

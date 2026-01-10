@@ -91,6 +91,11 @@
     "matchName": "試合名",
     "redName": "赤の名前",
     "blueName": "青の名前",
+    "playerID": "選手ID",
+    "affiliation": "所属",
+    "country": "国",
+    "redTeam": "赤チーム",
+    "blueTeam": "青チーム",
     "redTimer": "赤：タイマー",
     "blueTimer": "青：タイマー",
     "warmup": "ウォームアップ",
@@ -99,9 +104,15 @@
     "tieBreak": "タイブレーク",
     "rules": "競技規則",
     "resultApproval": "結果承認",
-    "gender": "性別"
+    "gender": "性別",
+    "scene": "利用場面"
   },
   "options": {
+    "scene": {
+      "recreation": "レクリエーション",
+      "official": "BC公式試合",
+      "general": "その他の試合"
+    },
     "warmup": {
       "simultaneous": "2:00 同時",
       "separate": "2:00 別々",

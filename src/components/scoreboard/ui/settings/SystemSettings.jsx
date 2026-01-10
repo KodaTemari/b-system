@@ -12,12 +12,15 @@ const SystemSettings = ({
   currentLang,
   setPendingChanges,
   pendingChanges,
-  gameData
+  gameData,
+  onUpdateField
 }) => {
   // Fallback if currentLang prop is not provided
   const lang = currentLang || getCurrentLanguage();
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
+
+  const scene = gameData?.scene || 'official';
 
   // Sort country list based on language
   const sortedCountries = useMemo(() => {
@@ -87,11 +90,12 @@ const SystemSettings = ({
     if (!country) return;
 
     const flagName = country.en === 'None' ? '' : country.en;
+    const flagPath = (country && country.code !== 'xx') ? `/img/flags/${country.code}.svg` : '';
 
     setPendingChanges(prev => ({
       ...prev,
       [`${side}.country`]: flagName,
-      [`${side}.profilePic`]: '' // 旗を選んだらカスタムアイコンをクリア
+      [`${side}.profilePic`]: flagPath // 旗を選んだらprofilePicにパスを設定
     }));
   };
 
@@ -213,6 +217,30 @@ const SystemSettings = ({
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div id="sceneSetting" className="detailSettingItem">
+            <label className="detailSettingLabel">{getLocalizedText('labels.scene', lang)}</label>
+            <div className="settingRadioGroup">
+              {['official', 'recreation', 'general'].map((s) => (
+                <label key={s} className="radioLabel">
+                  <input
+                    type="radio"
+                    name="scene"
+                    value={s}
+                    checked={scene === s}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // 即座にgameDataを更新してbody属性に反映させる
+                      if (onUpdateField) {
+                        onUpdateField('scene', null, val);
+                      }
+                    }}
+                  />
+                  {getLocalizedText(`options.scene.${s}`, lang)}
+                </label>
+              ))}
             </div>
           </div>
         </div>

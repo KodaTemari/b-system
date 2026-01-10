@@ -17,23 +17,19 @@
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
-  "warmup": {
-    "time": 120000,
-    "isRunning": false
-  },
-  "interval": {
-    "time": 60000,
-    "isRunning": false
-  },
+  "scene": "official",
+  "warmup": {},
+  "interval": {},
   "red": {
     "score": 0,
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
-    "scores": [],
     "playerID": "",
+    "affiliation": "",
+    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
@@ -42,15 +38,16 @@
     "score": 0,
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
-    "scores": [],
     "playerID": "",
+    "affiliation": "",
+    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
   },
   "courtId": "",
-  "lastUpdated": "2026-01-10T08:26:17.600Z"
+  "lastUpdated": "2026-01-10T11:57:44.618Z"
 }
