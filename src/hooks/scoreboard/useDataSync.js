@@ -177,13 +177,43 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       };
 
       // 2. 進行データ (game.json)
-      // 設定データに含まれるものは除外して保存（肥大化と競合防止）
+      // 設定データに含まれる項目を除外して保存（冗長性を排除し、役割を分離）
       const gameStateToSave = {
         ...data,
-        // 設定項目を空にするのではなく、進行状態のみを確実に含むようにする
+        classification: undefined,
+        category: undefined,
+        matchName: undefined,
         match: {
           ...data.match,
-          // 設定項目も念のため含めるが、読み込み時はsettings.jsonを優先する
+          totalEnds: undefined,
+          warmup: undefined,
+          interval: undefined,
+          rules: undefined,
+          resultApproval: undefined,
+          tieBreak: undefined,
+          sections: undefined
+        },
+        red: {
+          ...data.red,
+          name: undefined,
+          limit: undefined,
+          country: undefined,
+          profilePic: undefined
+        },
+        blue: {
+          ...data.blue,
+          name: undefined,
+          limit: undefined,
+          country: undefined,
+          profilePic: undefined
+        },
+        warmup: {
+          ...data.warmup,
+          limit: undefined
+        },
+        interval: {
+          ...data.interval,
+          limit: undefined
         }
       };
       

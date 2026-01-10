@@ -403,10 +403,10 @@ const Scoreboard = () => {
     }
 
     // Record penalty in current end
-    const currentEnd = gameData.match?.end || 0;
+    const currentEnd = gameData.match?.end;
     const ends = [...(gameData.match?.ends || [])];
 
-    if (currentEnd > 0) {
+    if (currentEnd !== undefined && currentEnd !== null && currentEnd !== 0) {
       // List of penalties to record (excluding restartedEnd and forfeit)
       const recordablePenalties = ['lineCross', 'throwBeforeInstruction', 'retraction', 'penaltyBall',
         'retractionAndPenaltyBall', 'penaltyBallAndYellowCard', 'yellowCard', 'redCard'];

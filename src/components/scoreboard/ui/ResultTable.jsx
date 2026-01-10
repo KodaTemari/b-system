@@ -8,21 +8,8 @@ import { getText as getLocalizedText, getCurrentLanguage } from '../../../locale
 const ResultTable = ({ ends = [] }) => {
   const currentLang = getCurrentLanguage();
 
-  // エンド番号の最大値を取得
-  const getMaxEnd = () => {
-    let maxEnd = 0;
-    ends.forEach(entry => {
-      if (entry.end) {
-        maxEnd = Math.max(maxEnd, entry.end);
-      }
-    });
-    return maxEnd;
-  };
-
-  const maxEnd = getMaxEnd();
-
-  // 行がない場合、何も表示しない
-  if (maxEnd === 0) {
+  // 表示するデータがない場合
+  if (!ends || ends.length === 0) {
     return null;
   }
 
@@ -60,25 +47,20 @@ const ResultTable = ({ ends = [] }) => {
   }));
 
   // 特定のエンド・色のチームに対する注釈番号の配列を取得するヘルパー
-  const getPenaltyIndices = (endNumber, color) => {
+  const getPenaltyIndices = (endIdentifier, color) => {
     return penaltyLegend
-      .filter(p => p.end === endNumber && p.color === color)
+      .filter(p => p.end === endIdentifier && p.color === color)
       .map(p => p.index);
   };
 
-  // エンドごとのスコアと反則を取得するヘルパー関数
-  const getEndData = (endNumber) => {
-    const endEntry = ends.find(e => e.end === endNumber);
-    if (endEntry) {
-      return {
-        redScore: endEntry.redScore ?? 0,
-        blueScore: endEntry.blueScore ?? 0,
-        redPenalties: endEntry.redPenalties || [],
-        bluePenalties: endEntry.bluePenalties || []
-      };
-    }
-    return { redScore: 0, blueScore: 0, redPenalties: [], bluePenalties: [] };
-  };
+  // 表示対象のエンドをフィルタリング
+  // 1. 通常のエンド（数値）はすべて表示
+  // 2. タイブレーク（数値以外）は反則がある場合のみ表示
+  const visibleEnds = ends.filter(e => {
+    const isRegularEnd = typeof e.end === 'number';
+    const hasPenalties = (e.redPenalties?.length > 0 || e.bluePenalties?.length > 0);
+    return isRegularEnd || hasPenalties;
+  });
 
   return (
     <div id="resultTableContainer">
@@ -92,25 +74,25 @@ const ResultTable = ({ ends = [] }) => {
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: maxEnd }, (_, index) => {
-              const endNumber = index + 1;
-              const data = getEndData(endNumber);
-              const redPenaltyIndices = getPenaltyIndices(endNumber, 'red');
-              const bluePenaltyIndices = getPenaltyIndices(endNumber, 'blue');
+            {visibleEnds.map((endEntry, index) => {
+              const endLabel = endEntry.end; // 1, 2, "TB1" など
+              const isTieBreakEnd = typeof endLabel === 'string';
+              const redPenaltyIndices = getPenaltyIndices(endLabel, 'red');
+              const bluePenaltyIndices = getPenaltyIndices(endLabel, 'blue');
               
               return (
-                <tr key={endNumber}>
-                  <td className={data.redScore >= 1 ? 'isHasScore' : ''}>
-                    {data.redScore}
+                <tr key={index}>
+                  <td className={!isTieBreakEnd && endEntry.redScore >= 1 ? 'isHasScore' : ''}>
+                    {!isTieBreakEnd && endEntry.redScore}
                     {redPenaltyIndices.length > 0 && (
                       <span className="penaltyRef">
                         {redPenaltyIndices.map(i => `*${i}`).join(',')}
                       </span>
                     )}
                   </td>
-                  <td>{endNumber}</td>
-                  <td className={data.blueScore >= 1 ? 'isHasScore' : ''}>
-                    {data.blueScore}
+                  <td>{endLabel}</td>
+                  <td className={!isTieBreakEnd && endEntry.blueScore >= 1 ? 'isHasScore' : ''}>
+                    {!isTieBreakEnd && endEntry.blueScore}
                     {bluePenaltyIndices.length > 0 && (
                       <span className="penaltyRef">
                         {bluePenaltyIndices.map(i => `*${i}`).join(',')}
@@ -133,7 +115,7 @@ const ResultTable = ({ ends = [] }) => {
                 .filter(p => p.color === 'red')
                 .map((p, i) => (
                   <div key={i} className="legendItem">
-                    *{p.index} 第{p.end}エンド / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
+                    *{p.index} {getLocalizedText('match.end', currentLang)}{p.end} / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
                   </div>
                 ))}
             </div>
@@ -142,7 +124,7 @@ const ResultTable = ({ ends = [] }) => {
                 .filter(p => p.color === 'blue')
                 .map((p, i) => (
                   <div key={i} className="legendItem">
-                    *{p.index} 第{p.end}エンド / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
+                    *{p.index} {getLocalizedText('match.end', currentLang)}{p.end} / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
                   </div>
                 ))}
             </div>

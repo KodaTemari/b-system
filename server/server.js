@@ -45,8 +45,9 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
 
     // match.ends 配列内の整形（game.jsonの場合のみ）
     if (filename === 'game') {
+      // インデントを保持しつつ、"shots" を含むオブジェクト（各エンドの記録）のみを1行化
       jsonString = jsonString.replace(
-        /(\s+)\{\s+"end":\s+(\d+),\s+"shots":[\s\S]+?\}/g,
+        /(\s+)\{\s+"end":\s+("[^"]+"|\d+),\s+"shots":[\s\S]+?\}/g,
         (match, indent) => {
           return indent + match.replace(/\n/g, '').replace(/\s\s+/g, ' ').trim();
         }

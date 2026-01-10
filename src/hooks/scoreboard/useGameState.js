@@ -226,6 +226,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     if (sectionName && sectionName.startsWith('end')) {
       return parseInt(sectionName.replace('end', ''), 10);
     }
+    if (sectionName === 'tieBreak') {
+      return 'TB1';
+    }
     return 0;
   }, []);
 
@@ -244,7 +247,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         },
         screen: {
           ...prevData.screen,
-          active: ''
+          active: '',
+          isScoreAdjusting: false
         }
       };
 

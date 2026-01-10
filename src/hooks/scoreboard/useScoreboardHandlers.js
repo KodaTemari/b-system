@@ -74,12 +74,17 @@ export const useScoreboardHandlers = ({
     
     const currentScore = gameData[color].score;
     const newScore = Math.max(0, currentScore + delta);
-    updateScore(color, newScore);
     
     // エンドスコアも更新（red.scoreの加減算と連動）
     const currentSection = gameData.match?.section || '';
     const sectionID = gameData.match?.sectionID || 0;
     const sections = gameData.match?.sections || [];
+    
+    // タイブレークセクション以外の場合のみ、合計スコアを更新
+    const isTieBreak = currentSection === 'tieBreak';
+    if (!isTieBreak) {
+      updateScore(color, newScore);
+    }
     
     let endNumber = 0;
     
@@ -113,19 +118,24 @@ export const useScoreboardHandlers = ({
         endEntryIndex = ends.length - 1;
       }
       
-      // スコアを更新
+      // スコアを更新（通常のエンドのみ）
+      const isTieBreakEnd = typeof endNumber === 'string';
       if (color === 'red') {
         const currentEndScore = ends[endEntryIndex].redScore || 0;
-        ends[endEntryIndex] = {
-          ...ends[endEntryIndex],
-          redScore: Math.max(0, currentEndScore + delta)
-        };
+        if (!isTieBreakEnd) {
+          ends[endEntryIndex] = {
+            ...ends[endEntryIndex],
+            redScore: Math.max(0, currentEndScore + delta)
+          };
+        }
       } else {
         const currentEndScore = ends[endEntryIndex].blueScore || 0;
-        ends[endEntryIndex] = {
-          ...ends[endEntryIndex],
-          blueScore: Math.max(0, currentEndScore + delta)
-        };
+        if (!isTieBreakEnd) {
+          ends[endEntryIndex] = {
+            ...ends[endEntryIndex],
+            blueScore: Math.max(0, currentEndScore + delta)
+          };
+        }
       }
       
       // match.endsを更新
@@ -556,13 +566,16 @@ export const useScoreboardHandlers = ({
 
     if (nextSection) {
       // エンド番号を計算
-      const extractEndNumber = (sectionName) => {
+      const extractEndNumberLocal = (sectionName) => {
         if (sectionName && sectionName.startsWith('end')) {
           return parseInt(sectionName.replace('end', ''), 10);
         }
+        if (sectionName === 'tieBreak') {
+          return 'TB1';
+        }
         return 0;
       };
-      const endNumber = extractEndNumber(nextSection);
+      const endNumber = extractEndNumberLocal(nextSection);
       
       // 現在のセクションがwarmupの場合、ウォームアップタイマーを停止し、limitにリセット
       if (currentSection === 'warmup' || currentSection === 'warmup1' || currentSection === 'warmup2') {
@@ -1015,7 +1028,8 @@ export const useScoreboardHandlers = ({
           },
           screen: {
             ...gameData.screen,
-            active: ''
+            active: '',
+            isScoreAdjusting: false
           }
         };
         saveData(updatedGameData);
