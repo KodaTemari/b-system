@@ -1,5 +1,5 @@
 {
-  "classification": "",
+  "classification": "IND BC1 Male",
   "category": "",
   "matchName": "第1回戦",
   "match": {
@@ -24,16 +24,16 @@
     ]
   },
   "red": {
-    "name": "Blue",
-    "limit": 270000,
-    "country": "",
-    "profilePic": "/img/flags/xx.svg"
-  },
-  "blue": {
     "name": "Red",
     "limit": 270000,
-    "country": "Great Britain",
-    "profilePic": "/img/flags/gb.svg"
+    "country": "Iceland",
+    "profilePic": "/img/flags/is.svg"
+  },
+  "blue": {
+    "name": "Blue",
+    "limit": 270000,
+    "country": "Philippines",
+    "profilePic": "/img/flags/ph.svg"
   },
   "warmup": {
     "limit": 120000

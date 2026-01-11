@@ -102,7 +102,7 @@ const SectionNavigation = React.memo(({
       'PairBC3', 'PairBC4',
       'TeamsBC1BC2',
       'TeamFriendly', 'Friendly', 'OPSeated', 'OPStanding',
-      'IndividualRecreation', 'TeamRecreation'];
+      'Recreation', 'Practice'];
 
     // Find matching key (check English name and Localized name)
     let found = false;

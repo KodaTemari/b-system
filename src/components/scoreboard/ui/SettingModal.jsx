@@ -3,7 +3,7 @@ import { getText as getLocalizedText, getCurrentLanguage, setLanguage } from '..
 import setting2Icon from '../img/icon_setting_2.png';
 import { MatchGeneralSettings, MatchRuleSettings } from './settings/MatchSettings';
 import TimerSettings from './settings/TimerSettings';
-import TeamSettings from './settings/TeamSettings';
+import PlayerSettings from './settings/PlayerSettings';
 import SystemSettings from './settings/SystemSettings';
 
 /**
@@ -76,21 +76,22 @@ const SettingModal = ({
     if (!classificationOptions || classificationOptions.length === 0) return [];
 
     switch (currentScene) {
-      case 'official': // BC公式試合: BCが含まれる選択肢のみ
+      case 'official': // 公式試合: BCシリーズ と OPシリーズ
         return classificationOptions.filter(opt => 
-          opt.classId && opt.classId.startsWith('BC') || 
-          opt.classId && (opt.classId.startsWith('PairBC') || opt.classId.startsWith('TeamsBC'))
-        );
-      case 'general': // 一般競技・オープン: フレンドリーとOP
-        return classificationOptions.filter(opt =>
           opt.classId && (
-            opt.classId.includes('Friendly') || 
+            opt.classId.startsWith('BC') || 
+            opt.classId.startsWith('PairBC') || 
+            opt.classId.startsWith('TeamsBC') ||
             opt.classId.includes('OP')
           )
         );
-      case 'recreation': // レクリエーション: 個人レク、チームレク
+      case 'general': // 一般競技: フレンドリー系
         return classificationOptions.filter(opt =>
-          opt.classId === 'IndividualRecreation' || opt.classId === 'TeamRecreation'
+          opt.classId && opt.classId.includes('Friendly')
+        );
+      case 'recreation': // レク・練習: 個人レク、チームレク
+        return classificationOptions.filter(opt =>
+          opt.classId === 'Recreation' || opt.classId === 'Practice'
         );
       default:
         return classificationOptions;
@@ -168,7 +169,7 @@ const SettingModal = ({
         settings.rules = 'friendlyMatch';
         settings.resultApproval = 'none';
         break;
-      case 'IndividualRecreation':
+      case 'Recreation':
         settings.redLimit = 240000; // 4:00
         settings.blueLimit = 240000; // 4:00
         settings.warmup = 'none';
@@ -178,9 +179,9 @@ const SettingModal = ({
         settings.rules = 'recreation';
         settings.resultApproval = 'none';
         break;
-      case 'TeamRecreation':
-        settings.redLimit = 300000; // 5:00
-        settings.blueLimit = 300000; // 5:00
+      case 'Practice':
+        settings.redLimit = 210000; // 3:30
+        settings.blueLimit = 210000; // 3:30
         settings.warmup = 'none';
         settings.interval = 'none';
         settings.totalEnds = 2;
@@ -218,7 +219,10 @@ const SettingModal = ({
           if (!classDef) return;
 
           let prefix = '';
-          if (classDef.type === 'individual') {
+          // レクリエーション系クラスはプレフィックスなし
+          if (classId === 'Recreation' || classId === 'Practice') {
+            prefix = '';
+          } else if (classDef.type === 'individual') {
             prefix = 'IND ';
           } else if (classDef.type === 'pair') {
             prefix = 'PAIR ';
@@ -269,16 +273,16 @@ const SettingModal = ({
       
       // Set default classification based on scene
       switch (currentScene) {
-        case 'official': // BC公式試合: 個人 BC1 男子
+        case 'official': // 公式試合: 個人 BC1 男子
           defaultClassId = 'BC1';
           defaultGender = 'M';
           break;
-        case 'general': // 一般競技・オープン: チーム フレンドリー
+        case 'general': // 一般競技: チーム フレンドリー
           defaultClassId = 'TeamFriendly';
           defaultGender = '';
           break;
-        case 'recreation': // レクリエーション: 個人 レクリエーション
-          defaultClassId = 'IndividualRecreation';
+        case 'recreation': // レク・練習: 個人 レクリエーション
+          defaultClassId = 'Recreation';
           defaultGender = '';
           break;
         default:
@@ -301,6 +305,22 @@ const SettingModal = ({
         // Apply default classification and its settings
         setSelectedClassId(defaultClassId);
         setSelectedGender(defaultGender);
+        
+        // Update URL params
+        if (setSearchParams) {
+          setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            newParams.set('c', defaultClassId);
+            if (defaultGender === 'M') {
+              newParams.set('g', 'm');
+            } else if (defaultGender === 'F') {
+              newParams.set('g', 'f');
+            } else {
+              newParams.delete('g');
+            }
+            return newParams;
+          });
+        }
         
         // Apply class settings
         const settings = getClassSettings(defaultClassId);
@@ -336,6 +356,17 @@ const SettingModal = ({
         // If default doesn't exist, clear classification
         setSelectedClassId('');
         setSelectedGender('');
+        
+        // Update URL params to clear classification
+        if (setSearchParams) {
+          setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            newParams.delete('c');
+            newParams.delete('g');
+            return newParams;
+          });
+        }
+        
         setPendingChanges(prev => {
           const newChanges = { ...prev };
           delete newChanges.classification;
@@ -344,7 +375,7 @@ const SettingModal = ({
         });
       }
     }
-  }, [currentScene, selectedClassId, filteredClassificationOptions, getClassSettings, updateClassificationValue, currentLimitsRef, setSelectedRedLimit, setSelectedBlueLimit, setSelectedWarmup, setSelectedInterval, setSelectedTieBreak, setSelectedRules, setSelectedResultApproval, setSelectedEnds, setPendingChanges]);
+  }, [currentScene, selectedClassId, filteredClassificationOptions, getClassSettings, updateClassificationValue, currentLimitsRef, setSelectedRedLimit, setSelectedBlueLimit, setSelectedWarmup, setSelectedInterval, setSelectedTieBreak, setSelectedRules, setSelectedResultApproval, setSelectedEnds, setPendingChanges, setSearchParams]);
 
   // Language change handler
   const handleLanguageChange = (lang) => {
@@ -667,7 +698,7 @@ const SettingModal = ({
           'PairBC3', 'PairBC4',
           'TeamsBC1BC2',
           'TeamFriendly', 'Friendly', 'OPSeated', 'OPStanding',
-          'IndividualRecreation', 'TeamRecreation'
+          'Recreation', 'Practice'
         ];
 
         const sortedClassIds = classOrder.filter(id => uniqueClassIds.includes(id));
@@ -677,7 +708,10 @@ const SettingModal = ({
           if (!classDef) return null;
 
           let prefix = '';
-          if (classDef.type === 'individual') {
+          // レクリエーション系クラスはプレフィックスなし
+          if (classId === 'Recreation' || classId === 'Practice') {
+            prefix = '';
+          } else if (classDef.type === 'individual') {
             prefix = currentLang === 'ja' ? '個人 ' : 'IND ';
           } else if (classDef.type === 'pair') {
             prefix = currentLang === 'ja' ? 'ペア ' : 'PAIR ';
@@ -1123,17 +1157,17 @@ const SettingModal = ({
               gameData={gameData}
               setPendingChanges={setPendingChanges}
             />
-            <TeamSettings
+            <PlayerSettings
               pendingChanges={pendingChanges}
               gameData={gameData}
               setPendingChanges={setPendingChanges}
+              selectedRedLimit={selectedRedLimit}
+              setSelectedRedLimit={setSelectedRedLimit}
+              selectedBlueLimit={selectedBlueLimit}
+              setSelectedBlueLimit={setSelectedBlueLimit}
             />
             <div id="detailSettings">
               <TimerSettings
-                selectedRedLimit={selectedRedLimit}
-                setSelectedRedLimit={setSelectedRedLimit}
-                selectedBlueLimit={selectedBlueLimit}
-                setSelectedBlueLimit={setSelectedBlueLimit}
                 selectedWarmup={selectedWarmup}
                 setSelectedWarmup={setSelectedWarmup}
                 selectedInterval={selectedInterval}

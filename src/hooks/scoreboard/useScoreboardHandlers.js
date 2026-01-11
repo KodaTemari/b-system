@@ -1196,6 +1196,7 @@ export const useScoreboardHandlers = ({
         classification: gameData.classification,
         category: gameData.category,
         matchName: gameData.matchName,
+        scene: gameData.scene, // 追加: 利用場面を維持
         match: {
           totalEnds: gameData.match?.totalEnds,
           warmup: gameData.match?.warmup,

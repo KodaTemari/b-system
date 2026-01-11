@@ -3,7 +3,7 @@
  * World Boccia Members + ASEAN Countries
  */
 export const COUNTRIES = [
-  { id: 'none', ja: 'なし', en: 'None', code: 'xx' },
+  { id: 'none', ja: '国旗なし', en: 'None', code: 'xx' },
   { id: 'argentina', ja: 'アルゼンチン', en: 'Argentina', code: 'ar' },
   { id: 'armenia', ja: 'アルメニア', en: 'Armenia', code: 'am' },
   { id: 'aruba', ja: 'アルバ', en: 'Aruba', code: 'aw' },

@@ -30,7 +30,7 @@
     "stop": "停止",
     "reset": "リセット",
     "setColor": "色確定",
-    "resetColor": "色の再設定",
+    "resetColor": "再設定",
     "changeColor": "色変更",
     "startWarmup": "ウォームアップ開始",
     "startMatch": "試合開始",
@@ -105,13 +105,14 @@
     "rules": "競技規則",
     "resultApproval": "結果承認",
     "gender": "性別",
-    "scene": "利用場面"
+    "scene": "利用場面",
+    "language": "言語"
   },
   "options": {
     "scene": {
-      "recreation": "レクリエーション",
-      "official": "BC公式試合",
-      "general": "一般競技・オープン"
+      "recreation": "レク・練習",
+      "official": "公式試合",
+      "general": "一般競技"
     },
     "warmup": {
       "simultaneous": "2:00 同時",
@@ -154,8 +155,8 @@
     "PairBC4": "BC4",
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "フレンドリー",
-    "IndividualRecreation": "レクリエーション",
-    "TeamRecreation": "レクリエーション"
+    "Recreation": "レクリエーション",
+    "Practice": "練習"
   },
   "match": {
     "red": "赤",

@@ -2,10 +2,36 @@ import React, { useMemo, useState } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../../locales';
 import { COUNTRIES } from '../../../../utils/scoreboard/countries';
 
-const TeamSettings = ({
+// Helper function to render time options
+const renderTimeOptions = () => {
+  const options = [];
+  // 2:00 to 7:00 in 30s increments
+  for (let minutes = 2; minutes <= 7; minutes++) {
+    for (let seconds = 0; seconds < 60; seconds += 30) {
+      // Skip 7:30
+      if (minutes === 7 && seconds === 30) {
+        continue;
+      }
+      const totalMs = minutes * 60000 + seconds * 1000;
+      const displayTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      options.push(
+        <option key={totalMs} value={totalMs}>
+          {displayTime}
+        </option>
+      );
+    }
+  }
+  return options;
+};
+
+const PlayerSettings = ({
   pendingChanges,
   gameData,
-  setPendingChanges
+  setPendingChanges,
+  selectedRedLimit,
+  setSelectedRedLimit,
+  selectedBlueLimit,
+  setSelectedBlueLimit
 }) => {
   const currentLang = getCurrentLanguage();
   const [showRedSelect, setShowRedSelect] = useState(false);
@@ -47,7 +73,22 @@ const TeamSettings = ({
 
   return (
     <div id="playerInput">
-      <div id="redPlayerInput">
+      {/* Red Player Settings */}
+      <div id="redPlayerInput" className="playerSettingGroup">
+        <div className="nameSetting">
+          <input
+            id="redNameInput"
+            type="text"
+            placeholder={getLocalizedText('labels.redName', currentLang) || 'Red Name'}
+            value={pendingChanges['red.name'] !== undefined ? pendingChanges['red.name'] : (gameData?.red?.name || '')}
+            onChange={(e) => {
+              setPendingChanges(prev => ({
+                ...prev,
+                'red.name': e.target.value
+              }));
+            }}
+          />
+        </div>
         <div className="profilePic">
           <label 
             htmlFor="redCountrySelect"
@@ -93,22 +134,44 @@ const TeamSettings = ({
             ))}
           </select>
         </div>
-        <div>
+        <div className="timerSetting">
+          <select
+            id="redLimitInput"
+            className="settingSelect"
+            aria-label={getLocalizedText('labels.redTimer', currentLang)}
+            value={selectedRedLimit}
+            onChange={(e) => {
+              const value = parseInt(e.target.value, 10);
+              if (!isNaN(value)) {
+                setSelectedRedLimit(value);
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'red.limit': value
+                }));
+              }
+            }}
+          >
+            {renderTimeOptions()}
+          </select>
+        </div>
+      </div>
+
+      {/* Blue Player Settings */}
+      <div id="bluePlayerInput" className="playerSettingGroup">
+        <div className="nameSetting">
           <input
-            id="redNameInput"
+            id="blueNameInput"
             type="text"
-            placeholder={getLocalizedText('labels.redName', currentLang) || 'Red Name'}
-            value={pendingChanges['red.name'] !== undefined ? pendingChanges['red.name'] : (gameData?.red?.name || '')}
+            placeholder={getLocalizedText('labels.blueName', currentLang) || 'Blue Name'}
+            value={pendingChanges['blue.name'] !== undefined ? pendingChanges['blue.name'] : (gameData?.blue?.name || '')}
             onChange={(e) => {
               setPendingChanges(prev => ({
                 ...prev,
-                'red.name': e.target.value
+                'blue.name': e.target.value
               }));
             }}
           />
         </div>
-      </div>
-      <div id="bluePlayerInput">
         <div className="profilePic">
           <label 
             htmlFor="blueCountrySelect"
@@ -154,23 +217,29 @@ const TeamSettings = ({
             ))}
           </select>
         </div>
-        <div>
-          <input
-            id="blueNameInput"
-            type="text"
-            placeholder={getLocalizedText('labels.blueName', currentLang) || 'Blue Name'}
-            value={pendingChanges['blue.name'] !== undefined ? pendingChanges['blue.name'] : (gameData?.blue?.name || '')}
+        <div className="timerSetting">
+          <select
+            id="blueLimitInput"
+            className="settingSelect"
+            aria-label={getLocalizedText('labels.blueTimer', currentLang)}
+            value={selectedBlueLimit}
             onChange={(e) => {
-              setPendingChanges(prev => ({
-                ...prev,
-                'blue.name': e.target.value
-              }));
+              const value = parseInt(e.target.value, 10);
+              if (!isNaN(value)) {
+                setSelectedBlueLimit(value);
+                setPendingChanges(prev => ({
+                  ...prev,
+                  'blue.limit': value
+                }));
+              }
             }}
-          />
+          >
+            {renderTimeOptions()}
+          </select>
         </div>
       </div>
     </div>
   );
 };
 
-export default TeamSettings;
+export default PlayerSettings;

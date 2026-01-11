@@ -77,18 +77,18 @@
       "timer": 300000,
       "hasGender": false
     },
-    "IndividualRecreation": {
+    "Recreation": {
       "name": "レクリエーション",
       "type": "individual",
       "ends": 2,
       "timer": 240000,
       "hasGender": false
     },
-    "TeamRecreation": {
-      "name": "レクリエーション",
+    "Practice": {
+      "name": "練習",
       "type": "team",
       "ends": 2,
-      "timer": 300000,
+      "timer": 210000,
       "hasGender": false
     }
   }

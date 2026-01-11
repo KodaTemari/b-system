@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../../locales';
 import { COUNTRIES } from '../../../../utils/scoreboard/countries';
 import resetIcon from '../../img/icon_reset.png';
-import languageIcon from '../../img/icon_language.png';
 import wrenchIcon from '../../img/icon_wrench.png';
 
 const SystemSettings = ({
@@ -17,7 +16,6 @@ const SystemSettings = ({
 }) => {
   // Fallback if currentLang prop is not provided
   const lang = currentLang || getCurrentLanguage();
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
 
   const scene = gameData?.scene || 'official';
@@ -37,29 +35,7 @@ const SystemSettings = ({
     ];
   }, [lang]);
 
-  // Toggle Language Modal
-  const toggleLanguageModal = () => {
-    setShowLanguageModal(!showLanguageModal);
-  };
-
-  // Handle Language Selection
-  const onSelectLanguage = (l) => {
-    handleLanguageChange(l);
-    setShowLanguageModal(false);
-  };
-
   // Setup Modal Control (showModal / close)
-  React.useEffect(() => {
-    const langDialog = document.getElementById('languageModal');
-    if (langDialog) {
-      if (showLanguageModal) {
-        if (!langDialog.open) langDialog.showModal();
-      } else {
-        if (langDialog.open) langDialog.close();
-      }
-    }
-  }, [showLanguageModal]);
-
   React.useEffect(() => {
     const customDialog = document.getElementById('customModal');
     if (customDialog) {
@@ -112,25 +88,15 @@ const SystemSettings = ({
         </button>
       )}
 
-      {/* Language Button (Only Visible in Standby, Top Right) */}
+      {/* Customization Button (Only Visible in Standby) */}
       {section === 'standby' && (
-        <>
-          <button
-            className="customBtn"
-            onClick={() => setShowCustomModal(true)}
-            title="Customization"
-          >
-            <img src={wrenchIcon} alt="Customization" className="btnIcon" />
-          </button>
-
-          <button
-            className="languageBtn"
-            onClick={toggleLanguageModal}
-            title="Language"
-          >
-            <img src={languageIcon} alt="Language" className="btnIcon" />
-          </button>
-        </>
+        <button
+          className="customBtn"
+          onClick={() => setShowCustomModal(true)}
+          title="Customization"
+        >
+          <img src={wrenchIcon} alt="Customization" className="btnIcon" />
+        </button>
       )}
 
       {/* Customization Modal */}
@@ -156,6 +122,27 @@ const SystemSettings = ({
             </button>
           </div>
 
+          <div id="languageSetting" className="detailSettingItem">
+            <label className="detailSettingLabel">{getLocalizedText('labels.language', lang)}</label>
+            <div className="settingRadioGroup">
+              {[
+                { id: 'ja', label: '日本語' },
+                { id: 'en', label: 'English' }
+              ].map((l) => (
+                <label key={l.id} className="radioLabel">
+                  <input
+                    type="radio"
+                    name="language"
+                    value={l.id}
+                    checked={lang === l.id}
+                    onChange={(e) => handleLanguageChange(e.target.value)}
+                  />
+                  {l.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div id="sceneSetting" className="detailSettingItem">
             <label className="detailSettingLabel">{getLocalizedText('labels.scene', lang)}</label>
             <div className="settingRadioGroup">
@@ -179,38 +166,6 @@ const SystemSettings = ({
               ))}
             </div>
           </div>
-        </div>
-      </dialog>
-
-      {/* Language Selection Modal */}
-      <dialog
-        id="languageModal"
-        onClose={(e) => {
-          e.stopPropagation();
-          setShowLanguageModal(false);
-        }}
-        onClick={(e) => handleDialogClick(e, 'languageModal', setShowLanguageModal)}
-      >
-        <div
-          className="languageModalBox"
-          onClick={(e) => e.stopPropagation()}
-        >
-
-          <button
-            onClick={() => onSelectLanguage('ja')}
-            className={`languageSelectBtn ${lang === 'ja' ? 'isSelected' : ''}`}
-          >
-            日本語
-          </button>
-
-          <button
-            onClick={() => onSelectLanguage('en')}
-            className={`languageSelectBtn ${lang === 'en' ? 'isSelected' : ''}`}
-          >
-            English
-          </button>
-
-
         </div>
       </dialog>
     </>

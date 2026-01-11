@@ -104,13 +104,14 @@
     "rules": "Rules",
     "resultApproval": "Result Approval",
     "gender": "Gender",
-    "scene": "Match Scene"
+    "scene": "Match Scene",
+    "language": "Language"
   },
   "options": {
     "scene": {
-      "recreation": "Recreation",
-      "official": "BC Official",
-      "general": "Standard / Open"
+      "recreation": "Rec / Practice",
+      "official": "Official Match",
+      "general": "General Competition"
     },
     "warmup": {
       "simultaneous": "2:00 Simultaneous",
@@ -153,8 +154,8 @@
     "PairBC4": "BC4",
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "Friendly",
-    "IndividualRecreation": "Recreation",
-    "TeamRecreation": "Recreation"
+    "Recreation": "Recreation",
+    "Practice": "Practice"
   },
   "match": {
     "red": "Red",
