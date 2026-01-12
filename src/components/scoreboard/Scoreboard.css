@@ -208,7 +208,7 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-#scoreboard button {
+button {
   padding: 0;
   color: rgb(var(--color-white));
   background-color: transparent;
@@ -218,8 +218,8 @@
   appearance: none;
 }
 
-[data-mode="view"] #scoreboard main button,
-#scoreboard button:disabled {
+[data-mode="view"] main button,
+button:disabled {
   cursor: inherit;
 }
 
@@ -387,23 +387,23 @@
 }
 
 /* resultApprovalセクションのレイアウト調整 */
-#scoreboard[data-section="resultApproval"] main {
+[data-section="resultApproval"] main {
   justify-content: space-between;
 }
 
-#scoreboard[data-section="resultApproval"] main #red {
+[data-section="resultApproval"] main #red {
   align-self: flex-start;
 }
 
-#scoreboard[data-section="resultApproval"] main #blue {
+[data-section="resultApproval"] main #blue {
   align-self: flex-end;
 }
 
-#scoreboard[data-section="resultApproval"] .score {
+[data-section="resultApproval"] .score {
   width: 35vw;
 }
 
-#scoreboard[data-section="resultApproval"] #blue .score {
+[data-section="resultApproval"] #blue .score {
   margin-left: auto;
 }
 
@@ -411,7 +411,7 @@
    結果テーブル
    ======================================== */
 
-#scoreboard[data-forfeit="true"] #resultTable {
+[data-forfeit="true"] #resultTable {
   display: none;
 }
 
@@ -659,7 +659,7 @@ h2 .profilePic img {
 }
 
 /* スタンバイセクションでのプレイヤー名位置 */
-#scoreboard[data-section="standby"] main h2 {
+[data-section="standby"] main h2 {
   position: relative;
   top: 40vh;
   z-index: 100;
@@ -679,7 +679,7 @@ h2 .profilePic img {
 }
 
 /* スコアボタン */
-#scoreboard .score button[name$="ScoreBtn"] {
+.score button[name$="ScoreBtn"] {
   position: relative;
   display: block;
   width: 100%;
@@ -692,9 +692,9 @@ h2 .profilePic img {
 }
 
 /* スコア調整ボタン（Plus/Minus/TieBreak） */
-#scoreboard .score .plus,
-#scoreboard .score .minus,
-#scoreboard .score .tieBreak {
+.score .plus,
+.score .minus,
+.score .tieBreak {
   position: absolute;
   right: 3vw;
   z-index: 10;
@@ -708,21 +708,21 @@ h2 .profilePic img {
   line-height: 1;
 }
 
-[data-mode="view"] #scoreboard .score .plus,
-[data-mode="view"] #scoreboard .score .minus,
-[data-mode="view"] #scoreboard .score .tieBreak {
+[data-mode="view"] .score .plus,
+[data-mode="view"] .score .minus,
+[data-mode="view"] .score .tieBreak {
   display: none !important;
 }
 
-#scoreboard .score button.plus {
+.score button.plus {
   top: 1.5vh;
 }
 
-#scoreboard .score button.minus {
+.score button.minus {
   bottom: 1.5vh;
 }
 
-#scoreboard .score button.tieBreak {
+.score button.tieBreak {
   top: 9vh;
 }
 
@@ -817,11 +817,11 @@ h2 .profilePic img {
 }
 
 /* スコアアクティブ時のサイズ調整 */
-#scoreboard:not([data-section="interval"]) [data-active="score"] .score {
+:not([data-section="interval"]) [data-active="score"] .score {
   height: 45vh;
 }
 
-#scoreboard:not([data-section="interval"]) [data-active="score"] .score button {
+:not([data-section="interval"]) [data-active="score"] .score button {
   font-size: 50vmin;
 }
 
@@ -835,38 +835,38 @@ h2 .profilePic img {
 }
 
 /* スコア調整モード（viewモード） */
-[data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .score {
+[data-mode="view"][data-scoreadjust="true"]:not([data-section="tieBreak"]) .score {
   height: 45vh;
 }
 
-[data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .score button {
+[data-mode="view"][data-scoreadjust="true"]:not([data-section="tieBreak"]) .score button {
   font-size: 50vmin;
 }
 
-[data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .time {
+[data-mode="view"][data-scoreadjust="true"]:not([data-section="tieBreak"]) .time {
   height: 17vh;
 }
 
-[data-mode="view"] #scoreboard[data-scoreadjust="true"] .time button {
+[data-mode="view"][data-scoreadjust="true"] .time button {
   font-size: 15vmin;
 }
 
 /* 試合終了時のスコアサイズ */
-#scoreboard[data-section="matchFinished"] .score {
+[data-section="matchFinished"] .score {
   height: 47vh;
 }
 
-[data-mode="view"] #scoreboard[data-section="matchFinished"] .score {
+[data-mode="view"][data-section="matchFinished"] .score {
   height: 59vh;
 }
 
-#scoreboard[data-section="resultApproval"] .score,
-[data-mode="view"] #scoreboard[data-section="resultApproval"] .score {
+[data-section="resultApproval"] .score,
+[data-mode="view"][data-section="resultApproval"] .score {
   height: 41vh;
 }
 
-#scoreboard[data-section="resultApproval"] #red [name="redScoreBtn"],
-#scoreboard[data-section="resultApproval"] #blue [name="blueScoreBtn"] {
+[data-section="resultApproval"] #red [name="redScoreBtn"],
+[data-section="resultApproval"] #blue [name="blueScoreBtn"] {
   font-size: 35vmin;
 }
 
@@ -1007,7 +1007,7 @@ h2 .profilePic img {
   background-image: url(/src/components/scoreboard/img/ball_blue.png);
 }
 
-#scoreboard[data-penaltythrow="true"] .score .penaltyIcon.penaltyBall {
+[data-penaltythrow="true"] .score .penaltyIcon.penaltyBall {
   transition: transform 0.3s ease;
   transform: scale(2);
 }
@@ -1509,13 +1509,13 @@ h2 .profilePic img {
 }
 
 [data-section="matchFinished"] #ends,
-#scoreboard[data-section="matchFinished"] .score .plus,
-#scoreboard[data-section="matchFinished"] .score .minus,
-#scoreboard[data-section="matchFinished"] .score .tieBreak,
+[data-section="matchFinished"] .score .plus,
+[data-section="matchFinished"] .score .minus,
+[data-section="matchFinished"] .score .tieBreak,
 [data-section="resultApproval"] #ends,
-#scoreboard[data-section="resultApproval"] .score .plus,
-#scoreboard[data-section="resultApproval"] .score .minus,
-#scoreboard[data-section="resultApproval"] .score .tieBreak {
+[data-section="resultApproval"] .score .plus,
+[data-section="resultApproval"] .score .minus,
+[data-section="resultApproval"] .score .tieBreak {
   display: none;
 }
 
@@ -1933,7 +1933,7 @@ h2 .profilePic img {
 }
 
 /* モーダルボタン */
-#scoreboard .okBtn {
+.okBtn {
   display: inline-block;
   padding: 1vmin 7vmin;
   color: rgb(var(--color-white));
@@ -2975,7 +2975,7 @@ h2 .profilePic img {
     font-size: 26vmin;
   }
 
-  #scoreboard .timeoutTimerEndBtn {
+  .timeoutTimerEndBtn {
     font-size: 5vmin;
     padding: 3vmin 6vmin;
   }
