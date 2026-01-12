@@ -182,19 +182,24 @@ const SectionNavigation = React.memo(({
           {/* Buttons for ctrl screen only */}
           {isCtrl && (
             <div id="setColorBox">
-              {!isColorSet && (
-                <button type="button" name="colorChangeBtn" onClick={onSwapTeamNames}>
-                  <img src={colorIcon} alt={getText('changeColor')} />
-                </button>
-              )}
               <button
                 type="button"
-                name={isColorSet ? "resetColorBtn" : "setColorBtn"}
-                className="btn"
-                onClick={onConfirmColorToggle}
+                className={`colorChangeBtn ${isColorSet ? 'isColorSet' : ''}`}
+                name="colorChangeBtn"
+                onClick={isColorSet ? onConfirmColorToggle : onSwapTeamNames}
               >
-                {isColorSet ? getText('resetColor') : getText('setColor')}
+                <img src={colorIcon} alt={getText('changeColor')} />
               </button>
+              {!isColorSet && (
+                <button
+                  type="button"
+                  name="setColorBtn"
+                  className="btn"
+                  onClick={onConfirmColorToggle}
+                >
+                  {getText('setColor')}
+                </button>
+              )}
             </div>
           )}
 

@@ -123,12 +123,6 @@
   margin-top: 5vh;
 }
 
-#sectionNav #setColorBox [name="resetColorBtn"] {
-  margin-top: -15vh;
-  transform: scale(0.3);
-  opacity: 0.5;
-}
-
 [name="startWarmupBtn"] {
   position: fixed;
   left: 50%;
@@ -289,6 +283,11 @@
   left: calc(50% - 3vmax);
   width: 8vmax;
   border-radius: 50%;
+}
+
+[name="colorChangeBtn"].isColorSet {
+  opacity: 0.3;
+  margin-top: -15vh;
 }
 
 #scoreboard main {
@@ -1865,6 +1864,29 @@ h2 .profilePic img {
   cursor: pointer;
 }
 
+#quickStartContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 4vh;
+}
+
+#quickStartContainer .btn {
+  display: inline-block;
+  padding: 2vmin 8vmin;
+  border: solid 0.3vmin rgb(var(--color-green-light));
+  border-radius: 15vmin;
+  font-size: 4vmin;
+  background: transparent;
+  color: rgb(var(--color-white));
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#quickStartContainer .btn:hover {
+  background-color: rgba(var(--color-green-light), 0.1);
+}
+
 #nextMatchContainer {
   position: absolute;
   top: 50%;
@@ -2291,6 +2313,12 @@ h2 .profilePic img {
 
 .fadeOut #settingModal {
   animation: fadeOut 1s linear forwards;
+}
+
+/* 試合開始時の画面遷移用 */
+#root.quickStartTransition {
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
 }
 
 @media screen and (max-width: 800px) {

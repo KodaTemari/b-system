@@ -1178,6 +1178,99 @@ const SettingModal = ({
                 scene={gameData?.scene || 'official'}
               />
             </div>
+            
+            {/* レクリエーション選択時のみ表示する「試合開始」ボタン */}
+            {selectedClassId === 'Recreation' && (
+              <div id="quickStartContainer">
+                <button
+                  type="button"
+                  className="btn quickStart"
+                  onClick={() => {
+                    const root = document.getElementById('root');
+                    const dialog = document.getElementById('settingModal');
+                    
+                    // 画面全体を一瞬で非表示
+                    if (root) {
+                      root.classList.add('quickStartTransition');
+                    }
+                    
+                    // 50ms後にデータ更新とモーダルを閉じる
+                    setTimeout(() => {
+                      if (saveData && gameData) {
+                        // 色を確定
+                        const updatedGameData = {
+                          ...gameData,
+                          screen: {
+                            ...gameData.screen,
+                            isColorSet: true
+                          }
+                        };
+                        
+                        // pendingChanges を反映
+                        Object.entries(pendingChanges).forEach(([key, value]) => {
+                          const [parent, child] = key.split('.');
+                          if (child) {
+                            updatedGameData[parent] = {
+                              ...updatedGameData[parent],
+                              [child]: value
+                            };
+                          } else {
+                            updatedGameData[parent] = value;
+                          }
+                        });
+                        
+                        // 最初のエンドに移動（ウォームアップをスキップ）
+                        const sections = updatedGameData.match?.sections || [];
+                        const firstEndSection = sections.find(s => s.startsWith('end'));
+                        const firstEndIndex = sections.indexOf(firstEndSection);
+                        
+                        if (firstEndSection && firstEndIndex !== -1) {
+                          const endNumber = parseInt(firstEndSection.replace('end', ''), 10);
+                          
+                          updatedGameData.match = {
+                            ...updatedGameData.match,
+                            section: firstEndSection,
+                            sectionID: firstEndIndex,
+                            end: endNumber
+                          };
+                          
+                          // ボール数をリセット（エンド開始時のボール数）
+                          const redBalls = endNumber === 1 ? 6 : (endNumber % 2 === 0 ? 5 : 6);
+                          const blueBalls = endNumber === 1 ? 6 : (endNumber % 2 === 1 ? 5 : 6);
+                          
+                          updatedGameData.red = {
+                            ...updatedGameData.red,
+                            ball: redBalls
+                          };
+                          updatedGameData.blue = {
+                            ...updatedGameData.blue,
+                            ball: blueBalls
+                          };
+                        }
+                        
+                        // すべての変更を一度に保存
+                        saveData(updatedGameData);
+                      }
+                      
+                      // モーダルを閉じる
+                      if (dialog) {
+                        dialog.close();
+                      }
+                      onClose();
+                      
+                      // 少し待ってからフェードイン
+                      setTimeout(() => {
+                        if (root) {
+                          root.classList.remove('quickStartTransition');
+                        }
+                      }, 50);
+                    }, 50);
+                  }}
+                >
+                  {getLocalizedText('buttons.startMatch', getCurrentLanguage())}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
