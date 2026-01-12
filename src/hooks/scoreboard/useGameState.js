@@ -286,9 +286,9 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     const endNumber = extractEndNumber(newSection);
     
     // セクション切り替え時のフェード効果: 画面全体を一瞬で暗転
-    const root = document.getElementById('root');
-    if (root) {
-      root.classList.add('quickStartTransition');
+    const scoreboard = document.getElementById('scoreboard');
+    if (scoreboard) {
+      scoreboard.classList.add('sectionTransition');
       
       // ブラウザに暗転をレンダリングさせる
       requestAnimationFrame(() => {
@@ -329,8 +329,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         // 次のフレームでフェードイン開始
         requestAnimationFrame(() => {
           setTimeout(() => {
-            if (root) {
-              root.classList.remove('quickStartTransition');
+            if (scoreboard) {
+              scoreboard.classList.remove('sectionTransition');
             }
           }, 100);
         });

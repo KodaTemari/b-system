@@ -164,18 +164,21 @@ const Scoreboard = () => {
   const handlePenaltyClick = (teamColor) => {
     setSelectedTeamColor(teamColor);
     setPenaltyModalOpen(true);
-    setTimeout(() => {
-      const dialog = document.getElementById('penaltyModal');
-      if (dialog) {
-        dialog.showModal();
-      }
-    }, 0);
   };
 
   const handleTimeoutClick = (teamColor) => {
     setSelectedTimeoutTeamColor(teamColor);
     setTimeoutModalOpen(true);
   };
+
+  useEffect(() => {
+    if (penaltyModalOpen && selectedTeamColor) {
+      const dialog = document.getElementById('penaltyModal');
+      if (dialog) {
+        dialog.showModal();
+      }
+    }
+  }, [penaltyModalOpen, selectedTeamColor]);
 
   useEffect(() => {
     if (timeoutModalOpen && selectedTimeoutTeamColor) {

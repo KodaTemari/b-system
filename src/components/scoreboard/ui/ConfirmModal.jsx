@@ -23,12 +23,25 @@ const ConfirmModal = ({
   };
 
   const handleConfirm = () => {
-    if (onConfirm) {
-      onConfirm();
-    }
     const dialog = document.getElementById('confirmModal');
     if (dialog) {
-      dialog.close();
+      // フェードアウトクラスを追加
+      dialog.classList.add('closing');
+      
+      // アニメーション完了後にモーダルを閉じる
+      setTimeout(() => {
+        if (onConfirm) {
+          onConfirm();
+        }
+        if (dialog) {
+          dialog.close();
+          dialog.classList.remove('closing');
+        }
+      }, 200);
+    } else {
+      if (onConfirm) {
+        onConfirm();
+      }
     }
   };
 
@@ -50,14 +63,14 @@ const ConfirmModal = ({
         <div className="confirmModalButtons">
           <button
             type="button"
-            className="btn confirmModalBtn confirmModalBtnOk"
+            className="primaryBtn"
             onClick={handleConfirm}
           >
             {getLocalizedText('buttons.ok', getCurrentLanguage()) || 'OK'}
           </button>
           <button
             type="button"
-            className="btn confirmModalBtn confirmModalBtnCancel"
+            className="primaryBtn"
             onClick={handleCancel}
           >
             {getLocalizedText('buttons.cancel', getCurrentLanguage()) || 'キャンセル'}

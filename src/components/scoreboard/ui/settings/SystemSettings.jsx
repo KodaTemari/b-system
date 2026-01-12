@@ -125,7 +125,19 @@ const SystemSettings = ({
           {/* 言語設定を一番上に配置 */}
           <div id="languageSetting" className="detailSettingItem">
             <div className="languageGroup" role="radiogroup" aria-label={getLocalizedText('labels.language', lang)}>
-              <img src={languageIcon} alt="Language" className="languageIcon" />
+              <img 
+                src={languageIcon} 
+                alt="Language" 
+                className="languageIcon" 
+                onClick={() => {
+                  // 現在の言語に応じて次の言語を選択
+                  const languages = ['ja', 'en'];
+                  const currentIndex = languages.indexOf(lang);
+                  const nextIndex = (currentIndex + 1) % languages.length;
+                  handleLanguageChange(languages[nextIndex]);
+                }}
+                style={{ cursor: 'pointer' }}
+              />
               {[
                 { id: 'ja', label: '日本語' },
                 { id: 'en', label: 'English' }

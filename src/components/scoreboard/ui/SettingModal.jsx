@@ -1184,40 +1184,92 @@ const SettingModal = ({
               <div id="quickStartContainer">
                 <button
                   type="button"
-                  className="btn quickStart"
+                  className="primaryBtn"
                   onClick={() => {
-                    const root = document.getElementById('root');
+                    const scoreboard = document.getElementById('scoreboard');
                     const dialog = document.getElementById('settingModal');
                     
                     // 画面全体を一瞬で非表示
-                    if (root) {
-                      root.classList.add('quickStartTransition');
+                    if (scoreboard) {
+                      scoreboard.classList.add('sectionTransition');
                     }
                     
                     // 50ms後にデータ更新とモーダルを閉じる
                     setTimeout(() => {
                       if (saveData && gameData) {
-                        // 色を確定
-                        const updatedGameData = {
-                          ...gameData,
-                          screen: {
-                            ...gameData.screen,
-                            isColorSet: true
-                          }
-                        };
-                        
-                        // pendingChanges を反映
-                        Object.entries(pendingChanges).forEach(([key, value]) => {
+                        // handleSaveChanges()のロジックを実行して設定を保存
+                        // Get current values (pending or current gameData)
+                        const currentTotalEnds = pendingChanges['match.totalEnds'] !== undefined
+                          ? pendingChanges['match.totalEnds']
+                          : (gameData?.match?.totalEnds || 4);
+                        const currentWarmup = pendingChanges['match.warmup'] !== undefined
+                          ? pendingChanges['match.warmup']
+                          : (gameData?.match?.warmup || 'simultaneous');
+                        const currentInterval = pendingChanges['match.interval'] !== undefined
+                          ? pendingChanges['match.interval']
+                          : (gameData?.match?.interval || 'enabled');
+                        const currentResultApproval = pendingChanges['match.resultApproval'] !== undefined
+                          ? pendingChanges['match.resultApproval']
+                          : (gameData?.match?.resultApproval || 'enabled');
+
+                        const shouldRecalculateSections =
+                          pendingChanges['match.totalEnds'] !== undefined ||
+                          pendingChanges['match.warmup'] !== undefined ||
+                          pendingChanges['match.interval'] !== undefined ||
+                          pendingChanges['match.resultApproval'] !== undefined;
+
+                        const finalChanges = { ...pendingChanges };
+                        if (shouldRecalculateSections) {
+                          const newSections = recalculateSections(
+                            currentTotalEnds,
+                            currentWarmup,
+                            currentInterval,
+                            currentResultApproval
+                          );
+                          finalChanges['match.sections'] = newSections;
+                        }
+
+                        // Update timer limits state if changed
+                        if (finalChanges['red.limit'] !== undefined) {
+                          const redLimitValue = finalChanges['red.limit'];
+                          currentLimitsRef.current.red = redLimitValue;
+                          setSelectedRedLimit(redLimitValue);
+                        }
+                        if (finalChanges['blue.limit'] !== undefined) {
+                          const blueLimitValue = finalChanges['blue.limit'];
+                          currentLimitsRef.current.blue = blueLimitValue;
+                          setSelectedBlueLimit(blueLimitValue);
+                        }
+
+                        const updatedGameData = { ...gameData };
+
+                        // Apply changes
+                        Object.entries(finalChanges).forEach(([key, value]) => {
                           const [parent, child] = key.split('.');
                           if (child) {
-                            updatedGameData[parent] = {
-                              ...updatedGameData[parent],
-                              [child]: value
-                            };
+                            // ネストされたプロパティ（red.limit, blue.limit, match.warmupなど）
+                            if (parent === 'match') {
+                              updatedGameData.match = {
+                                ...updatedGameData.match,
+                                [child]: value
+                              };
+                            } else {
+                              updatedGameData[parent] = {
+                                ...updatedGameData[parent],
+                                [child]: value
+                              };
+                            }
                           } else {
+                            // 直接プロパティ（classification, category, matchNameなど）
                             updatedGameData[parent] = value;
                           }
                         });
+
+                        // 色を確定
+                        updatedGameData.screen = {
+                          ...updatedGameData.screen,
+                          isColorSet: true
+                        };
                         
                         // 最初のエンドに移動（ウォームアップをスキップ）
                         const sections = updatedGameData.match?.sections || [];
@@ -1250,6 +1302,9 @@ const SettingModal = ({
                         
                         // すべての変更を一度に保存
                         saveData(updatedGameData);
+
+                        // 保存済みフラグを立てる
+                        savedRef.current = true;
                       }
                       
                       // モーダルを閉じる
@@ -1260,14 +1315,14 @@ const SettingModal = ({
                       
                       // 少し待ってからフェードイン
                       setTimeout(() => {
-                        if (root) {
-                          root.classList.remove('quickStartTransition');
+                        if (scoreboard) {
+                          scoreboard.classList.remove('sectionTransition');
                         }
                       }, 50);
                     }, 50);
                   }}
                 >
-                  {getLocalizedText('buttons.startMatch', getCurrentLanguage())}
+                  スタート！
                 </button>
               </div>
             )}
@@ -1425,7 +1480,7 @@ const SettingModal = ({
 
         <form method="dialog">
           <button
-            className="settingModalCloseBtn"
+            className={`settingModalCloseBtn ${section === 'standby' ? 'primaryBtn' : ''}`}
             onClick={() => {
               // Save changes on OK click
               if (section === 'standby') {
@@ -1433,7 +1488,11 @@ const SettingModal = ({
               }
             }}
           >
-            <img src={setting2Icon} alt={getLocalizedText('sections.ok', getCurrentLanguage())} />
+            {section === 'standby' ? (
+              getLocalizedText('sections.ok', getCurrentLanguage())
+            ) : (
+              <img src={setting2Icon} alt={getLocalizedText('sections.ok', getCurrentLanguage())} />
+            )}
           </button>
         </form>
       </div>

@@ -67,7 +67,7 @@
     "blueForfeit": "青の反則負けになります。",
     "redSecondYellowCard": "2枚目のイエローカードで赤の反則負けになります。",
     "blueSecondYellowCard": "2枚目のイエローカードで青の反則負けになります。",
-    "reset": "試合データをリセットします"
+    "reset": "試合データをリセットします。"
   },
   "penalties": {
     "lineCross": "ラインクロス",

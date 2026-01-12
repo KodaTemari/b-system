@@ -60,11 +60,27 @@
   }
 }
 
+/* フェードインクラス */
+.fadeIn {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+
 /* スコアボード基本設定 */
+
 #scoreboard {
   font-size: var(--font-size-m);
   line-height: 1.5;
+  opacity: 1;
+  transition: opacity 0.4s ease-in;
+}
+
+[data-section="standby"] {
   animation: fadeIn 0.5s linear forwards;
+}
+
+#scoreboard.sectionTransition {
+  opacity: 0;
+  transition: none; /* 暗転は即座に */
 }
 
 /* 背景画像とカバー設定 */
@@ -313,8 +329,15 @@
   opacity: 1;
 }
 
+/* スタンバイセクションのOKボタン */
 [data-section="standby"] .settingModalCloseBtn {
   top: 84vh;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+[data-section="standby"] .settingModalCloseBtn img {
+  display: none;
 }
 
 [data-section="matchFinished"] #setting [name="settingBtn"],
@@ -506,7 +529,7 @@
 
 #resultTable td:nth-child(2) {
   width: 20%;
-  background-color: rgb(var(--color-gray-lighter));
+  background-color: rgb(var(--color-gray-medium));
   font-size: 2vmin;
 }
 
@@ -1598,8 +1621,8 @@ h2 .profilePic img {
 #standbySetting select {
   padding: 2vh 1vw;
   color: rgb(var(--color-white));
-  background-color: rgb(var(--color-gray-medium));
-  border: solid 0.3vmin rgb(var(--color-gray-lighter));
+  background-color: rgb(var(--color-gray-darker));
+  border: solid 0.2vmin rgb(var(--color-gray));
   border-radius: 1vmin;
   font-family: inherit;
   font-size: 4vmin;
@@ -1619,9 +1642,8 @@ h2 .profilePic img {
 
 #standbySetting input:focus,
 #standbySetting select:focus {
-  color: rgb(var(--color-gray-dark));
-  background-color: rgb(var(--color-white));
-  outline: none;
+  border-color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray-dark));
 }
 
 #standbySetting select option {
@@ -1645,19 +1667,11 @@ h2 .profilePic img {
   font-family: inherit;
   font-size: 4vmin;
   text-align: left;
-  text-align-last: left;
   box-sizing: border-box;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-}
-
-.settingSelect:focus {
-  color: rgb(var(--color-gray-dark));
-  background-color: rgb(var(--color-white));
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23222' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  outline: none;
 }
 
 /* 入力欄の配置 */
@@ -1700,20 +1714,22 @@ h2 .profilePic img {
   display: grid;
   grid-template-columns: 1fr 1fr;
   justify-items: center;
-  width: 94vw;
-  gap: 3vh 2vw;
+  width: 80vw;
+  margin: 0 auto;
+  gap: 2vh 2vw;
 }
 
 #standbySetting .detailSettingItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 42vw;
+  width: 41vw;
   gap: 1vw;
 }
 
 #standbySetting .detailSettingLabel {
-  width: 14vw;
+  width: 19vw;
+  text-align: right;
   color: rgb(var(--color-white));
   font-family: var(--font-family-base);
   font-size: 3vmin;
@@ -1721,7 +1737,7 @@ h2 .profilePic img {
 }
 
 #standbySetting .detailSettingItem select {
-  width: 25vw;
+  width: 20vw;
   font-size: 3vmin;
 }
 
@@ -1798,10 +1814,40 @@ h2 .profilePic img {
   z-index: 1;
   width: 25vw;
   text-align: left;
+  box-shadow: 1vmin 1vmin 2vmin rgb(var(--color-black));
+}
+/* レクリエーションシーンのスタイル */
+
+[data-scene="recreation"] .profilePic,
+[data-scene="recreation"] #matchNameInput,
+[data-scene="recreation"] #scoreboard [data-section="standby"] .settingModalCloseBtn {
+  display: none !important;
 }
 
-[data-scene="recreation"] .profilePic {
-  display: none !important;
+[data-scene="recreation"] #scoreboard #classificationInput {
+  pointer-events: none;
+  left: 2vw;
+  width: 96vw;
+  border: none;
+  padding: 2vh 0;
+  background: none;
+  font-size: 6vmin;
+}
+
+[data-scene="recreation"] #scoreboard .settingSelect,
+[data-scene="recreation"] .timerSetting {
+  margin: 0 auto;
+  padding-right: 1.5vw;
+  text-align: center;
+}
+
+[data-scene="recreation"] #standbySetting #detailSettings {
+  display: block;
+  width: 76vw;
+}
+
+[data-scene="recreation"] #scoreboard #endsInput {
+  font-size: 4vmin;
 }
 
 /* 詳細モーダル */
@@ -1969,23 +2015,7 @@ h2 .profilePic img {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 4vh;
-}
-
-#quickStartContainer .btn {
-  display: inline-block;
-  padding: 2vmin 8vmin;
-  color: rgb(var(--color-white));
-  background: transparent;
-  border: solid 0.3vmin rgb(var(--color-green-light));
-  border-radius: 15vmin;
-  font-size: 4vmin;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-#quickStartContainer .btn:hover {
-  background-color: rgba(var(--color-green-light), 0.1);
+  margin-top: 74vh;
 }
 
 #nextMatchContainer {
@@ -2420,128 +2450,6 @@ h2 .profilePic img {
   height: 0.4vh;
 }
 
-#penaltyTimeoutSetting {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: absolute;
-  top: 35vh;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 96vw;
-  gap: 4vw;
-}
-
-#penaltyTimeoutSetting .penaltyTimeoutGroup {
-  display: flex;
-  gap: 2vw;
-  flex: 1;
-}
-
-#penaltyTimeoutSetting .penaltyTimeoutGroup.blue {
-  justify-content: flex-end;
-}
-
-#penaltyTimeoutSetting .btn {
-  width: 20vw;
-  padding: 1.5vmin 4vmin;
-  font-size: 3vmin;
-  border: solid 0.3vmin rgb(var(--color-white));
-  border-radius: 2vmin;
-  background-color: rgb(var(--color-gray));
-  color: rgb(var(--color-white));
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-#penaltyTimeoutSetting .btn:hover {
-  background-color: rgb(var(--color-gray-light));
-}
-
-#penaltyTimeoutSetting .penaltyTimeoutGroup.red .btn.penalty,
-#penaltyTimeoutSetting .penaltyTimeoutGroup.red .btn.timeout {
-  background-color: rgba(var(--color-red), 0.3);
-}
-
-#penaltyTimeoutSetting .penaltyTimeoutGroup.blue .btn.penalty,
-#penaltyTimeoutSetting .penaltyTimeoutGroup.blue .btn.timeout {
-  background-color: rgba(var(--color-blue), 0.3);
-}
-
-#timeSetting {
-  display: flex;
-  justify-content: space-between;
-  position: absolute;
-  top: 48vh;
-  left: 2vw;
-  width: 96vw;
-  height: 39vh;
-}
-
-[data-section="warmup"] #timeSetting,
-[data-section="warmup1"] #timeSetting,
-[data-section="warmup2"] #timeSetting {
-  top: 29vh;
-}
-
-#timeSetting .btnList {
-  display: flex;
-  justify-content: center;
-  width: 45%;
-}
-
-#timeSetting .btnList:first-child {
-  margin-left: 3%;
-}
-
-#timeSetting .btnList>div {
-  position: relative;
-  width: 16vmin;
-  margin: 0 0.6vmin;
-}
-
-#timeSetting .btnList>div:first-child {
-  margin-right: 10vmin;
-}
-
-#timeSetting button {
-  width: 10vmin;
-  height: 10vmin;
-  border: solid 0.3vmin rgb(var(--color-white));
-  border-radius: 2vmin;
-  box-sizing: border-box;
-  font-size: 6vmin;
-}
-
-#timeSetting button.minus {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-}
-
-#viewModal {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 20vmin;
-  height: 100vh;
-}
-
-.fadeOut #settingModal {
-  animation: fadeOut 1s linear forwards;
-}
-
-/* セクション切り替え時の画面遷移用 */
-#root {
-  opacity: 1;
-  transition: opacity 0.4s ease-in;
-}
-
-#root.quickStartTransition {
-  opacity: 0;
-  transition: none; /* 暗転は即座に */
-}
-
 @media screen and (max-width: 800px) {
 
   /* ステップバーを横スクロール可能にする */
@@ -2872,10 +2780,28 @@ h2 .profilePic img {
   background-color: rgba(var(--color-black), 0.9);
   border: none;
   box-sizing: border-box;
+  transition: opacity 0.2s ease-out;
 }
 
 #confirmModal::backdrop {
   background-color: rgb(var(--color-black));
+  transition: opacity 0.2s ease-out;
+}
+
+#confirmModal:not([open]),
+#confirmModal.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#confirmModal:not([open])::backdrop,
+#confirmModal.closing::backdrop {
+  opacity: 0;
+}
+
+#confirmModal.closing .confirmModalBox {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95);
 }
 
 [data-mode="view"] #confirmModal {
@@ -2902,12 +2828,18 @@ h2 .profilePic img {
   box-shadow: 0 10px 30px rgb(var(--color-black));
   gap: 4vmin;
   transform: translate(-50%, -50%);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+#confirmModal:not([open]) .confirmModalBox {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95);
 }
 
 .confirmModalMessage {
   margin: 0;
   color: rgb(var(--color-white));
-  font-size: 4vmin;
+  font-size: 5vmin;
   line-height: 1.5;
   text-align: center;
 }
@@ -2917,34 +2849,6 @@ h2 .profilePic img {
   justify-content: center;
   width: 100%;
   gap: 6vmin;
-}
-
-#confirmModal .confirmModalBtn {
-  flex: 0 0 30vw;
-  width: 30vw;
-  padding: 2vmin 6vmin;
-  color: rgb(var(--color-white));
-  background-color: transparent;
-  border: solid 0.2vmin rgb(var(--color-white));
-  border-radius: 1.5vmin;
-  font-size: 3.5vmin;
-  cursor: pointer;
-}
-
-#confirmModal .confirmModalBtnOk {
-  border-color: rgb(var(--color-white));
-}
-
-#confirmModal .confirmModalBtnOk:hover {
-  opacity: 0.8;
-}
-
-#confirmModal .confirmModalBtnCancel {
-  border-color: rgb(var(--color-white));
-}
-
-#confirmModal .confirmModalBtnCancel:hover {
-  opacity: 0.8;
 }
 
 /* タイムアウトタイマーモーダル */
@@ -3059,15 +2963,6 @@ h2 .profilePic img {
     padding: 4vmin;
   }
 
-  .confirmModalMessage {
-    font-size: 5vmin;
-  }
-
-  .confirmModalBtn {
-    font-size: 4vmin;
-    padding: 3vmin 5vmin;
-  }
-
   .timeoutTimerModalBox {
     width: 90vw;
     padding: 4vmin;
@@ -3134,7 +3029,7 @@ h2 .profilePic img {
   width: 6vw;
   height: auto;
   padding: 0;
-  opacity: 0.2;
+  opacity: 0.5;
   background: none;
   border: none;
   border-radius: 50%;
@@ -3151,7 +3046,7 @@ h2 .profilePic img {
 
 .resetBtn:hover,
 .customBtn:hover {
-  opacity: 0.5;
+  opacity: 0.9;
 }
 
 /* カスタムモーダル */
@@ -3210,13 +3105,14 @@ h2 .profilePic img {
 
 #scoreboard .primaryBtn {
   display: inline-block;
-  min-width: 20vw;
-  padding: 1.5vh 2vw;
+  min-width: 30vw;
+  padding: 2vh 2vw;
   color: rgb(var(--color-white));
   background-color: transparent;
   border: 0.3vmin solid rgb(var(--color-white));
   border-radius: 5vmin;
-  font-size: 4vmin;
+  font-size: 5.5vmin;
+  font-family: var(--font-family-base);
   text-align: center;
 }
 
@@ -3337,24 +3233,4 @@ h2 .profilePic img {
   font-size: 1.8vmin;
   line-height: 1.4;
   text-align: left;
-}
-
-/* その他のUI */
-#viewModal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  font-size: 20vmin;
-}
-
-/* セクション切り替え時の画面遷移 */
-#root {
-  opacity: 1;
-  transition: opacity 0.4s ease-in;
-}
-
-#root.quickStartTransition {
-  opacity: 0;
-  transition: none;
 }

@@ -208,7 +208,7 @@ const SectionNavigation = React.memo(({
             <button
               type="button"
               name="startWarmupBtn"
-              className="btn"
+              className="btn fadeIn"
               onClick={onStartWarmup}
             >
               {warmupEnabled ? getText('startWarmup') : getText('startMatch')}
@@ -254,7 +254,7 @@ const SectionNavigation = React.memo(({
                 ) : (
                   <button
                     type="button"
-                    className="btn finishWarmup"
+                    className="btn finishWarmup fadeIn"
                     onClick={onNextSection}
                   >
                     {getText('finishWarmup')}
