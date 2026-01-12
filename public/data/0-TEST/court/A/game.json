@@ -13,19 +13,13 @@
   },
   "screen": {
     "active": "",
-    "isColorSet": false,
+    "isColorSet": true,
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
-  "scene": "general",
-  "warmup": {
-    "time": 120000,
-    "isRunning": false
-  },
-  "interval": {
-    "time": 60000,
-    "isRunning": false
-  },
+  "scene": "recreation",
+  "warmup": {},
+  "interval": {},
   "red": {
     "score": 0,
     "ball": 6,

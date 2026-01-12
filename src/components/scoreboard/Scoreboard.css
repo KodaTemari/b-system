@@ -1,5 +1,9 @@
 @charset "utf-8";
 
+/* ========================================
+   CSS変数定義
+   ======================================== */
+
 :root {
   /* フォントサイズ */
   --font-size-2s: calc(12rem / 16);
@@ -9,13 +13,13 @@
   --font-size-2l: calc(20rem / 16);
   --font-size-3l: calc(26rem / 16);
   --font-size-4l: calc(32rem / 16);
-
   --font-size-h1: calc(48rem / 16);
   --font-size-h2: calc(36rem / 16);
   --font-size-h3: calc(30rem / 16);
   --font-size-h4: calc(22rem / 16);
 
-  /* 色 - RGB値のみ定義 (明るい順) */
+  /* カラーパレット（RGB値のみ定義） */
+  /* グレースケール（明るい順） */
   --color-white: 255, 255, 255;
   --color-gray-lighter: 212, 212, 212;
   --color-gray-light: 102, 102, 102;
@@ -25,6 +29,7 @@
   --color-gray-darker: 26, 26, 26;
   --color-black: 0, 0, 0;
 
+  /* テーマカラー */
   --color-red: 162, 47, 47;
   --color-blue: 16, 87, 193;
   --color-green: 46, 125, 50;
@@ -32,108 +37,104 @@
   --color-yellow: 255, 215, 0;
 }
 
+/* ========================================
+   基本スタイルとアニメーション
+   ======================================== */
+
+/* アニメーション定義 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* スコアボード基本設定 */
 #scoreboard {
   font-size: var(--font-size-m);
   line-height: 1.5;
   animation: fadeIn 0.5s linear forwards;
 }
 
+/* 背景画像とカバー設定 */
 [data-mode="view"] [data-section="standby"]::before,
 [data-mode="view"]::after {
-  display: block;
-  content: '';
   position: fixed;
   top: 0;
   left: 0;
+  display: block;
   width: 100vw;
   height: 100vh;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  content: '';
   pointer-events: none;
   z-index: 1;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   transition: opacity 0.5s;
 }
 
 [data-mode="view"] [data-section="standby"]::before {
-  background-image: url('./img/bg.jpg');
   z-index: 0;
+  background-image: url('./img/bg.jpg');
 }
 
 [data-mode="view"].cover::after {
-  background-image: url('./img/cover.png');
   opacity: 1;
+  background-image: url('./img/cover.png');
   animation: fadeIn 0.7s ease-in-out;
 }
 
 [data-mode="view"].coverFadeOut::after {
-  background-image: url('./img/cover.png');
   opacity: 1;
+  background-image: url('./img/cover.png');
   animation: fadeOut 0.7s ease-in-out forwards;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* ========================================
+   マッチ情報表示エリア
+   ======================================== */
 
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-[data-mode="view"] [data-section="standby"] #sectionNav {
-  display: flex;
-  justify-content: center;
-  background-color: inherit;
-}
-
+/* マッチ情報コンテナ */
 #matchInfo {
   margin-top: 5vh;
 }
 
+#matchNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3vmin;
+}
+
 #classification {
   display: inline-block;
-  font-size: 4vmin;
   margin: 0 1vw;
+  font-size: 4vmin;
 }
 
 #category {
   display: inline-block;
-  font-size: 4vmin;
   margin: 0 1vw;
+  font-size: 4vmin;
 }
 
 #matchName {
   font-size: 13vmin;
 }
 
-#setColorBox {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 15vh;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-#sectionNav #setColorBox [name="setColorBtn"] {
-  margin-top: 5vh;
-}
-
-[name="startWarmupBtn"] {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 22vh;
-  white-space: nowrap;
-  max-width: 90vw;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
+/* VS表示 */
 .vs {
   position: absolute;
   top: 50%;
@@ -143,9 +144,48 @@
   opacity: 0.5;
 }
 
+/* カラー設定ボックス */
+#setColorBox {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 15vh;
+  transform: translate(-50%, -50%);
+}
+
+#sectionNav #setColorBox [name="setColorBtn"] {
+  margin-top: 5vh;
+}
+
+/* スタートボタン */
+[name="startWarmupBtn"] {
+  position: fixed;
+  bottom: 22vh;
+  left: 50%;
+  max-width: 90vw;
+  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  transform: translateX(-50%);
+}
+
+/* スタンバイセクション固有のスタイル */
+[data-mode="view"] [data-section="standby"] #sectionNav {
+  display: flex;
+  justify-content: center;
+  background-color: inherit;
+}
+
 [data-mode="view"] [data-setcolor="true"]#scoreboard::after {
   opacity: 0;
 }
+
+/* ========================================
+   共通ボタンスタイル
+   ======================================== */
 
 #scoreboard .number,
 #scoreboard .timer {
@@ -153,13 +193,13 @@
 }
 
 #scoreboard button {
+  padding: 0;
+  color: rgb(var(--color-white));
   background-color: transparent;
   border: none;
-  cursor: pointer;
   outline: none;
-  padding: 0;
+  cursor: pointer;
   appearance: none;
-  color: rgb(var(--color-white));
 }
 
 [data-mode="view"] #scoreboard main button,
@@ -167,10 +207,14 @@
   cursor: inherit;
 }
 
+/* ========================================
+   ヘッダー
+   ======================================== */
+
 #scoreboard header {
   position: relative;
-  height: 2vh;
   z-index: 90;
+  height: 2vh;
 }
 
 #scoreboard header h1 {
@@ -181,32 +225,40 @@
   font-size: 2.4rem;
 }
 
+/* ========================================
+   エンド表示
+   ======================================== */
+
 #ends {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: absolute;
   top: 3vh;
-  left: 0;
   right: 0;
-  margin: 0 auto;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 6vw;
   height: 11vh;
+  margin: 0 auto;
   border-radius: 2vmin;
-  z-index: 100;
 }
 
 #endsBox {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   width: 100%;
-  font-size: 7vmin;
-  border-radius: 2vmin;
+  height: 100%;
   background: rgb(var(--color-gray));
+  border-radius: 2vmin;
+  font-size: 7vmin;
   text-align: center;
 }
+
+/* ========================================
+   設定ボタン
+   ======================================== */
 
 #setting button {
   position: absolute;
@@ -230,6 +282,19 @@
   opacity: 1;
 }
 
+/* カラー変更ボタン */
+[name="colorChangeBtn"] {
+  left: calc(50% - 3vmax);
+  width: 8vmax;
+  border-radius: 50%;
+}
+
+[name="colorChangeBtn"].isColorSet {
+  margin-top: -15vh;
+  opacity: 0.3;
+}
+
+/* セクションごとの設定ボタン位置調整 */
 .next #setting [name="settingBtn"] {
   top: 25vh;
   opacity: 0.3;
@@ -248,13 +313,13 @@
   opacity: 1;
 }
 
+[data-section="standby"] .settingModalCloseBtn {
+  top: 84vh;
+}
+
 [data-section="matchFinished"] #setting [name="settingBtn"],
 [data-section="resultApproval"] #setting [name="settingBtn"] {
   opacity: 0.2;
-}
-
-[data-section="standby"] .settingModalCloseBtn {
-  top: 84vh;
 }
 
 [data-section="warmup"] #setting [name="settingBtn"],
@@ -279,16 +344,9 @@
   top: 38vh;
 }
 
-[name="colorChangeBtn"] {
-  left: calc(50% - 3vmax);
-  width: 8vmax;
-  border-radius: 50%;
-}
-
-[name="colorChangeBtn"].isColorSet {
-  opacity: 0.3;
-  margin-top: -15vh;
-}
+/* ========================================
+   メインレイアウト
+   ======================================== */
 
 #scoreboard main {
   display: flex;
@@ -297,7 +355,7 @@
   margin: 0 auto;
 }
 
-#scoreboard main>section {
+#scoreboard main > section {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -305,6 +363,7 @@
   text-align: center;
 }
 
+/* resultApprovalセクションのレイアウト調整 */
 #scoreboard[data-section="resultApproval"] main {
   justify-content: space-between;
 }
@@ -325,51 +384,63 @@
   margin-left: auto;
 }
 
+/* ========================================
+   結果テーブル
+   ======================================== */
+
 #scoreboard[data-forfeit="true"] #resultTable {
   display: none;
 }
 
 #resultTable {
   position: absolute;
-  left: 50%;
   top: 18vh;
-  transform: translateX(-50%);
+  left: 50%;
+  z-index: 10;
   width: 23vw;
   height: 57vh;
   padding: 0;
   box-sizing: border-box;
-  z-index: 10;
+  transform: translateX(-50%);
 }
 
+/* テーブル本体 */
 #resultTable table {
+  display: table;
   width: 100%;
   height: 41vh;
-  border-collapse: collapse;
-  font-size: 3vmin;
+  overflow: hidden;
   color: rgb(var(--color-white));
   background-color: rgba(var(--color-black), 0.5);
+  border-collapse: collapse;
   border-radius: 2vmin;
-  display: table;
-  table-layout: fixed;
+  font-size: 3vmin;
   box-sizing: border-box;
-  overflow: hidden;
+  table-layout: fixed;
 }
 
+/* ヘッダー */
 #resultTable thead {
-  background-color: rgba(var(--color-white), 0.1);
   display: table-header-group;
+  background-color: rgba(var(--color-white), 0.1);
 }
 
 #resultTable th {
   padding: 1vh 1vw;
-  text-align: center;
-  font-weight: bold;
-  border: 0.4vmin solid rgb(var(--color-gray-dark));
   background-color: rgb(var(--color-gray));
+  border: 0.4vmin solid rgb(var(--color-gray-dark));
   font-size: 1.5vmin;
+  font-weight: bold;
+  text-align: center;
+}
+
+#resultTable th:first-child,
+#resultTable th:last-child {
+  width: 40%;
 }
 
 #resultTable th:nth-child(2) {
+  width: 20%;
   background-color: rgba(var(--color-gray), 0.8);
 }
 
@@ -381,34 +452,21 @@
   background-color: rgba(var(--color-blue), 0.5);
 }
 
-#resultTable th:first-child,
-#resultTable th:last-child {
-  width: 40%;
-}
-
-#resultTable th:nth-child(2) {
-  width: 20%;
-}
-
-#resultTable thead tr:first-child th:first-child {
-  border-top-left-radius: 2vmin;
-  border-top: none;
-}
-
-#resultTable thead tr:first-child th:last-child {
-  border-top-right-radius: 2vmin;
-  border-top: none;
-}
-
 #resultTable thead tr:first-child th {
   border-top: none;
 }
 
-#resultTable td:nth-child(2) {
-  background-color: rgb(var(--color-gray-lighter));
-  font-size: 2vmin;
+#resultTable thead tr:first-child th:first-child {
+  border-top: none;
+  border-top-left-radius: 2vmin;
 }
 
+#resultTable thead tr:first-child th:last-child {
+  border-top: none;
+  border-top-right-radius: 2vmin;
+}
+
+/* ボディ */
 #resultTable tbody {
   display: table-row-group;
   max-height: calc(57vh - 8vh);
@@ -420,57 +478,96 @@
   border: none;
 }
 
-#resultTable tbody tr:last-child td:first-child {
-  border-bottom-left-radius: 2vmin;
-  border-bottom: none;
-}
-
-#resultTable tbody tr:last-child td:last-child {
-  border-bottom-right-radius: 2vmin;
-  border-bottom: none;
-}
-
 #resultTable tbody tr:last-child td {
   border-bottom: none;
 }
 
-#resultTable td {
-  padding: 0;
-  text-align: center;
-  border: 0.4vmin solid rgb(var(--color-gray-dark));
-  position: relative;
+#resultTable tbody tr:last-child td:first-child {
+  border-bottom: none;
+  border-bottom-left-radius: 2vmin;
 }
 
+#resultTable tbody tr:last-child td:last-child {
+  border-bottom: none;
+  border-bottom-right-radius: 2vmin;
+}
+
+#resultTable td {
+  position: relative;
+  padding: 0;
+  border: 0.4vmin solid rgb(var(--color-gray-dark));
+  text-align: center;
+}
+
+#resultTable td:first-child,
+#resultTable td:last-child {
+  width: 40%;
+}
+
+#resultTable td:nth-child(2) {
+  width: 20%;
+  background-color: rgb(var(--color-gray-lighter));
+  font-size: 2vmin;
+}
+
+#resultTable tbody td:first-child {
+  background-color: rgba(var(--color-red), 0.3);
+  color: rgb(var(--color-white));
+  font-size: 3vmin;
+  font-weight: bold;
+}
+
+#resultTable tbody td:first-child.isHasScore {
+  background-color: rgb(var(--color-red));
+}
+
+#resultTable tbody td:last-child {
+  background-color: rgba(var(--color-blue), 0.3);
+  color: rgb(var(--color-white));
+  font-size: 3vmin;
+  font-weight: bold;
+}
+
+#resultTable tbody td:last-child.isHasScore {
+  background-color: rgb(var(--color-blue));
+}
+
+#resultTable tbody td:nth-child(2) {
+  color: rgba(var(--color-white), 0.8);
+}
+
+/* ペナルティ参照記号 */
 .penaltyRef {
   position: absolute;
   right: 0.5vmin;
   bottom: 0.5vmin;
+  color: rgba(var(--color-white), 0.7);
   font-size: 2vmin;
   line-height: 1;
-  color: rgba(var(--color-white), 0.7);
 }
 
+/* テーブルフッター */
 #resultTableFooter {
   margin-top: 2vh;
   padding: 1vh;
+  color: rgb(var(--color-white));
   background-color: rgba(var(--color-black), 0.5);
   border-radius: 1vmin;
   font-size: 1.5vmin;
-  color: rgb(var(--color-white));
 }
 
 .penaltyLegend {
   display: flex;
   justify-content: space-between;
-  gap: 1.5vw;
   width: 100%;
+  gap: 1.5vw;
 }
 
 .penaltyGroup {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.5vh;
-  flex: 1;
 }
 
 .penaltyGroup.red {
@@ -485,66 +582,45 @@
   white-space: nowrap;
 }
 
-#resultTable td:first-child,
-#resultTable td:last-child {
-  width: 40%;
-}
+/* ========================================
+   プレイヤー名・スコア・タイマー表示
+   ======================================== */
 
-#resultTable td:nth-child(2) {
-  width: 20%;
-}
-
-#resultTable tbody td:first-child {
-  background-color: rgba(var(--color-red), 0.3);
-  color: rgb(var(--color-white));
-  font-weight: bold;
-  font-size: 3vmin;
-}
-
-#resultTable tbody td:first-child.isHasScore {
-  background-color: rgb(var(--color-red));
-}
-
-#resultTable tbody td:last-child {
-  background-color: rgba(var(--color-blue), 0.3);
-  color: rgb(var(--color-white));
-  font-weight: bold;
-  font-size: 3vmin;
-}
-
-#resultTable tbody td:last-child.isHasScore {
-  background-color: rgb(var(--color-blue));
-}
-
-#resultTable tbody td:nth-child(2) {
-  color: rgba(var(--color-white), 0.8);
-}
-
+/* プレイヤー名表示 */
 #scoreboard main section h2 {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 13vh;
-  gap: 2vmin;
   padding: 0 4vw;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 7vmin;
   font-weight: normal;
+  gap: 2vmin;
 }
 
 #scoreboard #blue h2 {
   flex-direction: row-reverse;
 }
 
-#scoreboard main section h2 .name {
-  transform-origin: center;
-  transition: transform 0.3s ease;
-  transform: scaleX(var(--textScale, 1));
+#scoreboard main #red h2 {
+  margin: 0 4vw 0 2vw;
 }
 
+#scoreboard main #blue h2 {
+  margin: 0 2vw 0 4vw;
+}
+
+#scoreboard main section h2 .name {
+  transition: transform 0.3s ease;
+  transform: scaleX(var(--textScale, 1));
+  transform-origin: center;
+}
+
+/* プロフィール画像 */
 h2 .profilePic {
   display: inline-flex;
   align-items: center;
@@ -559,177 +635,54 @@ h2 .profilePic img {
   border-radius: 0.5vmin;
 }
 
-#scoreboard main #red h2 {
-  margin: 0 4vw 0 2vw;
-}
-
-#scoreboard main #blue h2 {
-  margin: 0 2vw 0 4vw;
-}
-
+/* スタンバイセクションでのプレイヤー名位置 */
 #scoreboard[data-section="standby"] main h2 {
   position: relative;
   top: 40vh;
   z-index: 100;
 }
 
+/* スコア表示エリア */
 #scoreboard .score {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 31vh;
-  border-radius: 2vmin;
   margin: 3vh 0;
+  border-radius: 2vmin;
   transition: height 0.5s;
 }
 
-/* ペナルティアイコン */
-#scoreboard .score .penaltyIcons {
-  position: absolute;
-  left: 2vw;
-  display: flex;
-  flex-direction: column;
-  gap: 1vh;
-  align-items: center;
-  z-index: 10;
-}
-
-#scoreboard .score .penaltyIcon {
-  display: inline-block;
-  width: 7vmin;
-  height: 7vmin;
-  border-radius: 0.5vmin;
-  position: relative;
-  border: 0.5vmin solid rgb(var(--color-white));
-}
-
-#scoreboard .score .penaltyIcon.penaltyBall {
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  border-radius: 50%;
-}
-
-#red .score .penaltyIcon.penaltyBall {
-  background-image: url(/src/components/scoreboard/img/ball_red.png);
-}
-
-#blue .score .penaltyIcon.penaltyBall {
-  background-image: url(/src/components/scoreboard/img/ball_blue.png);
-}
-
-#scoreboard[data-penaltythrow="true"] .score .penaltyIcon.penaltyBall {
-  transform: scale(2);
-  transition: transform 0.3s ease;
-}
-
-#penaltyThrowLabel {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 17vh;
-  background-color: rgb(var(--color-gray-darker));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgb(var(--color-white));
-  font-size: 5vmin;
-  font-weight: bold;
-  z-index: 1000;
-}
-
-#scoreboard .score .penaltyIcon.yellowCard {
-  background-color: #FFD700;
-  width: 5vmin;
-  height: 7vmin;
-  border-radius: 1vmin;
-  box-shadow: inset 0 0 0 0.1vmin rgb(var(--color-gray-dark));
-}
-
-#scoreboard .score .penaltyIcon.redCard {
-  background-color: rgb(var(--color-red));
-  width: 5vmin;
-  height: 7vmin;
-  border-radius: 1vmin;
-  box-shadow: inset 0 0 0 0.1vmin rgb(var(--color-gray-dark));
-}
-
-#scoreboard .score .penaltyIcon.redCard[data-count]::after,
-#scoreboard .score .penaltyIcon.yellowCard[data-count="1"]::after {
-  display: none;
-}
-
-#scoreboard .score .penaltyIcon[data-count]::after {
-  font-family: Arial, Helvetica, sans-serif;
-  content: attr(data-count);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 6vmin;
-  font-weight: bold;
-  color: rgb(var(--color-white));
-  text-shadow:
-    0.1vmin 0 0 rgb(var(--color-gray-dark)),
-    -0.1vmin 0 0 rgb(var(--color-gray-dark)),
-    0 0.1vmin 0 rgb(var(--color-gray-dark)),
-    0 -0.1vmin 0 rgb(var(--color-gray-dark));
-}
-
-#scoreboard .score .penaltyIcon.penaltyIconClickable {
-  cursor: pointer;
-}
-
-#scoreboard .score .penaltyIcon .penaltyIconDelete {
-  position: absolute;
-  top: -1vmin;
-  right: -1vmin;
-  width: 3vmin;
-  height: 3vmin;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgb(var(--color-gray-dark));
-  color: rgb(var(--color-white));
-  font-size: 2vmin;
-  font-weight: bold;
-  border-radius: 50%;
-  border: 0.2vmin solid rgb(var(--color-white));
-  cursor: pointer;
-  z-index: 10;
-  line-height: 1;
-  padding: 0;
-}
-
+/* スコアボタン */
 #scoreboard .score button[name$="ScoreBtn"] {
+  position: relative;
   display: block;
-  height: 100%;
   width: 100%;
+  height: 100%;
+  border-radius: 2vmin;
   font-size: 35vmin;
   font-weight: bold;
-  border-radius: 2vmin;
   line-height: 0.8;
   transition: font-size 0.5s;
-  position: relative;
 }
 
+/* スコア調整ボタン（Plus/Minus/TieBreak） */
 #scoreboard .score .plus,
 #scoreboard .score .minus,
 #scoreboard .score .tieBreak {
-  display: none;
   position: absolute;
   right: 3vw;
+  z-index: 10;
+  display: none;
   width: 13vmin;
   height: 13vmin;
+  box-sizing: border-box;
   border: solid 0.3vmin rgb(var(--color-white));
   border-radius: 2vmin;
-  box-sizing: border-box;
   font-size: 12vmin;
   line-height: 1;
-  z-index: 10;
 }
 
 [data-mode="view"] #scoreboard .score .plus,
@@ -750,6 +703,7 @@ h2 .profilePic img {
   top: 9vh;
 }
 
+/* Plus/Minus表示条件 */
 [data-active="red-score"] #red .plus,
 [data-active="red-score"] #red .minus,
 [data-active="blue-score"] #blue .plus,
@@ -781,62 +735,7 @@ h2 .profilePic img {
   display: none !important;
 }
 
-.winMark {
-  display: none;
-  position: absolute;
-  width: 30vmin;
-  height: 30vmin;
-  border: 2vmin solid rgb(var(--color-white));
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10;
-  transition: transform 0.5s;
-}
-
-[data-section="finalShot"][data-tieBreak="red"] #red .winMark,
-[data-section="finalShot"][data-tieBreak="blue"] #blue .winMark,
-[data-section="tieBreak"][data-tieBreak="red"] #red .winMark,
-[data-section="tieBreak"][data-tieBreak="blue"] #blue .winMark,
-[data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
-[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
-[data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
-[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
-[data-section="matchFinished"][data-win="red"] #red .winMark,
-[data-section="matchFinished"][data-win="blue"] #blue .winMark,
-[data-section="resultApproval"][data-win="red"] #red .winMark,
-[data-section="resultApproval"][data-win="blue"] #blue .winMark {
-  display: block;
-}
-
-[data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
-[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
-[data-section="matchFinished"][data-win="red"] #red .winMark,
-[data-section="matchFinished"][data-win="blue"] #blue .winMark {
-  transform: scale(1.5);
-}
-
-[data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
-[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
-[data-section="resultApproval"][data-win="red"] #red .winMark,
-[data-section="resultApproval"][data-win="blue"] #blue .winMark {
-  transform: scale(1.15);
-}
-
-/* viewモード専用のwinMarkサイズ調整 */
-[data-mode="view"] [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
-[data-mode="view"] [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
-[data-mode="view"] [data-section="matchFinished"][data-win="red"] #red .winMark,
-[data-mode="view"] [data-section="matchFinished"][data-win="blue"] #blue .winMark {
-  transform: scale(1.3);
-}
-
-[data-mode="view"] [data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
-[data-mode="view"] [data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
-[data-mode="view"] [data-section="resultApproval"][data-win="red"] #red .winMark,
-[data-mode="view"] [data-section="resultApproval"][data-win="blue"] #blue .winMark {
-  transform: scale(1.15);
-}
-
+/* タイマー表示 */
 .time {
   height: 31vh;
   transition: height 0.5s;
@@ -844,31 +743,19 @@ h2 .profilePic img {
 
 .timer {
   border-radius: 2vmin;
-  font-weight: bold;
   font-size: 30vmin;
+  font-weight: bold;
   line-height: 1;
 }
 
 .time button {
   display: block;
-  height: 100%;
   width: 100%;
+  height: 100%;
   transition: font-size 0.5s;
 }
 
-#sectionNav .btn {
-  display: inline-block;
-  padding: 1vmin 7vmin;
-  border: solid 0.5vmin rgb(var(--color-white));
-  border-radius: 15vmin;
-  font-size: 8vmin;
-}
-
-#sectionNav .timer {
-  padding: 0 5vw;
-  background: rgb(var(--color-gray));
-}
-
+/* チームカラー背景 */
 #red .score button,
 #red .time button {
   background-color: rgba(var(--color-red), 0.3);
@@ -885,6 +772,7 @@ h2 .profilePic img {
   opacity: 0.5;
 }
 
+/* アクティブ状態のカラー */
 [data-active="score"] #red .score button,
 [data-active="red-score"] #red [name="redScoreBtn"],
 [data-active="red-time"] #red .time button,
@@ -905,6 +793,7 @@ h2 .profilePic img {
   background-color: rgb(var(--color-blue));
 }
 
+/* スコアアクティブ時のサイズ調整 */
 #scoreboard:not([data-section="interval"]) [data-active="score"] .score {
   height: 45vh;
 }
@@ -922,6 +811,7 @@ h2 .profilePic img {
   font-size: 15vmin;
 }
 
+/* スコア調整モード（viewモード） */
 [data-mode="view"] #scoreboard[data-scoreadjust="true"]:not([data-section="tieBreak"]) .score {
   height: 45vh;
 }
@@ -938,6 +828,7 @@ h2 .profilePic img {
   font-size: 15vmin;
 }
 
+/* 試合終了時のスコアサイズ */
 #scoreboard[data-section="matchFinished"] .score {
   height: 47vh;
 }
@@ -951,20 +842,20 @@ h2 .profilePic img {
   height: 41vh;
 }
 
-
 #scoreboard[data-section="resultApproval"] #red [name="redScoreBtn"],
 #scoreboard[data-section="resultApproval"] #blue [name="blueScoreBtn"] {
   font-size: 35vmin;
 }
 
+/* Win表示 */
 .win {
   display: none;
 }
 
 [data-section="matchFinished"] .win,
 [data-section="resultApproval"] .win {
-  display: block;
   position: relative;
+  display: block;
   height: 10vh;
   opacity: 0;
 }
@@ -984,7 +875,10 @@ h2 .profilePic img {
   margin-left: auto;
 }
 
-/* resultApprovalセクションの承認ボタン */
+/* ========================================
+   結果承認セクション
+   ======================================== */
+
 #resultApproval {
   display: flex;
   flex-direction: column;
@@ -995,49 +889,49 @@ h2 .profilePic img {
 
 #resultApproval .approvalButtons {
   display: flex;
-  justify-content: space-evenly;
   align-items: center;
+  justify-content: space-evenly;
   width: 100%;
 }
 
 #resultApproval .approvalButtons .btn.approval {
+  position: relative;
   flex: 1;
   max-width: 25vw;
   padding: 2vh 2vw;
-  font-size: 4vmin;
+  color: rgb(var(--color-white));
+  background-color: rgba(var(--color-black), 0.7);
   border: 0.3vmin solid rgb(var(--color-white));
   border-radius: 5vmin;
-  background-color: rgba(var(--color-black), 0.7);
-  color: rgb(var(--color-white));
+  font-size: 4vmin;
   transition: all 0.3s;
-  position: relative;
 }
 
 #resultApproval .approvalButtons .btn.approval.isApproved {
+  position: relative;
   background-color: rgba(var(--color-green), 0.7);
   border-color: rgb(var(--color-green));
-  position: relative;
 }
 
 #resultApproval .approvalButtons .btn.approval.isApproved::before {
-  content: '✓';
   position: absolute;
   top: 50%;
   left: 1vw;
-  transform: translateY(-50%);
-  font-size: 6vmin;
-  color: rgb(var(--color-white));
-  pointer-events: none;
   z-index: 1;
+  color: rgb(var(--color-white));
+  font-size: 6vmin;
+  pointer-events: none;
+  content: '✓';
+  transform: translateY(-50%);
 }
 
-#resultApproval .matchCompleted { 
-  font-size: 4vmin;
-  color: rgb(var(--color-white));
-  font-weight: bold;
-  text-align: center;
+#resultApproval .matchCompleted {
   padding: 1vh 0;
   opacity: 0;
+  color: rgb(var(--color-white));
+  font-size: 4vmin;
+  font-weight: bold;
+  text-align: center;
   transition: opacity 0.3s;
 }
 
@@ -1045,11 +939,205 @@ h2 .profilePic img {
   opacity: 1;
 }
 
+/* ========================================
+   ペナルティアイコンとWinマーク
+   ======================================== */
+
+/* ペナルティアイコンコンテナ */
+#scoreboard .score .penaltyIcons {
+  position: absolute;
+  left: 2vw;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+}
+
+/* ペナルティアイコン基本 */
+#scoreboard .score .penaltyIcon {
+  position: relative;
+  display: inline-block;
+  width: 7vmin;
+  height: 7vmin;
+  border: 0.5vmin solid rgb(var(--color-white));
+  border-radius: 0.5vmin;
+}
+
+#scoreboard .score .penaltyIcon.penaltyIconClickable {
+  cursor: pointer;
+}
+
+/* ペナルティボール */
+#scoreboard .score .penaltyIcon.penaltyBall {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  border-radius: 50%;
+}
+
+#red .score .penaltyIcon.penaltyBall {
+  background-image: url(/src/components/scoreboard/img/ball_red.png);
+}
+
+#blue .score .penaltyIcon.penaltyBall {
+  background-image: url(/src/components/scoreboard/img/ball_blue.png);
+}
+
+#scoreboard[data-penaltythrow="true"] .score .penaltyIcon.penaltyBall {
+  transition: transform 0.3s ease;
+  transform: scale(2);
+}
+
+/* ペナルティスロー表示ラベル */
+#penaltyThrowLabel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 17vh;
+  color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray-darker));
+  font-size: 5vmin;
+  font-weight: bold;
+}
+
+/* イエローカード */
+#scoreboard .score .penaltyIcon.yellowCard {
+  width: 5vmin;
+  height: 7vmin;
+  background-color: #FFD700;
+  border-radius: 1vmin;
+  box-shadow: inset 0 0 0 0.1vmin rgb(var(--color-gray-dark));
+}
+
+/* レッドカード */
+#scoreboard .score .penaltyIcon.redCard {
+  width: 5vmin;
+  height: 7vmin;
+  background-color: rgb(var(--color-red));
+  border-radius: 1vmin;
+  box-shadow: inset 0 0 0 0.1vmin rgb(var(--color-gray-dark));
+}
+
+/* カード枚数表示 */
+#scoreboard .score .penaltyIcon[data-count]::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: rgb(var(--color-white));
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6vmin;
+  font-weight: bold;
+  content: attr(data-count);
+  text-shadow:
+    0.1vmin 0 0 rgb(var(--color-gray-dark)),
+    -0.1vmin 0 0 rgb(var(--color-gray-dark)),
+    0 0.1vmin 0 rgb(var(--color-gray-dark)),
+    0 -0.1vmin 0 rgb(var(--color-gray-dark));
+  transform: translate(-50%, -50%);
+}
+
+#scoreboard .score .penaltyIcon.redCard[data-count]::after,
+#scoreboard .score .penaltyIcon.yellowCard[data-count="1"]::after {
+  display: none;
+}
+
+/* ペナルティアイコン削除ボタン */
+#scoreboard .score .penaltyIcon .penaltyIconDelete {
+  position: absolute;
+  top: -1vmin;
+  right: -1vmin;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3vmin;
+  height: 3vmin;
+  padding: 0;
+  color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray-dark));
+  border: 0.2vmin solid rgb(var(--color-white));
+  border-radius: 50%;
+  font-size: 2vmin;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Winマーク */
+.winMark {
+  position: absolute;
+  z-index: 10;
+  display: none;
+  width: 30vmin;
+  height: 30vmin;
+  pointer-events: none;
+  border: 2vmin solid rgb(var(--color-white));
+  border-radius: 50%;
+  transition: transform 0.5s;
+}
+
+/* Winマーク表示条件 */
+[data-section="finalShot"][data-tieBreak="red"] #red .winMark,
+[data-section="finalShot"][data-tieBreak="blue"] #blue .winMark,
+[data-section="tieBreak"][data-tieBreak="red"] #red .winMark,
+[data-section="tieBreak"][data-tieBreak="blue"] #blue .winMark,
+[data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
+[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
+[data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
+[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
+[data-section="matchFinished"][data-win="red"] #red .winMark,
+[data-section="matchFinished"][data-win="blue"] #blue .winMark,
+[data-section="resultApproval"][data-win="red"] #red .winMark,
+[data-section="resultApproval"][data-win="blue"] #blue .winMark {
+  display: block;
+}
+
+/* matchFinished時のWinマークサイズ */
+[data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
+[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
+[data-section="matchFinished"][data-win="red"] #red .winMark,
+[data-section="matchFinished"][data-win="blue"] #blue .winMark {
+  transform: scale(1.5);
+}
+
+/* resultApproval時のWinマークサイズ */
+[data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
+[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
+[data-section="resultApproval"][data-win="red"] #red .winMark,
+[data-section="resultApproval"][data-win="blue"] #blue .winMark {
+  transform: scale(1.15);
+}
+
+/* viewモード時のWinマークサイズ調整 */
+[data-mode="view"] [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
+[data-mode="view"] [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
+[data-mode="view"] [data-section="matchFinished"][data-win="red"] #red .winMark,
+[data-mode="view"] [data-section="matchFinished"][data-win="blue"] #blue .winMark {
+  transform: scale(1.3);
+}
+
+[data-mode="view"] [data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
+[data-mode="view"] [data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
+[data-mode="view"] [data-section="resultApproval"][data-win="red"] #red .winMark,
+[data-mode="view"] [data-section="resultApproval"][data-win="blue"] #blue .winMark {
+  transform: scale(1.15);
+}
+
+/* ========================================
+   ボールマーカー
+   ======================================== */
+
 .ball {
   position: relative;
   display: flex;
-  justify-content: space-around;
   align-items: center;
+  justify-content: space-around;
   width: 100%;
   height: 17vh;
   margin: 0 auto;
@@ -1061,12 +1149,25 @@ h2 .profilePic img {
   transition: transform 0.5s, opacity 0.3s;
 }
 
+.ball li:first-child {
+  position: absolute;
+  left: -2vw;
+  width: 2.5vw;
+}
+
+.ball li:first-child button {
+  width: 2.5vw;
+  opacity: 0;
+  border-radius: 0;
+}
+
+/* ボタンスタイル */
 .ball button {
   width: 5vw;
   height: 5vw;
-  border-radius: 50%;
   background: no-repeat center center;
   background-size: cover;
+  border-radius: 50%;
 }
 
 .ball [name="redBallBtn"] {
@@ -1082,22 +1183,12 @@ h2 .profilePic img {
   background-image: url(img/ball_jack.png);
 }
 
-.ball li:first-child {
-  position: absolute;
-  left: -2vw;
-  width: 2.5vw;
-}
-
-.ball li:first-child button {
-  width: 2.5vw;
-  border-radius: 0;
-  opacity: 0;
-}
-
+/* ジャック表示 */
 .ball:not([data-ball="7"]) li.jack {
   opacity: 0.03;
 }
 
+/* ボール数による透明度調整 */
 [data-ball="6"] li:nth-child(n + 8),
 [data-ball="5"] li:nth-child(n + 7),
 [data-ball="4"] li:nth-child(n + 6),
@@ -1108,6 +1199,7 @@ h2 .profilePic img {
   opacity: 0.1;
 }
 
+/* アクティブボールのアニメーション */
 [data-active="red-time"] #red [data-ball="6"] li:nth-child(7),
 [data-active="red-time"] #red [data-ball="5"] li:nth-child(6),
 [data-active="red-time"] #red [data-ball="4"] li:nth-child(5),
@@ -1120,52 +1212,124 @@ h2 .profilePic img {
 [data-active="blue-time"] #blue [data-ball="3"] li:nth-child(4),
 [data-active="blue-time"] #blue [data-ball="2"] li:nth-child(3),
 [data-active="blue-time"] #blue [data-ball="1"] li:nth-child(2) {
-  transform: scale(1.3);
   filter: brightness(1.5);
   animation: ball-anim 1.5s linear infinite alternate-reverse;
+  transform: scale(1.3);
 }
 
 @keyframes ball-anim {
   0% {
     filter: brightness(1);
   }
-
   100% {
     filter: brightness(1.5);
   }
 }
 
+/* ジャックボールのアニメーション */
 [data-active="red-time"] #red [data-ball="7"] li:nth-child(8),
 [data-active="blue-time"] #blue [data-ball="7"] li:nth-child(8) {
-  transform: scale(1.3);
   filter: brightness(1.1);
   animation: jack-anim 1.5s infinite alternate-reverse;
+  transform: scale(1.3);
 }
 
 @keyframes jack-anim {
   0% {
     filter: brightness(1);
   }
-
   100% {
     filter: brightness(1.1);
   }
 }
 
+/* ========================================
+   セクションナビゲーション
+   ======================================== */
+
+/* 基本スタイル */
 #sectionNav {
   position: fixed;
-  left: 0;
   bottom: 0;
+  left: 0;
   width: 100%;
+  box-sizing: border-box;
   background-color: rgb(var(--color-gray-dark));
   text-align: center;
+}
+
+#sectionNav > div {
   box-sizing: border-box;
 }
 
-#sectionNav>div {
-  box-sizing: border-box;
+#sectionNav .btn {
+  display: inline-block;
+  padding: 1vmin 7vmin;
+  border: solid 0.5vmin rgb(var(--color-white));
+  border-radius: 15vmin;
+  font-size: 8vmin;
 }
 
+#sectionNav .timer {
+  padding: 0 5vw;
+  background: rgb(var(--color-gray));
+}
+
+/* セクションごとの調整 */
+[data-section="standby"] #sectionNav {
+  height: 100vh;
+}
+
+/* スタンバイセクション */
+[data-section="standby"] main > section > div,
+[data-section="standby"] main > section > ul {
+  opacity: 0;
+}
+
+[data-section="standby"] main h2::after,
+[data-section="warmup"] main h2::after,
+[data-section="warmup1"] main h2::after,
+[data-section="warmup2"] main h2::after {
+  position: absolute;
+  bottom: -2vh;
+  display: inline-block;
+  width: 100%;
+  height: 3vh;
+  border-radius: 0.5vmin;
+  content: "";
+  transition: transform 0.5s, filter 0.5s, opacity 0.5s;
+}
+
+[data-section="standby"][data-setcolor="false"] main h2::after {
+  transform: scaleX(0.75);
+}
+
+[data-mode="view"] [data-section="standby"][data-setcolor="false"] main h2::after {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+[data-section="standby"] #ends {
+  display: none;
+}
+
+#sectionNav [name="setColor"] {
+  position: relative;
+  top: -5vh;
+  min-width: 8em;
+  margin: 0;
+  padding: 2vh 1em;
+  font-size: 4vmin;
+  transition: all 0.3s;
+}
+
+[data-setcolor="true"] #sectionNav [name="setColor"] {
+  opacity: 0.5;
+  border-color: rgb(var(--color-gray-light));
+  transform: scale(0.8);
+}
+
+/* ウォームアップセクション */
 [data-section="warmup"] #secWarmup,
 [data-section="warmup1"] #secWarmup,
 [data-section="warmup2"] #secWarmup {
@@ -1182,41 +1346,11 @@ h2 .profilePic img {
 [data-section="warmup"] #secWarmup .warmupLabel,
 [data-section="warmup1"] #secWarmup .warmupLabel,
 [data-section="warmup2"] #secWarmup .warmupLabel {
-  font-size: 8vmin;
-  color: rgb(var(--color-white));
-  text-align: center;
   margin-bottom: 3vh;
+  color: rgb(var(--color-white));
+  font-size: 8vmin;
   font-weight: bold;
-}
-
-[data-section="standby"] #sectionNav {
-  height: 100vh;
-}
-
-/* インターバルセクションの時に赤、青のタイマーを透明度0に */
-[data-section="interval"] #red .time,
-[data-section="interval"] #blue .time {
-  opacity: 0;
-}
-
-[data-section="matchFinished"] .time,
-[data-section="matchFinished"] .ball,
-[data-section="resultApproval"] .time,
-[data-section="resultApproval"] .ball {
-  display: none;
-}
-
-[data-section="warmup"] #timeSetting .warmupTimer,
-[data-section="warmup1"] #timeSetting .warmupTimer,
-[data-section="warmup2"] #timeSetting .warmupTimer,
-[data-section="interval"] #timeSetting .intervalTimer {
-  display: flex;
-  width: 100%;
-  height: 37vh;
-}
-
-[data-section="standby"] #ends {
-  display: none;
+  text-align: center;
 }
 
 [data-section="warmup"] #ends,
@@ -1233,171 +1367,54 @@ h2 .profilePic img {
   background: none;
 }
 
-[data-section="interval"] #ends {
-  opacity: 0.5;
-}
-
-/* エンドセクションのスタイル */
-#secEnd,
-#secLastEnd {
-  height: 50vh;
-  padding-top: 28vh;
-}
-
-/* エンドセクション開始時、sectionNavを非表示（スコアボタンが押されるまで） */
-[data-mode="ctrl"][data-section^="end"] #sectionNav {
-  display: none;
-}
-
-/* 点数加算ボタンが押されたら（ctrlモードの時、red-scoreまたはblue-score）、sectionNavを表示 */
-[data-mode="ctrl"][data-section^="end"][data-active="red-score"] #sectionNav,
-[data-mode="ctrl"][data-section^="end"][data-active="blue-score"] #sectionNav {
-  display: block;
-}
-
-/* viewモードの時、scoreでsectionNavを表示 */
-[data-mode="view"][data-section^="end"][data-active="score"] #sectionNav {
-  display: block;
-}
-
-/* penaltyThrow中は、sectionNavを強制的に非表示 */
-[data-penaltythrow="true"] #sectionNav {
-  display: none !important;
-}
-
-[data-section="finalShot"] #ends {
-  display: block;
-  width: 70vmin;
-  transform: scale(0.6);
-}
-
-[data-section="matchFinished"] #ends,
-#scoreboard[data-section="matchFinished"] .score .plus,
-#scoreboard[data-section="matchFinished"] .score .minus,
-#scoreboard[data-section="matchFinished"] .score .tieBreak,
-[data-section="resultApproval"] #ends,
-#scoreboard[data-section="resultApproval"] .score .plus,
-#scoreboard[data-section="resultApproval"] .score .minus,
-#scoreboard[data-section="resultApproval"] .score .tieBreak {
-  display: none;
-}
-
-
 [data-section="warmup"] .score button[name$="ScoreBtn"],
 [data-section="warmup1"] .score button[name$="ScoreBtn"],
 [data-section="warmup2"] .score button[name$="ScoreBtn"] {
   display: none;
 }
 
-[data-section="standby"] main>section>div,
-[data-section="standby"] main>section>ul {
-  opacity: 0;
-}
-
-[data-section="standby"] main h2::after,
-[data-section="warmup"] main h2::after,
-[data-section="warmup1"] main h2::after,
-[data-section="warmup2"] main h2::after {
-  content: "";
-  display: inline-block;
-  position: absolute;
-  bottom: -2vh;
+[data-section="warmup"] #timeSetting .warmupTimer,
+[data-section="warmup1"] #timeSetting .warmupTimer,
+[data-section="warmup2"] #timeSetting .warmupTimer,
+[data-section="interval"] #timeSetting .intervalTimer {
+  display: flex;
   width: 100%;
-  height: 3vh;
-  border-radius: 0.5vmin;
-  transition: transform 0.5s, filter 0.5s, opacity 0.5s;
+  height: 37vh;
 }
 
-[data-section="standby"][data-setcolor="false"] main h2::after {
-  transform: scaleX(0.75);
-}
-
-[data-mode="view"] [data-section="standby"][data-setcolor="false"] main h2::after {
-  filter: grayscale(1);
-  opacity: 0.3;
-}
-
-/* ウォームアップタイマーのフォントサイズ */
 [data-mode="view"] [data-section="warmup"] [name="warmupTimerBtn"],
 [data-mode="view"] [data-section="warmup1"] [name="warmupTimerBtn"],
 [data-mode="view"] [data-section="warmup2"] [name="warmupTimerBtn"] {
   font-size: 35vmin;
 }
 
-/* ウォームアップタイマーが停止しているときの透明度 */
 [data-section="warmup"] [name="warmupTimerBtn"]:not([data-running="true"]),
 [data-section="warmup1"] [name="warmupTimerBtn"]:not([data-running="true"]),
 [data-section="warmup2"] [name="warmupTimerBtn"]:not([data-running="true"]) {
   opacity: 0.8;
 }
 
-/* インターバルタイマーが停止しているときの透明度 */
+#sectionNav .finishWarmup {
+  margin-top: 4vh;
+}
+
+/* インターバルセクション */
+[data-section="interval"] #red .time,
+[data-section="interval"] #blue .time {
+  opacity: 0;
+}
+
+[data-section="interval"] #ends {
+  opacity: 0.5;
+}
+
 [data-section="interval"] [name="intervalTimerBtn"]:not([data-running="true"]) {
   opacity: 0.8;
 }
 
-/* data-mode="view"の時、フルスクリーン以外のボタンを無効化 */
-[data-mode="view"] main button,
-[data-mode="view"] header [name="settingBtn"],
-[data-mode="view"] footer button,
-[data-section="matchFinished"] .score button,
-[data-section="resultApproval"] .score button {
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
-/* タイムモーダル */
-.timeModal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgb(var(--color-gray-medium));
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  pointer-events: none;
-  animation: fadeOut 1s 2s linear forwards;
-}
-
-.timeModalContent {
-  color: white;
-  padding: 40px 80px;
-  text-align: center;
-}
-
-.timeModalContent p {
-  font-size: 8rem;
-  font-weight: bold;
-  margin: 0;
-  text-shadow: 2px 2px 4px rgba(var(--color-black), 0.5);
-}
-
 [data-mode="ctrl"] [data-section="interval"] #sectionNav [data-word="finishInterval"] {
-  font-size: 6vmin;
   margin-top: 3vh;
-}
-
-#sectionNav [name="setColor"] {
-  position: relative;
-  top: -5vh;
-  min-width: 8em;
-  margin: 0;
-  padding: 2vh 1em;
-  font-size: 4vmin;
-  transition: all 0.3s;
-}
-
-[data-setcolor="true"] #sectionNav [name="setColor"] {
-  transform: scale(0.8);
-  border-color: rgb(var(--color-gray-light));
-  opacity: 0.5;
-}
-
-#sectionNav .finishWarmup {
-  margin-top: 4vh;
+  font-size: 6vmin;
 }
 
 #sectionNav .finishInterval {
@@ -1405,14 +1422,35 @@ h2 .profilePic img {
   font-size: 7vmin;
 }
 
-#secMatchFinished .btn.matchFinished,
-#secTieBreak .btn.matchFinished {
-  margin: 2.5vh 0;
-  font-size: 7vmin;
+[data-mode="view"] #secInterval {
+  margin: 10vh 0 11vh;
 }
 
-[data-mode="view"] #secInterval {
-  margin: 10vh 0 11vh
+/* エンドセクション */
+#secEnd,
+#secLastEnd {
+  height: 50vh;
+  padding-top: 28vh;
+}
+
+[data-mode="ctrl"][data-section^="end"] #sectionNav {
+  display: none;
+}
+
+[data-mode="ctrl"][data-section^="end"][data-active="red-score"] #sectionNav,
+[data-mode="ctrl"][data-section^="end"][data-active="blue-score"] #sectionNav {
+  display: block;
+}
+
+[data-mode="view"][data-section^="end"][data-active="score"] #sectionNav {
+  display: block;
+}
+
+/* ファイナルショットセクション */
+[data-section="finalShot"] #ends {
+  display: block;
+  width: 70vmin;
+  transform: scale(0.6);
 }
 
 [name="nextBtn"][data-word="finalShot"],
@@ -1427,6 +1465,94 @@ h2 .profilePic img {
   display: inline-block;
 }
 
+/* タイブレークセクション */
+[data-section="tieBreak"] #secStandby {
+  display: none;
+}
+
+[data-section="tieBreak"] #endsBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 試合終了セクション */
+[data-section="matchFinished"] .time,
+[data-section="matchFinished"] .ball,
+[data-section="resultApproval"] .time,
+[data-section="resultApproval"] .ball {
+  display: none;
+}
+
+[data-section="matchFinished"] #ends,
+#scoreboard[data-section="matchFinished"] .score .plus,
+#scoreboard[data-section="matchFinished"] .score .minus,
+#scoreboard[data-section="matchFinished"] .score .tieBreak,
+[data-section="resultApproval"] #ends,
+#scoreboard[data-section="resultApproval"] .score .plus,
+#scoreboard[data-section="resultApproval"] .score .minus,
+#scoreboard[data-section="resultApproval"] .score .tieBreak {
+  display: none;
+}
+
+#secMatchFinished .btn.matchFinished,
+#secTieBreak .btn.matchFinished {
+  margin: 2.5vh 0;
+  font-size: 7vmin;
+}
+
+/* ペナルティスロー中の非表示 */
+[data-penaltythrow="true"] #sectionNav {
+  display: none !important;
+}
+
+/* viewモードでのボタン無効化 */
+[data-mode="view"] main button,
+[data-mode="view"] header [name="settingBtn"],
+[data-mode="view"] footer button,
+[data-section="matchFinished"] .score button,
+[data-section="resultApproval"] .score button {
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   タイムモーダル
+   ======================================== */
+
+.timeModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background-color: rgb(var(--color-gray-medium));
+  animation: fadeOut 1s 2s linear forwards;
+}
+
+.timeModalContent {
+  padding: 40px 80px;
+  color: white;
+  text-align: center;
+}
+
+.timeModalContent p {
+  margin: 0;
+  font-size: 8rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(var(--color-black), 0.5);
+}
+
+/* ========================================
+   設定モーダル
+   ======================================== */
+
+/* 基本モーダル */
 #settingModal {
   position: fixed;
   top: 0;
@@ -1434,17 +1560,6 @@ h2 .profilePic img {
   width: 100%;
   height: 100%;
   background-color: rgba(var(--color-black), 0.7);
-}
-
-#settingDetailsModal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(var(--color-black), 0.95);
-  z-index: 1001;
 }
 
 [data-mode="view"] #settingModal {
@@ -1455,81 +1570,97 @@ h2 .profilePic img {
   background-color: rgb(var(--color-black));
 }
 
-/* スタンバイセクションの入力欄 */
+.fadeOut #settingModal {
+  animation: fadeOut 1s linear forwards;
+}
+
+/* 設定詳細モーダル */
+#settingDetailsModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1001;
+  display: none;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(var(--color-black), 0.95);
+}
+
+/* スタンバイ設定 */
 #standbySetting {
   display: flex;
   flex-direction: column;
-  gap: 2vh;
   padding: 2vh 1vw;
+  gap: 2vh;
 }
 
 #standbySetting input,
 #standbySetting select {
-  color: rgb(var(--color-white));
   padding: 2vh 1vw;
+  color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray-medium));
   border: solid 0.3vmin rgb(var(--color-gray-lighter));
   border-radius: 1vmin;
-  box-sizing: border-box;
-  background-color: rgb(var(--color-gray-medium));
-  font-weight: normal;
   font-family: inherit;
   font-size: 4vmin;
+  font-weight: normal;
+  box-sizing: border-box;
 }
 
 #standbySetting select {
   padding: 2vh 1.25em 2vh 1vw;
 }
 
-#standbySetting>select,
-#standbySetting>input {
+#standbySetting > select,
+#standbySetting > input {
   position: absolute;
   text-align: center;
 }
 
 #standbySetting input:focus,
 #standbySetting select:focus {
-  background-color: rgb(var(--color-white));
   color: rgb(var(--color-gray-dark));
+  background-color: rgb(var(--color-white));
   outline: none;
 }
 
 #standbySetting select option {
-  font-size: 4vmin;
-  background-color: rgb(var(--color-gray-medium));
   color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray-medium));
+  font-size: 4vmin;
 }
 
-/* 共通のセレクトボックススタイル（カスタム矢印付き） */
+/* セレクトボックス共通スタイル（カスタム矢印付き） */
 .settingSelect {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.25vw center;
-  background-size: 4.2vmin 4.2vmin;
-  background-color: rgb(var(--color-gray-medium));
-  color: rgb(var(--color-white));
   padding: 2vh 1vw;
+  padding-left: 3vw;
+  color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray-medium));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 0.25vw center;
+  background-repeat: no-repeat;
+  background-size: 4.2vmin 4.2vmin;
   border: solid 0.3vmin rgb(var(--color-gray-lighter));
   border-radius: 1vmin;
-  box-sizing: border-box;
   font-family: inherit;
   font-size: 4vmin;
   text-align: left;
   text-align-last: left;
-  padding-left: 3vw;
-  /* 中央揃えの補正 */
+  box-sizing: border-box;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 .settingSelect:focus {
-  background-color: rgb(var(--color-white));
   color: rgb(var(--color-gray-dark));
-  outline: none;
+  background-color: rgb(var(--color-white));
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23222' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  outline: none;
 }
 
+/* 入力欄の配置 */
 #standbySetting #classificationInput,
 #standbySetting #genderInput,
 #standbySetting .settingSelect {
@@ -1540,9 +1671,9 @@ h2 .profilePic img {
   top: 2vh;
   left: 35vw;
   width: 30vw;
+  padding-left: 0;
   text-align: center;
   text-align-last: center;
-  padding-left: 0;
 }
 
 #standbySetting #genderInput {
@@ -1562,65 +1693,67 @@ h2 .profilePic img {
   width: 30vw;
 }
 
+/* 詳細設定 */
 #standbySetting #detailSettings {
   position: absolute;
-  width: 94vw;
   top: 53vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3vh 2vw;
   justify-items: center;
+  width: 94vw;
+  gap: 3vh 2vw;
 }
 
 #standbySetting .detailSettingItem {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 1vw;
+  justify-content: space-between;
   width: 42vw;
+  gap: 1vw;
 }
 
 #standbySetting .detailSettingLabel {
-  color: rgb(var(--color-white));
-  font-size: 3vmin;
-  font-family: var(--font-family-base);
   width: 14vw;
+  color: rgb(var(--color-white));
+  font-family: var(--font-family-base);
+  font-size: 3vmin;
   line-height: 1.2;
 }
 
 #standbySetting .detailSettingItem select {
-  font-size: 3vmin;
   width: 25vw;
-}
-
-#standbySetting .detailSettingItem  option {
   font-size: 3vmin;
 }
 
+#standbySetting .detailSettingItem option {
+  font-size: 3vmin;
+}
+
+/* プレイヤー入力 */
 #playerInput {
   position: absolute;
+  top: 25vh;
   display: flex;
   justify-content: space-between;
-  top: 25vh;
   width: 94vw;
 }
 
 .playerSettingGroup {
-  width: 46vw;
-  border-radius: 2vmin;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  width: 46vw;
   padding: 2vh 2vw;
+  border-radius: 2vmin;
   box-sizing: border-box;
 }
 
-#redPlayerInput { 
+#redPlayerInput {
   background-color: rgba(var(--color-red), 0.3);
 }
 
 #bluePlayerInput {
-   background-color: rgba(var(--color-blue), 0.3);
+  background-color: rgba(var(--color-blue), 0.3);
 }
 
 #playerInput .nameSetting {
@@ -1630,26 +1763,26 @@ h2 .profilePic img {
 
 #playerInput .nameSetting input {
   width: 100%;
-  text-align: center;
   font-size: 5vmin;
+  text-align: center;
 }
 
 .profilePic label {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3vmin;
   width: 100%;
+  margin-bottom: 1vmin;
   color: rgb(var(--color-white));
   font-size: 4vmin;
-  margin-bottom: 1vmin;
   cursor: pointer;
+  gap: 3vmin;
 }
 
 .profilePic .flagPreview {
-  margin-top: 0.5vh;
   width: 10vmin;
   height: auto;
+  margin-top: 0.5vh;
   vertical-align: text-bottom;
   border-radius: 0.5vmin;
 }
@@ -1663,9 +1796,6 @@ h2 .profilePic img {
   top: 0;
   left: 8.5vw;
   z-index: 1;
-}
-
-#playerInput .profilePic .settingSelect {
   width: 25vw;
   text-align: left;
 }
@@ -1674,61 +1804,45 @@ h2 .profilePic img {
   display: none !important;
 }
 
-/* タイブレークボタンのスタイル */
-.tiebreakButtons {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.tiebreakBtn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
+/* 詳細モーダル */
 #settingDetailsModal {
   display: block;
 }
 
 #detailsModal {
-  background-color: rgb(var(--color-gray-darker));
-  color: rgb(var(--color-white));
-  padding: 2rem;
-  border-radius: 10px;
-  max-width: 900px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 10px 30px rgb(var(--color-black));
-  border: 1px solid rgb(var(--color-gray-medium));
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
   align-items: start;
+  width: 90%;
+  max-width: 900px;
+  max-height: 80vh;
+  padding: 2rem;
+  overflow-y: auto;
+  color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray-darker));
+  border: 1px solid rgb(var(--color-gray-medium));
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgb(var(--color-black));
+  gap: 1rem;
+  transform: translate(-50%, -50%);
 }
 
 #detailsModal h2 {
-  text-align: center;
+  grid-column: 1 / -1;
   margin-bottom: 1.6rem;
+  opacity: 1;
   color: rgb(var(--color-white));
   font-size: 1rem;
-  opacity: 1;
-  grid-column: 1 / -1;
+  text-align: center;
 }
 
 .settingSection {
   padding: 1rem;
+  background-color: rgb(var(--color-gray-medium));
   border: 1px solid rgb(var(--color-gray));
-  background-color: rgb(var(--color-gray-medium));/*☆*/
   border-radius: 8px;
 }
 
@@ -1739,69 +1853,70 @@ h2 .profilePic img {
 }
 
 .inputGroup {
-  margin-bottom: 1rem;
   display: flex;
   align-items: center;
+  margin-bottom: 1rem;
   gap: 1rem;
 }
 
 .inputGroup label {
   min-width: 120px;
-  font-weight: bold;
   color: rgb(var(--color-white));
+  font-weight: bold;
 }
 
 .inputGroup input,
 .inputGroup select {
   flex: 1;
   padding: 0.5rem;
+  color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray));
   border: 1px solid rgb(var(--color-gray));
   border-radius: 4px;
   font-size: 1rem;
-  background-color: rgb(var(--color-gray));
-  color: rgb(var(--color-white));
 }
 
 .modalButtons {
+  grid-column: 1 / -1;
   display: flex;
   justify-content: center;
-  gap: 1rem;
   margin-top: 2rem;
-  grid-column: 1 / -1;
+  gap: 1rem;
 }
 
+/* モーダルボタン */
 #scoreboard .okBtn {
   display: inline-block;
   padding: 1vmin 7vmin;
+  color: rgb(var(--color-white));
+  background-color: transparent;
   border: solid 2px rgb(var(--color-white));
   border-radius: 15vmin;
   font-size: 1.2rem;
-  background-color: transparent;
-  color: rgb(var(--color-white));
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .settingModalCloseBtn {
   position: absolute;
-  width: 6vw;
-  border-radius: 50%;
-  opacity: 1;
   top: 62vh;
   left: calc(47vw - 3px);
+  width: 6vw;
+  opacity: 1;
+  border-radius: 50%;
 }
 
 .settingModalCloseBtn img {
   position: relative;
-  top: -3px
+  top: -3px;
 }
 
 #setting #fullscreenBtn {
   position: absolute;
-  width: 6vw;
-  opacity: 0;
   top: 3vh;
   right: 3vw;
+  width: 6vw;
+  opacity: 0;
 }
 
 #setting #fullscreenBtn:hover {
@@ -1809,11 +1924,11 @@ h2 .profilePic img {
   background-color: rgba(var(--color-black), 0.9);
 }
 
+/* 設定オープン時の透明度 */
 .settingOpen #setting,
 [data-mode="view"] .settingOpen #indexModal {
   display: none;
 }
-
 
 .settingOpen h2,
 .settingOpen main h2::after,
@@ -1831,51 +1946,42 @@ h2 .profilePic img {
   opacity: 0.1;
 }
 
-[data-section="tieBreak"] #secStandby {
-  display: none;
-}
-
-[data-section="tieBreak"] #endsBox {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
+/* 各種コンテナ */
 #restartEndContainer {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   padding-top: 12vh;
 }
 
 #restartEndContainer .btn {
   display: inline-block;
   padding: 1vmin 7vmin;
+  color: rgb(var(--color-white));
+  background: transparent;
   border: solid 0.3vmin rgb(var(--color-white));
   border-radius: 15vmin;
   font-size: 3vmin;
-  background: transparent;
-  color: rgb(var(--color-white));
   cursor: pointer;
 }
 
 #quickStartContainer {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   margin-top: 4vh;
 }
 
 #quickStartContainer .btn {
   display: inline-block;
   padding: 2vmin 8vmin;
+  color: rgb(var(--color-white));
+  background: transparent;
   border: solid 0.3vmin rgb(var(--color-green-light));
   border-radius: 15vmin;
   font-size: 4vmin;
-  background: transparent;
-  color: rgb(var(--color-white));
-  cursor: pointer;
   font-weight: bold;
+  cursor: pointer;
 }
 
 #quickStartContainer .btn:hover {
@@ -1886,11 +1992,11 @@ h2 .profilePic img {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
 }
 
 #nextMatchContainer .btn {
@@ -1900,16 +2006,16 @@ h2 .profilePic img {
   font-size: 7vmin;
 }
 
+/* リセットボタン */
 [name="resetBtn"] {
   position: absolute;
   top: 3vh;
-  width: 6vw;
   left: 3vw;
-  filter: brightness(3);
+  width: 6vw;
   opacity: 0.2;
+  filter: brightness(3);
 }
 
-/* スボタンバイセクションではリセットボタンを非表示 */
 #settingModal[data-section="standby"] [name="resetBtn"] {
   display: none;
 }
@@ -1918,17 +2024,18 @@ h2 .profilePic img {
   opacity: 0.8;
 }
 
+/* 言語ボタン */
 [name="languageBtn"] {
   position: absolute;
   top: 3vh;
-  width: 6vw;
   right: 3vw;
-  filter: brightness(3);
+  width: 6vw;
+  padding: 0;
   opacity: 0.2;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
+  filter: brightness(3);
 }
 
 [name="languageBtn"]:hover {
@@ -1940,17 +2047,17 @@ h2 .profilePic img {
   height: auto;
 }
 
-/* 言語一覧モーダル */
+/* 言語モーダル */
 #languageModal {
   position: absolute;
   top: 10vh;
   right: 3vw;
+  z-index: 1000;
+  min-width: 150px;
+  padding: 1vh 0;
   background-color: rgba(var(--color-black), 0.95);
   border: 1px solid rgb(var(--color-white));
   border-radius: 4px;
-  padding: 1vh 0;
-  z-index: 1000;
-  min-width: 150px;
 }
 
 .languageModalContent {
@@ -1959,13 +2066,13 @@ h2 .profilePic img {
 }
 
 #scoreboard .languageOption {
+  padding: 1.5vh 2vw;
+  color: rgb(var(--color-white));
   background: none;
   border: none;
-  color: rgb(var(--color-white));
-  padding: 1.5vh 2vw;
-  cursor: pointer;
-  text-align: left;
   font-size: 1.2rem;
+  text-align: left;
+  cursor: pointer;
   transition: background-color 0.2s;
 }
 
@@ -1974,20 +2081,125 @@ h2 .profilePic img {
   font-weight: bold;
 }
 
+/* 設定詳細ボタン */
 [name="settingDetailsBtn"] {
   position: absolute;
   top: 3vh;
-  width: 6vw;
   right: 3vw;
-  filter: brightness(3);
+  width: 6vw;
   opacity: 0.2;
+  filter: brightness(3);
 }
 
 [name="settingDetailsBtn"]:hover {
   opacity: 0.8;
 }
 
-/* ステップバー */
+/* ペナルティ・タイムアウト設定 */
+#penaltyTimeoutSetting {
+  position: absolute;
+  top: 35vh;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 96vw;
+  gap: 4vw;
+  transform: translateX(-50%);
+}
+
+#penaltyTimeoutSetting .penaltyTimeoutGroup {
+  display: flex;
+  flex: 1;
+  gap: 2vw;
+}
+
+#penaltyTimeoutSetting .penaltyTimeoutGroup.blue {
+  justify-content: flex-end;
+}
+
+#penaltyTimeoutSetting .btn {
+  width: 20vw;
+  padding: 1.5vmin 4vmin;
+  color: rgb(var(--color-white));
+  background-color: rgb(var(--color-gray));
+  border: solid 0.3vmin rgb(var(--color-white));
+  border-radius: 2vmin;
+  font-size: 3vmin;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#penaltyTimeoutSetting .btn:hover {
+  background-color: rgb(var(--color-gray-light));
+}
+
+#penaltyTimeoutSetting .penaltyTimeoutGroup.red .btn.penalty,
+#penaltyTimeoutSetting .penaltyTimeoutGroup.red .btn.timeout {
+  background-color: rgba(var(--color-red), 0.3);
+}
+
+#penaltyTimeoutSetting .penaltyTimeoutGroup.blue .btn.penalty,
+#penaltyTimeoutSetting .penaltyTimeoutGroup.blue .btn.timeout {
+  background-color: rgba(var(--color-blue), 0.3);
+}
+
+/* タイム設定 */
+#timeSetting {
+  position: absolute;
+  top: 48vh;
+  left: 2vw;
+  display: flex;
+  justify-content: space-between;
+  width: 96vw;
+  height: 39vh;
+}
+
+[data-section="warmup"] #timeSetting,
+[data-section="warmup1"] #timeSetting,
+[data-section="warmup2"] #timeSetting {
+  top: 29vh;
+}
+
+#timeSetting .btnList {
+  display: flex;
+  justify-content: center;
+  width: 45%;
+}
+
+#timeSetting .btnList:first-child {
+  margin-left: 3%;
+}
+
+#timeSetting .btnList > div {
+  position: relative;
+  width: 16vmin;
+  margin: 0 0.6vmin;
+}
+
+#timeSetting .btnList > div:first-child {
+  margin-right: 10vmin;
+}
+
+#timeSetting button {
+  width: 10vmin;
+  height: 10vmin;
+  box-sizing: border-box;
+  border: solid 0.3vmin rgb(var(--color-white));
+  border-radius: 2vmin;
+  font-size: 6vmin;
+}
+
+#timeSetting button.minus {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+/* ========================================
+   ステップバー（エンド進行表示）
+   ======================================== */
+
 #endsSetting {
   display: flex;
   justify-content: center;
@@ -1998,42 +2210,29 @@ h2 .profilePic img {
 }
 
 #endsSetting .stepList {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  list-style: none;
+  width: 100%;
   margin: 0;
   padding: 0;
-  gap: 0;
-  flex-wrap: nowrap;
-  width: 100%;
-  position: relative;
-  padding-left: 0;
   padding-right: 0;
+  padding-left: 0;
+  flex-wrap: nowrap;
+  list-style: none;
+  gap: 0;
 }
 
+/* ステップ項目 */
 #endsSetting .stepItem {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   flex: 1 1 0;
   min-width: 0;
   overflow: visible;
-}
-
-#endsSetting .stepItem.stepHasLine::after {
-  content: '';
-  position: absolute;
-  left: calc(50% + 0.6vmin);
-  top: calc(0.6vh + 0.6vmin);
-  width: calc(100% - 1.2vmin);
-  height: 0.4vh;
-  background-color: rgb(var(--color-gray-light));
-  z-index: 0;
-  pointer-events: none;
-  transform: translateY(-50%);
-  overflow: hidden;
 }
 
 #endsSetting .stepItem:first-child::before,
@@ -2041,104 +2240,137 @@ h2 .profilePic img {
   display: none;
 }
 
-#endsSetting .stepItem.stepCompleted::before {
-  content: '';
+/* 接続線 */
+#endsSetting .stepItem.stepHasLine::after {
   position: absolute;
-  left: 0;
   top: calc(0.6vh + 0.6vmin);
+  left: calc(50% + 0.6vmin);
+  z-index: 0;
+  width: calc(100% - 1.2vmin);
+  height: 0.4vh;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: rgb(var(--color-gray-light));
+  content: '';
+  transform: translateY(-50%);
+}
+
+/* 完了済み項目の接続線 */
+#endsSetting .stepItem.stepCompleted::before {
+  position: absolute;
+  top: calc(0.6vh + 0.6vmin);
+  left: 0;
+  z-index: 1;
   width: 50%;
   height: 0.4vh;
-  background-color: rgb(var(--color-white));
-  z-index: 1;
-  pointer-events: none;
-  transform: translateY(-50%);
   overflow: hidden;
+  pointer-events: none;
+  background-color: rgb(var(--color-white));
+  content: '';
+  transform: translateY(-50%);
 }
 
 #endsSetting .stepItem.stepCompleted.stepHasLine::after {
-  background-color: #FFF;
-  z-index: 1;
   top: calc(0.6vh + 0.6vmin);
+  z-index: 1;
   height: 0.4vh;
+  background-color: #FFF;
 }
 
 #endsSetting .stepItem.stepCurrent.stepHasLine::after {
-  background-color: rgb(var(--color-gray-light));
-  z-index: 1;
   top: calc(0.6vh + 0.6vmin);
+  z-index: 1;
   height: 0.4vh;
+  background-color: rgb(var(--color-gray-light));
 }
 
+/* ステップボタン */
 #endsSetting .stepButton {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
   background: transparent;
   border: none;
   border-radius: 1vmin;
-  padding: 0;
-  margin: 0;
   cursor: pointer;
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  min-width: 0;
-  overflow: visible;
   isolation: isolate;
 }
 
+#endsSetting .stepButton:focus {
+  outline: none;
+}
+
+#endsSetting .stepButton:isActive {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin: 0;
+  padding: 0;
+  transform: none;
+}
+
+/* ステップインジケーター */
 #endsSetting .stepIndicator {
-  width: 1.2vmin;
-  height: 1.2vmin;
-  border-radius: 50%;
-  border: none;
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.8vh;
-  position: relative;
-  background-color: transparent;
   flex-shrink: 0;
-  z-index: 1;
+  width: 1.2vmin;
+  height: 1.2vmin;
   margin-top: 0.6vh;
+  margin-bottom: 0.8vh;
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
 }
 
 #endsSetting .stepIndicatorFill {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background-color: rgb(var(--color-white));
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(var(--color-white));
+  border-radius: 50%;
 }
 
 #endsSetting .stepLabel {
-  font-size: 0.9vw;
-  white-space: nowrap;
-  text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 100%;
   margin-top: 0.5vh;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  text-overflow: ellipsis;
+  font-size: 0.9vw;
 }
 
+/* ステップ状態：完了 */
 #endsSetting .stepItem.stepCompleted .stepIndicator {
-  border: none;
   background-color: #FFF;
+  border: none;
 }
 
 #endsSetting .stepItem.stepCompleted .stepLabel {
   color: rgb(var(--color-gray-light));
 }
 
+/* ステップ状態：現在 */
 #endsSetting .stepItem.stepCurrent .stepIndicator {
   width: 1.2vmin;
   height: 1.2vmin;
-  border: none;
-  background-color: rgb(var(--color-white));
   margin-top: 0.6vh;
+  background-color: rgb(var(--color-white));
+  border: none;
   transform: scale(2);
 }
 
@@ -2148,9 +2380,15 @@ h2 .profilePic img {
   transform: scale(1.2);
 }
 
+#endsSetting .stepItem.stepCurrent .stepButton:isActive .stepIndicator {
+  margin-top: 0.6vh;
+  transform: scale(2);
+}
+
+/* ステップ状態：未来 */
 #endsSetting .stepItem.stepFuture .stepIndicator {
-  border: none;
   background-color: rgb(var(--color-gray-light));
+  border: none;
 }
 
 #endsSetting .stepItem.stepFuture .stepLabel {
@@ -2158,37 +2396,20 @@ h2 .profilePic img {
   font-weight: normal;
 }
 
-#endsSetting .stepButton:focus {
-  outline: none;
-}
-
-#endsSetting .stepButton:isActive {
-  transform: none;
-  position: relative;
-  top: auto;
-  left: auto;
-  margin: 0;
-  padding: 0;
-}
-
+/* アクティブ状態の調整 */
 #endsSetting .stepButton:isActive .stepIndicator {
-  transform: scale(1);
   position: relative;
   top: auto;
   left: auto;
   margin-top: 0.6vh;
   margin-bottom: 0.8vh;
-}
-
-#endsSetting .stepItem.stepCurrent .stepButton:isActive .stepIndicator {
-  transform: scale(2);
-  margin-top: 0.6vh;
+  transform: scale(1);
 }
 
 #endsSetting .stepItem:isActive::after {
   position: absolute;
-  left: calc(50% + 0.6vmin);
   top: calc(0.6vh + 0.6vmin);
+  left: calc(50% + 0.6vmin);
   width: calc(100% - 1.2vmin);
   height: 0.4vh;
   transform: translateY(-50%);
@@ -2385,19 +2606,23 @@ h2 .profilePic img {
   }
 }
 
-/* 反則選択モーダル */
+/* ========================================
+   ペナルティ・タイムアウト・確認モーダル
+   ======================================== */
+
+/* ペナルティモーダル */
 #penaltyModal {
   position: fixed;
   inset: 0;
+  z-index: 1002;
   width: 100vw;
   height: 100vh;
   max-width: none;
   max-height: none;
   margin: 0;
+  padding: 0;
   background-color: rgba(var(--color-black), 0.9);
   border: none;
-  padding: 0;
-  z-index: 1002;
   box-sizing: border-box;
 }
 
@@ -2417,31 +2642,31 @@ h2 .profilePic img {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgb(var(--color-gray-darker));
-  border: 1px solid rgb(var(--color-gray));
-  border-radius: 2vmin;
-  padding: 3vh 4vw 5vh;
-  width: 80vw;
-  max-width: 100vmin;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 30px rgb(var(--color-black));
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 80vw;
+  max-width: 100vmin;
+  max-height: 90vh;
+  padding: 3vh 4vw 5vh;
+  overflow-y: auto;
+  background-color: rgb(var(--color-gray-darker));
+  border: 1px solid rgb(var(--color-gray));
+  border-radius: 2vmin;
+  box-shadow: 0 10px 30px rgb(var(--color-black));
   gap: 3vmin;
+  transform: translate(-50%, -50%);
 }
 
 #penaltyModal .penaltyModalTitle {
-  font-size: 4vmin;
-  color: rgb(var(--color-white));
   margin: 0;
-  text-align: center;
-  font-weight: bold;
-  opacity: 1;
-  border-bottom: 1vh solid;
   padding: 0 2vw 0.5vh;
+  opacity: 1;
+  color: rgb(var(--color-white));
+  border-bottom: 1vh solid;
+  font-size: 4vmin;
+  font-weight: bold;
+  text-align: center;
 }
 
 #penaltyModal .penaltyModalTitle.red {
@@ -2455,26 +2680,25 @@ h2 .profilePic img {
 .penaltyList {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2vmin;
-  width: 100%;
   align-items: stretch;
+  width: 100%;
+  gap: 2vmin;
 }
 
 #penaltyModal .penaltyItem {
   width: 100%;
   padding: 1.5vmin 2vmin;
-  font-size: 3vmin;
+  color: rgb(var(--color-white));
+  background-color: transparent;
   border: solid 0.2vmin rgb(var(--color-white));
   border-radius: 1.5vmin;
-  background-color: transparent;
-  color: rgb(var(--color-white));
+  font-size: 3vmin;
   cursor: pointer;
 }
 
 #penaltyModal .penaltyItem.penaltyItemFullWidth {
   grid-column: 1 / -1;
 }
-
 
 #penaltyModal[data-team-color="red"] .penaltyItem {
   background-color: rgba(var(--color-red), 0.3);
@@ -2484,51 +2708,35 @@ h2 .profilePic img {
   position: absolute;
   top: 0;
   right: 0;
+  z-index: 10;
   width: auto;
   height: auto;
+  padding: 0 1.5vw;
+  color: rgb(var(--color-white));
   background: transparent;
   border: none;
-  color: rgb(var(--color-white));
   font-size: 8vmin;
-  cursor: pointer;
-  padding: 0 1.5vw;
   line-height: 1;
-  z-index: 10;
+  cursor: pointer;
 }
 
 #penaltyModal .penaltyModalCloseBtn:hover {
   opacity: 0.8;
 }
 
-@media screen and (max-width: 800px) {
-  .penaltyModalBox {
-    width: 90vw;
-    padding: 3vmin;
-  }
-
-  #penaltyModal .penaltyModalTitle {
-    font-size: 5vmin;
-  }
-
-  #penaltyModal .penaltyItem {
-    font-size: 4vmin;
-    padding: 3vmin 4vmin;
-  }
-}
-
-/* タイムアウト選択モーダル */
+/* タイムアウトモーダル */
 #timeoutModal {
   position: fixed;
   inset: 0;
+  z-index: 1002;
   width: 100vw;
   height: 100vh;
   max-width: none;
   max-height: none;
   margin: 0;
+  padding: 0;
   background-color: rgba(var(--color-black), 0.9);
   border: none;
-  padding: 0;
-  z-index: 1002;
   box-sizing: border-box;
 }
 
@@ -2548,32 +2756,31 @@ h2 .profilePic img {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgb(var(--color-gray-darker));
-  border: 1px solid rgb(var(--color-gray));
-  border-radius: 2vmin;
-  padding: 3vh 4vw 5vh;
-  width: 80vw;
-  max-width: 100vmin;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 30px rgb(var(--color-black));
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 80vw;
+  max-width: 100vmin;
+  max-height: 90vh;
+  padding: 3vh 4vw 5vh;
+  overflow-y: auto;
+  background-color: rgb(var(--color-gray-darker));
+  border: 1px solid rgb(var(--color-gray));
+  border-radius: 2vmin;
+  box-shadow: 0 10px 30px rgb(var(--color-black));
   gap: 3vmin;
-  position: relative;
+  transform: translate(-50%, -50%);
 }
 
 #timeoutModal .timeoutModalTitle {
-  font-size: 4vmin;
-  color: rgb(var(--color-white));
   margin: 0;
-  text-align: center;
-  font-weight: bold;
-  opacity: 1;
-  border-bottom: 1vh solid;
   padding: 0 2vw 0.5vh;
+  opacity: 1;
+  color: rgb(var(--color-white));
+  border-bottom: 1vh solid;
+  font-size: 4vmin;
+  font-weight: bold;
+  text-align: center;
 }
 
 #timeoutModal .timeoutModalTitle.red {
@@ -2587,26 +2794,26 @@ h2 .profilePic img {
 .timeoutList {
   display: flex;
   flex-direction: column;
-  gap: 4vmin;
-  width: 100%;
   align-items: stretch;
+  width: 100%;
+  gap: 4vmin;
 }
 
 .timeoutItemContainer {
   display: flex;
   flex-direction: column;
-  gap: 1vmin;
   width: 100%;
+  gap: 1vmin;
 }
 
 #timeoutModal .timeoutItem {
   width: 100%;
   padding: 1.5vmin 2vmin;
-  font-size: 4vmin;
+  color: rgb(var(--color-white));
+  background-color: transparent;
   border: solid 0.2vmin rgb(var(--color-white));
   border-radius: 1.5vmin;
-  background-color: transparent;
-  color: rgb(var(--color-white));
+  font-size: 4vmin;
   cursor: pointer;
 }
 
@@ -2620,11 +2827,11 @@ h2 .profilePic img {
 }
 
 .timeoutTimer {
-  font-size: 5vmin;
   color: rgb(var(--color-white));
-  text-align: center;
-  font-weight: bold;
   font-family: monospace;
+  font-size: 5vmin;
+  font-weight: bold;
+  text-align: center;
 }
 
 #timeoutModal .timeoutItem.timeoutItemFullWidth {
@@ -2635,51 +2842,35 @@ h2 .profilePic img {
   position: absolute;
   top: 0;
   right: 0;
+  z-index: 10;
   width: auto;
   height: auto;
+  padding: 0 1.5vw;
+  color: rgb(var(--color-white));
   background: transparent;
   border: none;
-  color: rgb(var(--color-white));
   font-size: 8vmin;
-  cursor: pointer;
-  padding: 0 1.5vw;
   line-height: 1;
-  z-index: 10;
+  cursor: pointer;
 }
 
 #timeoutModal .timeoutModalCloseBtn:hover {
   opacity: 0.8;
 }
 
-@media screen and (max-width: 800px) {
-  .timeoutModalBox {
-    width: 90vw;
-    padding: 3vmin;
-  }
-
-  #timeoutModal .timeoutModalTitle {
-    font-size: 5vmin;
-  }
-
-  #timeoutModal .timeoutItem {
-    font-size: 4vmin;
-    padding: 3vmin 4vmin;
-  }
-}
-
 /* 確認モーダル */
 #confirmModal {
   position: fixed;
   inset: 0;
+  z-index: 1003;
   width: 100vw;
   height: 100vh;
   max-width: none;
   max-height: none;
   margin: 0;
+  padding: 0;
   background-color: rgba(var(--color-black), 0.9);
   border: none;
-  padding: 0;
-  z-index: 1003;
   box-sizing: border-box;
 }
 
@@ -2699,45 +2890,45 @@ h2 .profilePic img {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgb(var(--color-gray-darker));
-  border: 1px solid rgb(var(--color-gray));
-  border-radius: 2vmin;
-  padding: 5vh 6vw;
-  width: 80vw;
-  max-width: 100vmin;
-  box-shadow: 0 10px 30px rgb(var(--color-black));
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 80vw;
+  max-width: 100vmin;
+  padding: 5vh 6vw;
+  background-color: rgb(var(--color-gray-darker));
+  border: 1px solid rgb(var(--color-gray));
+  border-radius: 2vmin;
+  box-shadow: 0 10px 30px rgb(var(--color-black));
   gap: 4vmin;
+  transform: translate(-50%, -50%);
 }
 
 .confirmModalMessage {
-  font-size: 4vmin;
-  color: rgb(var(--color-white));
-  text-align: center;
   margin: 0;
+  color: rgb(var(--color-white));
+  font-size: 4vmin;
   line-height: 1.5;
+  text-align: center;
 }
 
 .confirmModalButtons {
   display: flex;
-  gap: 6vmin;
-  width: 100%;
   justify-content: center;
+  width: 100%;
+  gap: 6vmin;
 }
 
 #confirmModal .confirmModalBtn {
+  flex: 0 0 30vw;
+  width: 30vw;
   padding: 2vmin 6vmin;
-  font-size: 3.5vmin;
+  color: rgb(var(--color-white));
+  background-color: transparent;
   border: solid 0.2vmin rgb(var(--color-white));
   border-radius: 1.5vmin;
-  background-color: transparent;
-  color: rgb(var(--color-white));
+  font-size: 3.5vmin;
   cursor: pointer;
-  width: 30vw;
-  flex: 0 0 30vw;
 }
 
 #confirmModal .confirmModalBtnOk {
@@ -2760,20 +2951,20 @@ h2 .profilePic img {
 #timeoutTimerModal {
   position: fixed;
   top: 0;
-  left: 0;
   right: 0;
   bottom: 0;
+  left: 0;
+  z-index: 1003;
   width: 100vw;
   height: 100vh;
-  margin: 0;
-  background-color: rgba(var(--color-black), 0.9);
-  border: none;
-  padding: 0;
-  z-index: 1003;
-  inset: 0;
   max-width: none;
   max-height: none;
+  margin: 0;
+  padding: 0;
+  background-color: rgba(var(--color-black), 0.9);
+  border: none;
   box-sizing: border-box;
+  inset: 0;
 }
 
 #timeoutTimerModal::backdrop {
@@ -2784,31 +2975,30 @@ h2 .profilePic img {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgb(var(--color-gray-darker));
-  border: 1px solid rgb(var(--color-gray));
-  border-radius: 2vmin;
-  padding: 5vh 6vw;
-  width: 80vw;
-  max-width: 100vmin;
-  box-shadow: 0 10px 30px rgb(var(--color-black));
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 80vw;
+  max-width: 100vmin;
+  padding: 5vh 6vw;
+  background-color: rgb(var(--color-gray-darker));
+  border: 1px solid rgb(var(--color-gray));
+  border-radius: 2vmin;
+  box-shadow: 0 10px 30px rgb(var(--color-black));
   gap: 5vh;
-  position: relative;
+  transform: translate(-50%, -50%);
 }
 
 #timeoutTimerModal .timeoutTimerModalTitle {
-  font-size: 5vmin;
-  color: rgb(var(--color-white));
-  margin: 0;
-  text-align: center;
-  font-weight: bold;
-  opacity: 1;
-  border-bottom: 1vh solid;
-  padding: 0 2vw 1vh;
   width: 100%;
+  margin: 0;
+  padding: 0 2vw 1vh;
+  opacity: 1;
+  color: rgb(var(--color-white));
+  border-bottom: 1vh solid;
+  font-size: 5vmin;
+  font-weight: bold;
+  text-align: center;
 }
 
 #timeoutTimerModal .timeoutTimerModalTitle.red {
@@ -2820,23 +3010,23 @@ h2 .profilePic img {
 }
 
 .timeoutTimerDisplay {
-  font-size: 35vmin;
-  font-weight: bold;
   color: rgb(var(--color-white));
-  text-align: center;
-  line-height: 1;
+  font-size: 35vmin;
   font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
 }
 
 #scoreboard .timeoutTimerEndBtn {
+  min-width: 30vw;
   padding: 2vmin 8vmin;
-  font-size: 4vmin;
+  color: rgb(var(--color-white));
+  background-color: transparent;
   border: solid 0.2vmin rgb(var(--color-white));
   border-radius: 1.5vmin;
-  background-color: transparent;
-  color: rgb(var(--color-white));
+  font-size: 4vmin;
   cursor: pointer;
-  min-width: 30vw;
 }
 
 #scoreboard .timeoutTimerEndBtn:hover {
@@ -2847,16 +3037,16 @@ h2 .profilePic img {
   position: absolute;
   top: 0;
   right: 0;
+  z-index: 10;
   width: auto;
   height: auto;
+  padding: 0 1.5vw;
+  color: rgb(var(--color-white));
   background: transparent;
   border: none;
-  color: rgb(var(--color-white));
   font-size: 8vmin;
-  cursor: pointer;
-  padding: 0 1.5vw;
   line-height: 1;
-  z-index: 10;
+  cursor: pointer;
 }
 
 #timeoutTimerModal .timeoutTimerModalCloseBtn:hover {
@@ -2931,19 +3121,24 @@ h2 .profilePic img {
   }
 }
 
+/* ========================================
+   カスタムモーダルとその他のUI
+   ======================================== */
+
+/* リセット・カスタムボタン */
 .resetBtn,
 .customBtn {
   position: absolute;
   top: 3vh;
+  z-index: 200;
   width: 6vw;
   height: auto;
-  z-index: 200;
+  padding: 0;
+  opacity: 0.2;
   background: none;
   border: none;
-  cursor: pointer;
-  padding: 0;
   border-radius: 50%;
-  opacity: 0.2;
+  cursor: pointer;
 }
 
 .resetBtn {
@@ -2959,19 +3154,19 @@ h2 .profilePic img {
   opacity: 0.5;
 }
 
-/* 表示設定モーダル */
+/* カスタムモーダル */
 #customModal {
   position: fixed;
   inset: 0;
+  z-index: 1002;
   width: 100vw;
   height: 100vh;
   max-width: none;
   max-height: none;
   margin: 0;
+  padding: 0;
   background-color: transparent;
   border: none;
-  padding: 0;
-  z-index: 1002;
   box-sizing: border-box;
 }
 
@@ -2983,95 +3178,87 @@ h2 .profilePic img {
   position: fixed;
   top: 10vh;
   left: 50%;
-  transform: translateX(-50%);
-  background-color: rgb(var(--color-gray-darker));
-  border: 1px solid rgb(var(--color-gray));
-  border-radius: 2vmin;
-  padding: 2vh 4vw;
   display: flex;
   flex-direction: column;
-  gap: 2vmin;
   width: 80vw;
   max-width: 1000px;
   max-height: 80vh;
+  padding: 2vh 4vw;
   overflow-y: auto;
+  background-color: rgb(var(--color-gray-darker));
+  border: 1px solid rgb(var(--color-gray));
+  border-radius: 2vmin;
   box-shadow: 0 10px 30px rgb(var(--color-black));
   box-sizing: border-box;
+  gap: 2vmin;
+  transform: translateX(-50%);
+}
+
+#customModal h2 {
+  margin: 0 0 2vmin 0;
+  opacity: 1;
+  color: rgb(var(--color-gray-lighter));
+  font-size: 3vmin;
+  font-weight: bold;
+}
+
+/* ボタン内のアイコン画像 */
+.btnIcon {
+  width: 100%;
+  height: auto;
 }
 
 #scoreboard .primaryBtn {
   display: inline-block;
   min-width: 20vw;
   padding: 1.5vh 2vw;
-  font-size: 4vmin;
+  color: rgb(var(--color-white));
+  background-color: transparent;
   border: 0.3vmin solid rgb(var(--color-white));
   border-radius: 5vmin;
-  background-color: transparent;
-  color: rgb(var(--color-white));
+  font-size: 4vmin;
   text-align: center;
 }
 
-/* スコアボード上の試合名コンテナ */
-#matchNameContainer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3vmin;
-}
-
-/* 確定ボタンのコンテナ */
 .confirmBtnBox {
-  text-align: center;
   margin: 5vh 0;
+  text-align: center;
 }
+
 .confirmBtn {
   margin: 0 auto;
 }
 
-/* ボタン内のアイコン画像（リセット、言語、設定など共通） */
-.btnIcon {
-  width: 100%;
-  height: auto;
-}
-
-/* カスタム設定モーダル内の設定項目 */
+/* カスタム設定項目 */
 .customModalBox #languageSetting,
 .customModalBox #sceneSetting {
-  margin-top: 4vh;
-  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  margin-top: 4vh;
 }
 
 .customModalBox #languageSetting {
   margin-top: 0;
-  border-top: none;
   padding-top: 0;
-}
-
-#customModal h2 {
-  font-size: 3vmin;
-  color: rgb(var(--color-gray-lighter));
-  margin: 0 0 2vmin 0;
-  font-weight: bold;
-  opacity: 1;
+  border-top: none;
 }
 
 /* 言語設定 */
 .languageGroup {
   display: flex;
   align-items: center;
-  gap: 2vmin;
-  margin-left: auto;
   justify-content: flex-end;
+  margin-left: auto;
+  gap: 2vmin;
 }
 
 .languageGroup .radioButton {
   display: inline-block;
+  min-width: 8vmin;
   padding: 1vh 1vw;
   border-radius: 1vmin;
-  min-width: 8vmin;
 }
 
 .languageIcon {
@@ -3080,30 +3267,31 @@ h2 .profilePic img {
   opacity: 0.3;
 }
 
+/* ラジオボタングループ */
 .radioButtonGroup {
   display: flex;
-  gap: 2vmin;
-  width: 100%;
   justify-content: center;
+  width: 100%;
   margin-top: 1vmin;
+  gap: 2vmin;
 }
 
 .radioButton {
-  flex: 1;
-  max-width: 30vmin;
-  background-color: rgba(var(--color-white), 0.05);
-  border: 0.3vmin solid transparent;
-  border-radius: 2vmin;
-  padding: 2vh 2vw;
-  cursor: pointer;
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  max-width: 30vmin;
+  padding: 2vh 2vw;
+  color: rgb(var(--color-white));
+  background-color: rgba(var(--color-white), 0.05);
+  border: 0.3vmin solid transparent;
+  border-radius: 2vmin;
+  text-align: center;
+  cursor: pointer;
   transition: all 0.2s ease;
   gap: 0.5vmin;
-  text-align: center;
-  color: rgb(var(--color-white));
 }
 
 .radioButton:hover {
@@ -3111,9 +3299,9 @@ h2 .profilePic img {
 }
 
 .radioButton:focus-visible {
+  background-color: rgba(var(--color-white), 0.1);
   outline: 0.3vmin solid rgb(var(--color-yellow));
   outline-offset: 0.3vmin;
-  background-color: rgba(var(--color-white), 0.1);
 }
 
 .radioButton.selected {
@@ -3122,12 +3310,12 @@ h2 .profilePic img {
 }
 
 .radioButtonImgBox {
-  width: 50%;
-  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 50%;
   padding: 1vmin;
+  aspect-ratio: 1;
 }
 
 .radioButtonImg {
@@ -3137,16 +3325,36 @@ h2 .profilePic img {
 }
 
 .radioButton h3 {
+  margin: 0;
+  color: white;
   font-size: 2.5vmin;
   font-weight: bold;
-  color: white;
-  margin: 0;
 }
 
 .radioButtonDesc {
-  font-size: 1.8vmin;
-  color: rgba(var(--color-white), 0.7);
-  line-height: 1.4;
   margin: 0;
+  color: rgba(var(--color-white), 0.7);
+  font-size: 1.8vmin;
+  line-height: 1.4;
   text-align: left;
-} 
+}
+
+/* その他のUI */
+#viewModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 20vmin;
+}
+
+/* セクション切り替え時の画面遷移 */
+#root {
+  opacity: 1;
+  transition: opacity 0.4s ease-in;
+}
+
+#root.quickStartTransition {
+  opacity: 0;
+  transition: none;
+}
