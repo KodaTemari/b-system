@@ -39,7 +39,9 @@ const SectionNavigation = React.memo(({
   redCountry,
   redProfilePic,
   blueCountry,
-  blueProfilePic
+  blueProfilePic,
+  scene,
+  onRestartToStandby
 }) => {
   // Get text (uses current language)
   const getText = (key) => {
@@ -194,7 +196,7 @@ const SectionNavigation = React.memo(({
                 <button
                   type="button"
                   name="setColorBtn"
-                  className="btn"
+                  className="primaryBtn"
                   onClick={onConfirmColorToggle}
                 >
                   {getText('setColor')}
@@ -208,7 +210,7 @@ const SectionNavigation = React.memo(({
             <button
               type="button"
               name="startWarmupBtn"
-              className="btn fadeIn"
+              className="primaryBtn fadeIn"
               onClick={onStartWarmup}
             >
               {warmupEnabled ? getText('startWarmup') : getText('startMatch')}
@@ -246,7 +248,7 @@ const SectionNavigation = React.memo(({
                 !warmup.isRunning ? (
                   <button
                     type="button"
-                    className="btn finishWarmup"
+                    className="primaryBtn finishWarmup"
                     onClick={onWarmupTimerToggle}
                   >
                     {getText('startWarmup')}
@@ -254,7 +256,7 @@ const SectionNavigation = React.memo(({
                 ) : (
                   <button
                     type="button"
-                    className="btn finishWarmup fadeIn"
+                    className="primaryBtn finishWarmup fadeIn"
                     onClick={onNextSection}
                   >
                     {getText('finishWarmup')}
@@ -263,7 +265,7 @@ const SectionNavigation = React.memo(({
               ) : (
                 <button
                   type="button"
-                  className="btn finishWarmup"
+                  className="primaryBtn finishWarmup"
                   onClick={onNextSection}
                 >
                   {getText('finishWarmup')}
@@ -292,7 +294,7 @@ const SectionNavigation = React.memo(({
             {/* Show "Start Interval" or "Next End" button */}
             <button
               type="button"
-              className="btn startInterval"
+              className="primaryBtn startInterval"
               onClick={onNextSection}
             >
               {intervalEnabled ? getText('startInterval') : getText('nextEnd')}
@@ -318,7 +320,7 @@ const SectionNavigation = React.memo(({
               <br />
               <button
                 type="button"
-                className="btn finishInterval"
+                className="primaryBtn finishInterval"
                 onClick={onNextSection}
               >
                 {getText('finishInterval')}
@@ -344,7 +346,7 @@ const SectionNavigation = React.memo(({
               tieBreak === 'extraEnd' ? (
                 <button
                   type="button"
-                  className="btn tieBreak"
+                  className="primaryBtn tieBreak"
                   onClick={onTieBreak}
                 >
                   {getLocalizedText('sections.tieBreak', currentLang || getCurrentLanguage())}
@@ -352,7 +354,7 @@ const SectionNavigation = React.memo(({
               ) : tieBreak === 'finalShot' ? (
                 <button
                   type="button"
-                  className="btn tieBreak"
+                  className="primaryBtn tieBreak"
                   onClick={onTieBreak}
                 >
                   {getLocalizedText('sections.finalShot', currentLang || getCurrentLanguage())}
@@ -361,7 +363,7 @@ const SectionNavigation = React.memo(({
                 // If tieBreak is "none" or empty, finish match as draw
                 <button
                   type="button"
-                  className="btn matchFinished"
+                  className="primaryBtn matchFinished"
                   onClick={onNextSection}
                 >
                   {getLocalizedText('sections.matchFinished', currentLang || getCurrentLanguage())}
@@ -371,7 +373,7 @@ const SectionNavigation = React.memo(({
               // If score difference exists, finish match
               <button
                 type="button"
-                className="btn matchFinished"
+                className="primaryBtn matchFinished"
                 onClick={onNextSection}
               >
                 {getLocalizedText('sections.matchFinished', currentLang || getCurrentLanguage())}
@@ -386,7 +388,7 @@ const SectionNavigation = React.memo(({
           {scoreAdjusting && (
             <button
               type="button"
-              className="btn matchFinished"
+              className="primaryBtn matchFinished"
               onClick={onNextSection}
             >
               {getLocalizedText('sections.matchFinished', currentLang || getCurrentLanguage())}
@@ -400,7 +402,7 @@ const SectionNavigation = React.memo(({
         <div id="secFinalShot">
           <button
             type="button"
-            className="btn"
+            className="primaryBtn"
             onClick={onNextSection}
           >
             {getLocalizedText('sections.matchFinished', currentLang || getCurrentLanguage())}
@@ -412,6 +414,22 @@ const SectionNavigation = React.memo(({
       {isCtrl && currentSectionId === 'secMatchFinished' && (
         <div id="secMatchFinished">
           {(() => {
+            // Check if data-scene is recreation
+            const isRecreation = scene === 'recreation';
+            
+            // Show "もう一度！" button for recreation scene
+            if (isRecreation && onRestartToStandby) {
+              return (
+                <button
+                  type="button"
+                  className="primaryBtn restart"
+                  onClick={onRestartToStandby}
+                >
+                  {getText('restart')}
+                </button>
+              );
+            }
+
             // Check if last section is resultApproval
             const lastSection = sections && sections.length > 0 ? sections[sections.length - 1] : null;
             const hasResultApproval = lastSection === 'resultApproval';
@@ -421,7 +439,7 @@ const SectionNavigation = React.memo(({
               return (
                 <button
                   type="button"
-                  className="btn matchFinished"
+                  className="primaryBtn matchFinished"
                   onClick={onNextSection}
                 >
                   {getLocalizedText('sections.resultApproval', currentLang || getCurrentLanguage())}

@@ -49,6 +49,7 @@
     "timeout": "Timeout",
     "redPenalty": "Red Penalty",
     "bluePenalty": "Blue Penalty",
+    "restart": "Again!",
     "redTimeout": "Red Timeout",
     "blueTimeout": "Blue Timeout",
     "end": "End",

@@ -50,6 +50,7 @@
     "timeout": "タイムアウト",
     "redPenalty": "赤の反則",
     "bluePenalty": "青の反則",
+    "restart": "もう一度！",
     "redTimeout": "赤のタイムアウト",
     "blueTimeout": "青のタイムアウト",
     "end": "終了",

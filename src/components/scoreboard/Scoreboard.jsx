@@ -977,6 +977,12 @@ const Scoreboard = () => {
         onIntervalTimerToggle={handleIntervalTimerToggle}
         onTieBreak={handleTieBreak}
         onSwapTeamNames={handleSwapTeamNames}
+        scene={gameData.scene}
+        onRestartToStandby={async () => {
+          await handleReset();
+          // リセット後に設定モーダルを開く
+          handleSettingModalOpen();
+        }}
       />
 
       {/* タイムモーダル */}

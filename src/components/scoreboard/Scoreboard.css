@@ -1285,12 +1285,13 @@ h2 .profilePic img {
   box-sizing: border-box;
 }
 
+#sectionNav div .primaryBtn {
+  margin: 3vh 0;
+  font-size: 7vmin;
+}
+
 #sectionNav .btn {
-  display: inline-block;
-  padding: 1vmin 7vmin;
-  border: solid 0.5vmin rgb(var(--color-white));
-  border-radius: 15vmin;
-  font-size: 8vmin;
+  font-size: 6vmin;
 }
 
 #sectionNav .timer {
@@ -1519,7 +1520,8 @@ h2 .profilePic img {
 }
 
 #secMatchFinished .btn.matchFinished,
-#secTieBreak .btn.matchFinished {
+#secTieBreak .btn.matchFinished,
+#secMatchFinished .btn.restart {
   margin: 2.5vh 0;
   font-size: 7vmin;
 }
@@ -2217,7 +2219,8 @@ h2 .profilePic img {
   box-sizing: border-box;
   border: solid 0.3vmin rgb(var(--color-white));
   border-radius: 2vmin;
-  font-size: 6vmin;
+  font-size: 7vmin;
+  line-height: 1;
 }
 
 #timeSetting button.minus {
@@ -3106,11 +3109,11 @@ h2 .profilePic img {
 #scoreboard .primaryBtn {
   display: inline-block;
   min-width: 30vw;
-  padding: 2vh 2vw;
+  padding: 2.5vh 5vw;
   color: rgb(var(--color-white));
   background-color: transparent;
   border: 0.3vmin solid rgb(var(--color-white));
-  border-radius: 5vmin;
+  border-radius: 6vmin;
   font-size: 5.5vmin;
   font-family: var(--font-family-base);
   text-align: center;
