@@ -3,6 +3,9 @@ import { getText as getLocalizedText, getCurrentLanguage } from '../../../../loc
 import { COUNTRIES } from '../../../../utils/scoreboard/countries';
 import resetIcon from '../../img/icon_reset.png';
 import wrenchIcon from '../../img/icon_wrench.png';
+import scene1Icon from '../../img/scene_1.png';
+import scene2Icon from '../../img/scene_2.png';
+import scene3Icon from '../../img/scene_3.png';
 
 const SystemSettings = ({
   handleReset,
@@ -19,6 +22,12 @@ const SystemSettings = ({
   const [showCustomModal, setShowCustomModal] = useState(false);
 
   const scene = gameData?.scene || 'official';
+
+  const scenes = [
+    { id: 'official', icon: scene1Icon },
+    { id: 'general', icon: scene2Icon },
+    { id: 'recreation', icon: scene3Icon }
+  ];
 
   // Sort country list based on language
   const sortedCountries = useMemo(() => {
@@ -123,46 +132,62 @@ const SystemSettings = ({
           </div>
 
           <div id="languageSetting" className="detailSettingItem">
-            <label className="detailSettingLabel">{getLocalizedText('labels.language', lang)}</label>
-            <div className="settingRadioGroup">
+            <h2>{getLocalizedText('labels.language', lang)}</h2>
+            <div className="radioButtonGroup" role="radiogroup" aria-label={getLocalizedText('labels.language', lang)}>
               {[
                 { id: 'ja', label: '日本語' },
                 { id: 'en', label: 'English' }
               ].map((l) => (
-                <label key={l.id} className="radioLabel">
-                  <input
-                    type="radio"
-                    name="language"
-                    value={l.id}
-                    checked={lang === l.id}
-                    onChange={(e) => handleLanguageChange(e.target.value)}
-                  />
-                  {l.label}
-                </label>
+                <div
+                  key={l.id}
+                  className={`radioButton ${lang === l.id ? 'selected' : ''}`}
+                  onClick={() => handleLanguageChange(l.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleLanguageChange(l.id);
+                    }
+                  }}
+                  tabIndex="0"
+                  role="radio"
+                  aria-checked={lang === l.id}
+                >
+                  <h3>{l.label}</h3>
+                </div>
               ))}
             </div>
           </div>
 
           <div id="sceneSetting" className="detailSettingItem">
-            <label className="detailSettingLabel">{getLocalizedText('labels.scene', lang)}</label>
-            <div className="settingRadioGroup">
-              {['official', 'general', 'recreation'].map((s) => (
-                <label key={s} className="radioLabel">
-                  <input
-                    type="radio"
-                    name="scene"
-                    value={s}
-                    checked={scene === s}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      // 即座にgameDataを更新してbody属性に反映させる
+            <h2>{getLocalizedText('labels.scene', lang)}</h2>
+            <div className="radioButtonGroup" role="radiogroup" aria-label={getLocalizedText('labels.scene', lang)}>
+              {scenes.map((s) => (
+                <div
+                  key={s.id}
+                  className={`radioButton ${scene === s.id ? 'selected' : ''}`}
+                  onClick={() => {
+                    if (onUpdateField) {
+                      onUpdateField('scene', null, s.id);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
                       if (onUpdateField) {
-                        onUpdateField('scene', null, val);
+                        onUpdateField('scene', null, s.id);
                       }
-                    }}
-                  />
-                  {getLocalizedText(`options.scene.${s}`, lang)}
-                </label>
+                    }
+                  }}
+                  tabIndex="0"
+                  role="radio"
+                  aria-checked={scene === s.id}
+                >
+                  <h3>{getLocalizedText(`options.scene.${s.id}`, lang)}</h3>
+                  <div className="radioButtonImgBox">
+                    <img src={s.icon} alt={getLocalizedText(`options.scene.${s.id}`, lang)} className="radioButtonImg" />
+                  </div>
+                  <p className="radioButtonDesc">{getLocalizedText(`options.scene.${s.id}Desc`, lang)}</p>
+                </div>
               ))}
             </div>
           </div>

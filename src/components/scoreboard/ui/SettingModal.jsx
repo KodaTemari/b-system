@@ -89,9 +89,9 @@ const SettingModal = ({
         return classificationOptions.filter(opt =>
           opt.classId && opt.classId.includes('Friendly')
         );
-      case 'recreation': // レク・練習: 個人レク、チームレク
+      case 'recreation': // レク・練習: 個人レク
         return classificationOptions.filter(opt =>
-          opt.classId === 'Recreation' || opt.classId === 'Practice'
+          opt.classId === 'Recreation'
         );
       default:
         return classificationOptions;
@@ -179,16 +179,6 @@ const SettingModal = ({
         settings.rules = 'recreation';
         settings.resultApproval = 'none';
         break;
-      case 'Practice':
-        settings.redLimit = 210000; // 3:30
-        settings.blueLimit = 210000; // 3:30
-        settings.warmup = 'none';
-        settings.interval = 'none';
-        settings.totalEnds = 2;
-        settings.tieBreak = 'none';
-        settings.rules = 'recreation';
-        settings.resultApproval = 'none';
-        break;
       default:
         break;
     }
@@ -220,7 +210,7 @@ const SettingModal = ({
 
           let prefix = '';
           // レクリエーション系クラスはプレフィックスなし
-          if (classId === 'Recreation' || classId === 'Practice') {
+          if (classId === 'Recreation') {
             prefix = '';
           } else if (classDef.type === 'individual') {
             prefix = 'IND ';
@@ -698,7 +688,7 @@ const SettingModal = ({
           'PairBC3', 'PairBC4',
           'TeamsBC1BC2',
           'TeamFriendly', 'Friendly', 'OPSeated', 'OPStanding',
-          'Recreation', 'Practice'
+          'Recreation'
         ];
 
         const sortedClassIds = classOrder.filter(id => uniqueClassIds.includes(id));
@@ -709,7 +699,7 @@ const SettingModal = ({
 
           let prefix = '';
           // レクリエーション系クラスはプレフィックスなし
-          if (classId === 'Recreation' || classId === 'Practice') {
+          if (classId === 'Recreation') {
             prefix = '';
           } else if (classDef.type === 'individual') {
             prefix = currentLang === 'ja' ? '個人 ' : 'IND ';

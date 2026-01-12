@@ -28,6 +28,7 @@
   --color-red: 162, 47, 47;
   --color-blue: 16, 87, 193;
   --color-green: 46, 125, 50;
+  --color-green-light: 0, 255, 127;
   --color-yellow: 255, 215, 0;
 }
 
@@ -2862,6 +2863,33 @@ h2 .profilePic img {
     font-size: 5vmin;
     padding: 3vmin 6vmin;
   }
+
+  .radioButtonGroup {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .radioButton {
+    max-width: 100%;
+    width: 100%;
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+    padding: 3vmin;
+    flex-wrap: wrap;
+  }
+
+  .radioButtonImgBox {
+    width: 20vmin;
+    height: 20vmin;
+    flex-shrink: 0;
+  }
+
+  .radioButtonDesc {
+    flex: 1;
+    font-size: 2.5vmin;
+    margin-left: 3vmin;
+  }
 }
 
 .resetBtn,
@@ -2914,14 +2942,20 @@ h2 .profilePic img {
 
 .customModalBox {
   position: fixed;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: rgb(var(--color-gray-darker));
   border: 1px solid rgb(var(--color-gray));
   border-radius: 2vmin;
-  padding: 3vmin;
+  padding: 2vh 4vw;
   display: flex;
   flex-direction: column;
   gap: 2vmin;
-  min-width: 20vw;
+  width: 80vw;
+  max-width: 1000px;
+  max-height: 80vh;
+  overflow-y: auto;
   box-shadow: 0 10px 30px rgb(var(--color-black));
   box-sizing: border-box;
 }
@@ -2941,17 +2975,6 @@ h2 .profilePic img {
   justify-content: center;
   min-height: 8vmin;
   box-sizing: border-box;
-}
-
-.customModalBox {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80vw;
-  max-width: 1000px;
-  padding: 4vmin;
-  display: flex;
-  flex-direction: column;
 }
 
 .confirmBtnBox {
@@ -2984,35 +3007,11 @@ h2 .profilePic img {
   height: auto;
 }
 
-/* カスタム設定モーダル内のラジオボタン設定 */
-.customModalBox .settingRadioGroup {
-  display: flex;
-  gap: 3vmin;
-  padding: 1vmin 0;
-  justify-content: center;
-}
-
-.customModalBox .radioLabel {
-  display: flex;
-  align-items: center;
-  gap: 1vmin;
-  cursor: pointer;
-  font-size: 3vmin;
-  color: white;
-}
-
-.customModalBox .radioLabel input[type="radio"] {
-  width: 3.5vmin;
-  height: 3.5vmin;
-  cursor: pointer;
-}
-
+/* カスタム設定モーダル内の設定項目 */
 .customModalBox #languageSetting,
 .customModalBox #sceneSetting {
   order: 2;
-  margin-top: 4vmin;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding-top: 3vmin;
+  margin-top: 4vh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -3026,12 +3025,84 @@ h2 .profilePic img {
   padding-top: 0;
 }
 
-.customModalBox .detailSettingLabel {
-  font-size: 4vmin;
-  color: rgb(var(--color-white));
-  margin-bottom: 2vmin;
+#customModal h2 {
+  font-size: 3vmin;
+  color: rgb(var(--color-gray-lighter));
+  margin: 0 0 2vmin 0;
   font-weight: bold;
+  opacity: 1;
 }
+
+.radioButtonGroup {
+  display: flex;
+  gap: 2vmin;
+  width: 100%;
+  justify-content: center;
+  margin-top: 1vmin;
+}
+
+.radioButton {
+  flex: 1;
+  max-width: 30vmin;
+  background-color: rgba(var(--color-white), 0.05);
+  border: 0.3vmin solid transparent;
+  border-radius: 2vmin;
+  padding: 1vmin;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  transition: all 0.2s ease;
+  gap: 0.5vmin;
+  text-align: center;
+  padding: 2vmin 1vmin;
+}
+
+.radioButton:hover {
+  background-color: rgba(var(--color-white), 0.1);
+}
+
+.radioButton:focus-visible {
+  outline: 0.3vmin solid rgb(var(--color-yellow));
+  outline-offset: 0.3vmin;
+  background-color: rgba(var(--color-white), 0.1);
+}
+
+.radioButton.selected {
+  background-color: rgba(var(--color-white), 0.1);
+  border-color: rgb(var(--color-green-light));
+}
+
+.radioButtonImgBox {
+  width: 50%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1vmin;
+}
+
+.radioButtonImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.radioButton h3 {
+  font-size: 2.5vmin;
+  font-weight: bold;
+  color: white;
+  margin: 0;
+}
+
+.radioButtonDesc {
+  font-size: 1.8vmin;
+  color: rgba(var(--color-white), 0.7);
+  line-height: 1.4;
+  margin: 0;
+  text-align: left;
+} 
 
 .customModalBox .confirmBtnBox {
   order: 3;

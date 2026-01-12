@@ -109,9 +109,12 @@
   },
   "options": {
     "scene": {
-      "recreation": "Rec / Practice",
+      "recreation": "Recreation",
       "official": "Official Match",
-      "general": "General Competition"
+      "general": "General Competition",
+      "officialDesc": "BC1-BC4 and Open Standing/Seated. Supports official competition rules.",
+      "generalDesc": "Supports friendly match rules such as \"BOCCIA JAPAN CUP\".",
+      "recreationDesc": "Ideal for simple use."
     },
     "warmup": {
       "simultaneous": "2:00 Simultaneous",
@@ -154,8 +157,7 @@
     "PairBC4": "BC4",
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "Friendly",
-    "Recreation": "Recreation",
-    "Practice": "Practice"
+    "Recreation": "Recreation"
   },
   "match": {
     "red": "Red",

@@ -17,6 +17,7 @@
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
+  "scene": "recreation",
   "warmup": {
     "time": 120000,
     "isRunning": false
@@ -27,31 +28,32 @@
   },
   "red": {
     "score": 0,
-    "scores": [],
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 300000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
+    "affiliation": "",
+    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
   },
   "blue": {
     "score": 0,
-    "scores": [],
     "ball": 6,
     "isRunning": false,
-    "time": 270000,
+    "time": 300000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
+    "affiliation": "",
+    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
   },
   "courtId": "",
-  "scene": "official",
-  "lastUpdated": "2026-01-11T13:57:30.856Z"
+  "lastUpdated": "2026-01-12T01:44:35.212Z"
 }

@@ -1,39 +1,32 @@
 {
-  "classification": "IND BC1 Male",
+  "classification": "Recreation",
   "category": "",
   "matchName": "第1回戦",
   "match": {
-    "totalEnds": 4,
-    "warmup": "simultaneous",
-    "interval": "enabled",
-    "rules": "worldBoccia",
-    "resultApproval": "enabled",
-    "tieBreak": "extraEnd",
+    "totalEnds": 2,
+    "warmup": "none",
+    "interval": "none",
+    "rules": "recreation",
+    "resultApproval": "none",
+    "tieBreak": "none",
     "sections": [
       "standby",
-      "warmup",
       "end1",
-      "interval",
       "end2",
-      "interval",
-      "end3",
-      "interval",
-      "end4",
-      "matchFinished",
-      "resultApproval"
+      "matchFinished"
     ]
   },
   "red": {
-    "name": "Red",
-    "limit": 270000,
-    "country": "Iceland",
-    "profilePic": "/img/flags/is.svg"
-  },
-  "blue": {
     "name": "Blue",
-    "limit": 270000,
+    "limit": 240000,
     "country": "Philippines",
     "profilePic": "/img/flags/ph.svg"
+  },
+  "blue": {
+    "name": "Red",
+    "limit": 240000,
+    "country": "Iceland",
+    "profilePic": "/img/flags/is.svg"
   },
   "warmup": {
     "limit": 120000

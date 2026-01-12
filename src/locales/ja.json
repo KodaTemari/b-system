@@ -110,9 +110,12 @@
   },
   "options": {
     "scene": {
-      "recreation": "レク・練習",
+      "recreation": "レクリエーション",
       "official": "公式試合",
-      "general": "一般競技"
+      "general": "一般競技",
+      "officialDesc": "BC1～BC4とオープン立位・座位。公式の競技規則に対応。",
+      "generalDesc": "「BOCCIA JAPAN CUP」などのフレンドリーマッチ版規則に対応。",
+      "recreationDesc": "簡単に利用したい場合に最適。"
     },
     "warmup": {
       "simultaneous": "2:00 同時",
@@ -155,8 +158,7 @@
     "PairBC4": "BC4",
     "TeamsBC1BC2": "BC1/BC2",
     "TeamFriendly": "フレンドリー",
-    "Recreation": "レクリエーション",
-    "Practice": "練習"
+    "Recreation": "レクリエーション"
   },
   "match": {
     "red": "赤",

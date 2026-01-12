@@ -83,13 +83,6 @@
       "ends": 2,
       "timer": 240000,
       "hasGender": false
-    },
-    "Practice": {
-      "name": "練習",
-      "type": "team",
-      "ends": 2,
-      "timer": 210000,
-      "hasGender": false
     }
   }
 }
