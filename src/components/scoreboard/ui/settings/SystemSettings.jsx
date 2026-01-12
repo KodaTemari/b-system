@@ -3,6 +3,7 @@ import { getText as getLocalizedText, getCurrentLanguage } from '../../../../loc
 import { COUNTRIES } from '../../../../utils/scoreboard/countries';
 import resetIcon from '../../img/icon_reset.png';
 import wrenchIcon from '../../img/icon_wrench.png';
+import languageIcon from '../../img/icon_language.png';
 import scene1Icon from '../../img/scene_1.png';
 import scene2Icon from '../../img/scene_2.png';
 import scene3Icon from '../../img/scene_3.png';
@@ -121,19 +122,10 @@ const SystemSettings = ({
           className="customModalBox"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* OKボタンをDOMの先頭に配置（初期フォーカス対策） */}
-          <div className="confirmBtnBox">
-            <button
-              className="languageSelectBtn selected"
-              onClick={() => setShowCustomModal(false)}
-            >
-              OK
-            </button>
-          </div>
-
+          {/* 言語設定を一番上に配置 */}
           <div id="languageSetting" className="detailSettingItem">
-            <h2>{getLocalizedText('labels.language', lang)}</h2>
-            <div className="radioButtonGroup" role="radiogroup" aria-label={getLocalizedText('labels.language', lang)}>
+            <div className="languageGroup" role="radiogroup" aria-label={getLocalizedText('labels.language', lang)}>
+              <img src={languageIcon} alt="Language" className="languageIcon" />
               {[
                 { id: 'ja', label: '日本語' },
                 { id: 'en', label: 'English' }
@@ -152,7 +144,7 @@ const SystemSettings = ({
                   role="radio"
                   aria-checked={lang === l.id}
                 >
-                  <h3>{l.label}</h3>
+                  {l.label}
                 </div>
               ))}
             </div>
@@ -190,6 +182,16 @@ const SystemSettings = ({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* OKボタンを最後に配置 */}
+          <div className="confirmBtnBox">
+            <button
+              className="confirmBtn primaryBtn"
+              onClick={() => setShowCustomModal(false)}
+            >
+              OK
+            </button>
           </div>
         </div>
       </dialog>

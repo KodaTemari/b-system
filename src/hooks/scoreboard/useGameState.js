@@ -284,38 +284,92 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
   // Section update
   const updateSection = useCallback((newSection, newSectionID, newSections = null) => {
     const endNumber = extractEndNumber(newSection);
-    setGameData(prevData => {
-      const newData = {
-        ...prevData,
-        match: {
-          ...prevData.match,
-          sectionID: newSectionID,
-          section: newSection,
-          end: endNumber,
-          ...(newSections && { sections: newSections })
-        },
-        screen: {
-          ...prevData.screen,
-          active: '',
-          isScoreAdjusting: false
-        }
-      };
+    
+    // セクション切り替え時のフェード効果: 画面全体を一瞬で暗転
+    const root = document.getElementById('root');
+    if (root) {
+      root.classList.add('quickStartTransition');
+      
+      // ブラウザに暗転をレンダリングさせる
+      requestAnimationFrame(() => {
+        // 暗転後に状態更新
+        setGameData(prevData => {
+          const newData = {
+            ...prevData,
+            match: {
+              ...prevData.match,
+              sectionID: newSectionID,
+              section: newSection,
+              end: endNumber,
+              ...(newSections && { sections: newSections })
+            },
+            screen: {
+              ...prevData.screen,
+              active: '',
+              isScoreAdjusting: false
+            }
+          };
 
-      if (endNumber > 0) {
-        const ends = [...(prevData.match?.ends || [])];
-        if (!ends.find(e => e.end === endNumber)) {
-          ends.push({ 
-            end: endNumber, 
-            shots: [], 
-            redScore: 0, 
-            blueScore: 0
-          });
-          newData.match.ends = ends.sort((a, b) => a.end - b.end);
-        }
-      }
+          if (endNumber > 0) {
+            const ends = [...(prevData.match?.ends || [])];
+            if (!ends.find(e => e.end === endNumber)) {
+              ends.push({ 
+                end: endNumber, 
+                shots: [], 
+                redScore: 0, 
+                blueScore: 0
+              });
+              newData.match.ends = ends.sort((a, b) => a.end - b.end);
+            }
+          }
 
-      return newData;
-    });
+          return newData;
+        });
+        
+        // 次のフレームでフェードイン開始
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            if (root) {
+              root.classList.remove('quickStartTransition');
+            }
+          }, 100);
+        });
+      });
+    } else {
+      // root要素が見つからない場合は通常の更新
+      setGameData(prevData => {
+        const newData = {
+          ...prevData,
+          match: {
+            ...prevData.match,
+            sectionID: newSectionID,
+            section: newSection,
+            end: endNumber,
+            ...(newSections && { sections: newSections })
+          },
+          screen: {
+            ...prevData.screen,
+            active: '',
+            isScoreAdjusting: false
+          }
+        };
+
+        if (endNumber > 0) {
+          const ends = [...(prevData.match?.ends || [])];
+          if (!ends.find(e => e.end === endNumber)) {
+            ends.push({ 
+              end: endNumber, 
+              shots: [], 
+              redScore: 0, 
+              blueScore: 0
+            });
+            newData.match.ends = ends.sort((a, b) => a.end - b.end);
+          }
+        }
+
+        return newData;
+      });
+    }
   }, [extractEndNumber]);
 
   // Color set state update

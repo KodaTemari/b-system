@@ -1,12 +1,10 @@
 {
   "matchID": "",
   "match": {
-    "end": 1,
-    "ends": [
-      { "end": 1, "shots": [], "redScore": 0, "blueScore": 0 }
-    ],
-    "sectionID": 2,
-    "section": "end1",
+    "end": 0,
+    "ends": [],
+    "sectionID": 0,
+    "section": "standby",
     "approvals": {
       "red": false,
       "referee": false,
@@ -30,9 +28,9 @@
   },
   "red": {
     "score": 0,
-    "ball": 7,
+    "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 240000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -46,7 +44,7 @@
     "score": 0,
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 240000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -57,5 +55,5 @@
     "redCard": 0
   },
   "courtId": "",
-  "lastUpdated": "2026-01-12T04:26:53.852Z"
+  "lastUpdated": "2026-01-12T07:12:30.542Z"
 }

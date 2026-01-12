@@ -1,32 +1,30 @@
 {
-  "classification": "TEAM Friendly",
+  "classification": "Recreation",
   "category": "",
   "matchName": "第1回戦",
   "match": {
     "totalEnds": 2,
-    "warmup": "simultaneous",
-    "interval": "enabled",
-    "rules": "friendlyMatch",
+    "warmup": "none",
+    "interval": "none",
+    "rules": "recreation",
     "resultApproval": "none",
-    "tieBreak": "finalShot",
+    "tieBreak": "none",
     "sections": [
       "standby",
-      "warmup",
       "end1",
-      "interval",
       "end2",
       "matchFinished"
     ]
   },
   "red": {
     "name": "Blue",
-    "limit": 300000,
+    "limit": 240000,
     "country": "Philippines",
     "profilePic": "/img/flags/ph.svg"
   },
   "blue": {
     "name": "Red",
-    "limit": 300000,
+    "limit": 240000,
     "country": "Iceland",
     "profilePic": "/img/flags/is.svg"
   },

@@ -113,9 +113,9 @@
       "recreation": "レクリエーション",
       "official": "公式試合",
       "general": "一般競技",
-      "officialDesc": "BC1～BC4とオープン立位・座位。公式の競技規則に対応。",
-      "generalDesc": "「BOCCIA JAPAN CUP」などのフレンドリーマッチ版規則に対応。",
-      "recreationDesc": "簡単に利用したい場合に最適。"
+      "officialDesc": "BC1～BC4とオープン立位・座位。公式の競技規則。",
+      "generalDesc": "「BOCCIA JAPAN CUP」などのフレンドリーマッチ版規則。",
+      "recreationDesc": "簡単に利用したい場合に最適。シンプルな操作画面。"
     },
     "warmup": {
       "simultaneous": "2:00 同時",

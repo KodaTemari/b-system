@@ -1173,12 +1173,6 @@ h2 .profilePic img {
   padding-top: 8vh;
 }
 
-/* warmup1からwarmup2への切り替わり時にフェードイン */
-[data-section="warmup2"] #secWarmup {
-  animation: fadeIn 0.5s ease-in-out forwards;
-  opacity: 0;
-}
-
 [data-mode="ctrl"] [data-section="warmup"] #secWarmup,
 [data-mode="ctrl"] [data-section="warmup1"] #secWarmup,
 [data-mode="ctrl"] [data-section="warmup2"] #secWarmup {
@@ -1820,6 +1814,7 @@ h2 .profilePic img {
   display: none;
 }
 
+
 .settingOpen h2,
 .settingOpen main h2::after,
 .settingOpen .score,
@@ -2315,10 +2310,15 @@ h2 .profilePic img {
   animation: fadeOut 1s linear forwards;
 }
 
-/* 試合開始時の画面遷移用 */
+/* セクション切り替え時の画面遷移用 */
+#root {
+  opacity: 1;
+  transition: opacity 0.4s ease-in;
+}
+
 #root.quickStartTransition {
   opacity: 0;
-  transition: opacity 0.4s ease-in;
+  transition: none; /* 暗転は即座に */
 }
 
 @media screen and (max-width: 800px) {
@@ -2892,6 +2892,17 @@ h2 .profilePic img {
     padding: 3vmin 6vmin;
   }
 
+  /* 言語設定のモバイル調整 */
+  .languageGroup {
+    justify-content: center;
+    gap: 3vmin;
+  }
+
+  .languageIcon {
+    width: 6vmin;
+    height: 6vmin;
+  }
+
   .radioButtonGroup {
     flex-direction: column;
     align-items: center;
@@ -2988,25 +2999,16 @@ h2 .profilePic img {
   box-sizing: border-box;
 }
 
-.languageSelectBtn {
-  width: 100%;
-  padding: 1.5vmin 2vmin;
+#scoreboard .primaryBtn {
+  display: inline-block;
+  min-width: 20vw;
+  padding: 1.5vh 2vw;
   font-size: 4vmin;
-  border: 0.2vmin solid rgb(var(--color-white));
-  border-radius: 1.5vmin;
+  border: 0.3vmin solid rgb(var(--color-white));
+  border-radius: 5vmin;
   background-color: transparent;
   color: rgb(var(--color-white));
-  cursor: pointer;
   text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 8vmin;
-  box-sizing: border-box;
-}
-
-.confirmBtnBox {
-  order: 2;
 }
 
 /* スコアボード上の試合名コンテナ */
@@ -3020,12 +3022,9 @@ h2 .profilePic img {
 /* 確定ボタンのコンテナ */
 .confirmBtnBox {
   text-align: center;
-  margin-top: 5vmin;
+  margin: 5vh 0;
 }
-
-/* 確定ボタン（OKボタン）のサイズ調整 */
-.confirmBtnBox .languageSelectBtn {
-  width: 20vmin;
+.confirmBtn {
   margin: 0 auto;
 }
 
@@ -3038,7 +3037,6 @@ h2 .profilePic img {
 /* カスタム設定モーダル内の設定項目 */
 .customModalBox #languageSetting,
 .customModalBox #sceneSetting {
-  order: 2;
   margin-top: 4vh;
   width: 100%;
   display: flex;
@@ -3047,7 +3045,6 @@ h2 .profilePic img {
 }
 
 .customModalBox #languageSetting {
-  order: 1;
   margin-top: 0;
   border-top: none;
   padding-top: 0;
@@ -3059,6 +3056,28 @@ h2 .profilePic img {
   margin: 0 0 2vmin 0;
   font-weight: bold;
   opacity: 1;
+}
+
+/* 言語設定 */
+.languageGroup {
+  display: flex;
+  align-items: center;
+  gap: 2vmin;
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.languageGroup .radioButton {
+  display: inline-block;
+  padding: 1vh 1vw;
+  border-radius: 1vmin;
+  min-width: 8vmin;
+}
+
+.languageIcon {
+  width: 4vmin;
+  height: 4vmin;
+  opacity: 0.3;
 }
 
 .radioButtonGroup {
@@ -3075,7 +3094,7 @@ h2 .profilePic img {
   background-color: rgba(var(--color-white), 0.05);
   border: 0.3vmin solid transparent;
   border-radius: 2vmin;
-  padding: 1vmin;
+  padding: 2vh 2vw;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -3084,7 +3103,7 @@ h2 .profilePic img {
   transition: all 0.2s ease;
   gap: 0.5vmin;
   text-align: center;
-  padding: 2vmin 1vmin;
+  color: rgb(var(--color-white));
 }
 
 .radioButton:hover {
@@ -3131,8 +3150,3 @@ h2 .profilePic img {
   margin: 0;
   text-align: left;
 } 
-
-.customModalBox .confirmBtnBox {
-  order: 3;
-}
-
