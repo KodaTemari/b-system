@@ -190,6 +190,15 @@ const Scoreboard = () => {
   }, [timeoutModalOpen, selectedTimeoutTeamColor]);
 
   useEffect(() => {
+    if (confirmModalOpen && (pendingPenalty || pendingReset)) {
+      const dialog = document.getElementById('confirmModal');
+      if (dialog) {
+        dialog.showModal();
+      }
+    }
+  }, [confirmModalOpen, pendingPenalty, pendingReset]);
+
+  useEffect(() => {
     if (timeoutTimerModalOpen && timeoutTimerTeamColor && timeoutTimerType) {
       const dialog = document.getElementById('timeoutTimerModal');
       if (dialog) {
@@ -307,12 +316,6 @@ const Scoreboard = () => {
         // Show confirmation modal for second yellow card
         setPendingPenalty({ teamColor, penaltyId });
         setConfirmModalOpen(true);
-        setTimeout(() => {
-          const dialog = document.getElementById('confirmModal');
-          if (dialog) {
-            dialog.showModal();
-          }
-        }, 0);
         return;
       }
     }
@@ -321,12 +324,6 @@ const Scoreboard = () => {
       // 確認が必要な場合は、確認モーダルを表示
       setPendingPenalty({ teamColor, penaltyId });
       setConfirmModalOpen(true);
-      setTimeout(() => {
-        const dialog = document.getElementById('confirmModal');
-        if (dialog) {
-          dialog.showModal();
-        }
-      }, 0);
       // Penalty modal remains open (closes after confirmation)
     } else {
       // 確認が不要な場合は、直接処理を実行
@@ -523,12 +520,6 @@ const Scoreboard = () => {
   const handleResetClick = () => {
     setPendingReset(true);
     setConfirmModalOpen(true);
-    setTimeout(() => {
-      const dialog = document.getElementById('confirmModal');
-      if (dialog) {
-        dialog.showModal();
-      }
-    }, 0);
   };
 
   // リセット直接実行（確認モーダルなし）

@@ -2,9 +2,12 @@
   "matchID": "",
   "match": {
     "end": 0,
-    "ends": [],
-    "sectionID": 0,
-    "section": "standby",
+    "ends": [
+      { "end": 1, "shots": [], "redScore": 1, "blueScore": 0 },
+      { "end": 2, "shots": [], "redScore": 0, "blueScore": 2 }
+    ],
+    "sectionID": 3,
+    "section": "matchFinished",
     "approvals": {
       "red": false,
       "referee": false,
@@ -17,6 +20,7 @@
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
+  "scene": "recreation",
   "warmup": {
     "time": 120000,
     "isRunning": false
@@ -26,32 +30,33 @@
     "isRunning": false
   },
   "red": {
-    "score": 0,
-    "scores": [],
+    "score": 1,
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 240000,
     "isTieBreak": false,
-    "result": "",
+    "result": "lose",
     "playerID": "",
+    "affiliation": "",
+    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
   },
   "blue": {
-    "score": 0,
-    "scores": [],
+    "score": 2,
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 240000,
     "isTieBreak": false,
-    "result": "",
+    "result": "win",
     "playerID": "",
+    "affiliation": "",
+    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
   },
   "courtId": "",
-  "scene": "general",
-  "lastUpdated": "2026-01-12T13:32:04.942Z"
+  "lastUpdated": "2026-01-12T13:34:18.794Z"
 }
