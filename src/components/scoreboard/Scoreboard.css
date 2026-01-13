@@ -281,22 +281,22 @@ button:disabled {
    設定ボタン
    ======================================== */
 
-#setting {
+.setting {
   position: relative;
 }
 
-#setting button {
+.setting button {
   position: absolute;
   top: 3vh;
   width: 6vw;
   opacity: 0.8;
 }
 
-#setting button:hover {
+.setting button:hover {
   opacity: 1;
 }
 
-#setting [name="settingBtn"] {
+.setting [name="settingBtn"] {
   top: 62vh;
   left: 47vw;
   z-index: 100;
@@ -320,12 +320,12 @@ button:disabled {
 }
 
 /* セクションごとの設定ボタン位置調整 */
-.next #setting [name="settingBtn"] {
+.next .setting [name="settingBtn"] {
   top: 25vh;
   opacity: 0.3;
 }
 
-[data-scoreadjust="true"] #setting [name="settingBtn"] {
+[data-scoreadjust="true"] .setting [name="settingBtn"] {
   opacity: 0.1;
 }
 
@@ -333,7 +333,7 @@ button:disabled {
   display: none;
 }
 
-[data-section="standby"] #setting [name="settingBtn"] {
+[data-section="standby"] .setting [name="settingBtn"] {
   top: 84vh;
   opacity: 1;
 }
@@ -349,14 +349,14 @@ button:disabled {
   display: none;
 }
 
-[data-section="matchFinished"] #setting [name="settingBtn"],
-[data-section="resultApproval"] #setting [name="settingBtn"] {
+[data-section="matchFinished"] .setting [name="settingBtn"],
+[data-section="resultApproval"] .setting [name="settingBtn"] {
   opacity: 0.2;
 }
 
-[data-section="warmup"] #setting [name="settingBtn"],
-[data-section="warmup1"] #setting [name="settingBtn"],
-[data-section="warmup2"] #setting [name="settingBtn"] {
+[data-section="warmup"] .setting [name="settingBtn"],
+[data-section="warmup1"] .setting [name="settingBtn"],
+[data-section="warmup2"] .setting [name="settingBtn"] {
   top: 85vh;
   opacity: 0.3;
 }
@@ -367,11 +367,11 @@ button:disabled {
   top: 85vh;
 }
 
-[data-section="interval"] #setting [name="settingBtn"] {
+[data-section="interval"] .setting [name="settingBtn"] {
   opacity: 0.3;
 }
 
-[data-section="interval"] #setting [name="settingBtn"],
+[data-section="interval"] .setting [name="settingBtn"],
 [data-section="interval"] .settingModalCloseBtn {
   top: 38vh;
 }
@@ -1612,7 +1612,7 @@ h2 .profilePic img {
 }
 
 /* 設定詳細モーダル */
-#settingDetailsModal {
+.settingDetailsModal {
   position: fixed;
   top: 0;
   left: 0;
@@ -1737,12 +1737,12 @@ h2 .profilePic img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 41vw;
+  width: 42vw;
   gap: 1vw;
 }
 
 #standbySetting .detailSettingLabel {
-  width: 19vw;
+  width: 20vw;
   text-align: right;
   color: rgb(var(--color-white));
   font-family: var(--font-family-base);
@@ -1763,6 +1763,7 @@ h2 .profilePic img {
 #playerInput {
   position: absolute;
   top: 25vh;
+  left: 3vw;
   display: flex;
   justify-content: space-between;
   width: 94vw;
@@ -1866,7 +1867,7 @@ h2 .profilePic img {
 }
 
 /* 詳細モーダル */
-#settingDetailsModal {
+.settingDetailsModal {
   display: block;
 }
 
@@ -1973,9 +1974,7 @@ h2 .profilePic img {
 }
 
 #fullscreenBtn {
-  top: 3vh;
   right: 3vw;
-  width: 6vw;
   opacity: 0;
 }
 
@@ -1986,11 +1985,8 @@ h2 .profilePic img {
 
 /* スタンバイセクションでのフルスクリーンボタン - 常に表示 */
 [data-section="standby"] #fullscreenBtn {
-  position: fixed;
-  top: 3vh;
-  right: 3vw;
   z-index: 200;
-  opacity: 1;
+  opacity: 0.8;
 }
 
 /* viewモードでフルスクリーン時の解除ボタンを透明度0にする（ボタンは機能する） */
@@ -2001,7 +1997,7 @@ h2 .profilePic img {
   opacity: 0.5;
 }
 
-.settingOpen:not([data-section="standby"]) #setting,
+.settingOpen:not([data-section="standby"]) .setting,
 .settingOpen[data-section="standby"] [name="settingBtn"],
 [data-mode="view"] .settingOpen #indexModal {
   display: none;
@@ -3046,13 +3042,12 @@ h2 .profilePic img {
 
 .customModalBox {
   position: fixed;
-  top: 10vh;
+  top: 12vh;
   left: 50%;
   display: flex;
   flex-direction: column;
   width: 80vw;
   max-width: 1000px;
-  max-height: 80vh;
   padding: 2vh 4vw;
   overflow-y: auto;
   background-color: rgb(var(--color-gray-darker));
@@ -3060,7 +3055,6 @@ h2 .profilePic img {
   border-radius: 2vmin;
   box-shadow: 0 10px 30px rgb(var(--color-black));
   box-sizing: border-box;
-  gap: 2vmin;
   transform: translateX(-50%);
 }
 
@@ -3161,7 +3155,6 @@ h2 .profilePic img {
   border-radius: 2vmin;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s ease;
   gap: 0.5vmin;
 }
 
@@ -3254,6 +3247,117 @@ h2 .profilePic img {
   .customBtn {
     min-width: 48px;
     min-height: 48px;
+  }
+
+  .languageIcon {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  #fullscreenBtn {
+    top: 2vh;
+    right: 2vw;
+  }
+
+  .customBtn {
+    top: 2vh;
+    left: 2vw;
+  }
+
+  .customModalBox {
+    width: 98vw;
+  }
+
+  .radioButton {
+    border-width: 2px;
+  }
+
+  .languageGroup .radioButton {
+    min-width: inherit;
+    padding: 1vh 2vw;
+    border-radius: 2vmin;
+  }
+
+  #sceneSetting .radioButtonGroup {
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #sceneSetting .radioButton {
+    position: relative;
+    max-width: inherit;
+    display: block;
+    width: 80vw;
+    text-align: left;
+  }
+
+  #sceneSetting .radioButtonImgBox {
+    position: absolute;
+    top: 1vh;
+    left: 1vw;
+    width: 15vw;
+    height: 15vw;
+    max-width: 64px;
+    max-height: 64px;
+  }
+
+  .customModalBox {
+    top: 9vh;
+  }
+
+  #customModal h2 {
+    font-size: min(5vmin, 20px);
+  }
+
+  #sceneSetting .radioButton h3 {
+    margin-bottom: 1vh;
+    padding-left: 16vw;
+    font-size: min(5vmin, 20px);
+  }
+
+  #sceneSetting .radioButtonDesc {
+    padding-left: 16vw;
+    font-size: min(4vmin, 16px);
+  }
+
+  #standbySetting #classificationInput {
+    left: 20vw;
+    width: 60vw;
+  }
+
+  #standbySetting #genderInput {
+    top: 11vh;
+    left: 35vw;
+    width: 30vw;
+    padding: 1vh 1vw;
+  }
+
+  #standbySetting #matchNameInput {
+    top: 18vh;
+    left: 20vw;
+    width: 60vw;
+  }
+
+  #playerInput {
+    top: 28vh;
+  }
+  
+  #standbySetting #detailSettings {
+    width: 100vw;
+    gap: 2vh 0;
+  }
+
+  #standbySetting .detailSettingItem {
+    width: 44vw;
+  }
+
+  #standbySetting .detailSettingLabel {
+    width: 12vw;
+  }
+
+  #standbySetting .detailSettingItem select {
+    width: 30vw;
   }
 
   #scoreboard .primaryBtn {

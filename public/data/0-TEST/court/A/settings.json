@@ -1,17 +1,19 @@
 {
-  "classification": "Recreation",
+  "classification": "IND General Male",
   "category": "",
   "matchName": "第1回戦",
   "match": {
     "totalEnds": 2,
-    "warmup": "none",
-    "interval": "none",
-    "rules": "recreation",
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "friendlyMatch",
     "resultApproval": "none",
-    "tieBreak": "none",
+    "tieBreak": "finalShot",
     "sections": [
       "standby",
+      "warmup",
       "end1",
+      "interval",
       "end2",
       "matchFinished"
     ]

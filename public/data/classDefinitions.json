@@ -43,7 +43,7 @@
       "hasGender": true
     },
     "Friendly": {
-      "name": "フレンドリー",
+      "name": "一般",
       "type": "individual",
       "ends": 2,
       "timer": 240000,
@@ -71,7 +71,7 @@
       "hasGender": false
     },
     "TeamFriendly": {
-      "name": "フレンドリー",
+      "name": "一般",
       "type": "team",
       "ends": 2,
       "timer": 300000,

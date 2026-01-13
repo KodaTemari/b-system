@@ -153,11 +153,11 @@
     "BC4": "BC4",
     "OPStanding": "OP Standing",
     "OPSeated": "OP Seated",
-    "Friendly": "Friendly",
+    "Friendly": "General",
     "PairBC3": "BC3",
     "PairBC4": "BC4",
     "TeamsBC1BC2": "BC1/BC2",
-    "TeamFriendly": "Friendly",
+    "TeamFriendly": "General",
     "Recreation": "Recreation"
   },
   "match": {

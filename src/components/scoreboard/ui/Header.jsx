@@ -52,7 +52,7 @@ const Header = ({
           })()}
         </div>
       </div>
-      <nav id="setting">
+      <nav className="setting">
         {isCtrl && onSettingToggle && (
           <button
             type="button"
