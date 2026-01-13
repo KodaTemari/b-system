@@ -20,18 +20,10 @@ const CustomModal = ({
     { id: 'recreation', icon: scene3Icon }
   ];
 
-  const handleDialogClick = (e) => {
-    if (e.target === e.currentTarget) {
-      e.stopPropagation(); // SettingModalへのイベント伝播を防ぐ
-      onClose();
-    }
-  };
-
   return (
     <div
       id="customModal"
       className="modalOpen"
-      onClick={handleDialogClick}
     >
       <div
         className="customModalBox"

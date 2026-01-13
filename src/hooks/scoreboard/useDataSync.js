@@ -18,12 +18,10 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     setError(null);
 
     try {
-      const apiUrl = 'http://localhost:3001';
-      
       // settings.json と game.json を並列で取得
       const [settingsRes, gameRes] = await Promise.all([
-        fetch(`${apiUrl}/api/data/${id}/court/${court}/settings`),
-        fetch(`${apiUrl}/api/data/${id}/court/${court}/game`)
+        fetch(`/api/data/${id}/court/${court}/settings`),
+        fetch(`/api/data/${id}/court/${court}/game`)
       ]);
       
       let settingsData = {};
@@ -33,7 +31,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         settingsData = await settingsRes.json();
       } else {
         // settings.json がない場合は大会設定(init.json)から初期生成を試みる
-        const initUrl = `${apiUrl}/data/${id}/init.json`;
+        const initUrl = `/data/${id}/init.json`;
         const initRes = await fetch(initUrl);
         if (initRes.ok) {
           const initData = await initRes.json();
@@ -144,8 +142,6 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     if (!id || !court || !data) return;
 
     try {
-      const apiUrl = 'http://localhost:3001';
-      
       // 1. 設定データ (settings.json)
       const settingsToSave = {
         classification: data.classification,
@@ -220,12 +216,12 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       // 非同期で両方のファイルを更新
       // （※タイマーなどの頻繁な更新時は game.json のみでも良いが、まずは確実性を優先）
       await Promise.all([
-        fetch(`${apiUrl}/api/data/${id}/court/${court}/settings`, {
+        fetch(`/api/data/${id}/court/${court}/settings`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(settingsToSave)
         }),
-        fetch(`${apiUrl}/api/data/${id}/court/${court}/game`, {
+        fetch(`/api/data/${id}/court/${court}/game`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(gameStateToSave)

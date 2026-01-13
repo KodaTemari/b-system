@@ -202,10 +202,14 @@ const SettingModal = ({
     }
 
     try {
-      const apiUrl = 'http://localhost:3001';
-      const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+      const classDefUrl = `/data/classDefinitions.json`;
       fetch(classDefUrl)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
         .then(data => {
           const classDef = data.classifications?.[classId];
           if (!classDef) return;
@@ -608,8 +612,7 @@ const SettingModal = ({
       // Reverse lookup class ID from name
       const findClassId = async () => {
         try {
-          const apiUrl = 'http://localhost:3001';
-          const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+          const classDefUrl = `/data/classDefinitions.json`;
           const classDefResponse = await fetch(classDefUrl);
           if (classDefResponse.ok) {
             const classDefData = await classDefResponse.json();
@@ -663,24 +666,34 @@ const SettingModal = ({
       if (!id) return;
 
       try {
-        const apiUrl = 'http://localhost:3001';
-
         // Load classDefinitions.json
-        const classDefUrl = `${apiUrl}/data/classDefinitions.json`;
+        const classDefUrl = `/data/classDefinitions.json`;
         const classDefResponse = await fetch(classDefUrl);
         let classDefinitions = {};
         if (classDefResponse.ok) {
-          const classDefData = await classDefResponse.json();
-          classDefinitions = classDefData.classifications || {};
+          try {
+            const classDefData = await classDefResponse.json();
+            classDefinitions = classDefData.classifications || {};
+          } catch (error) {
+            console.error('Failed to parse classDefinitions.json:', error);
+          }
+        } else {
+          console.error(`Failed to load classDefinitions.json: ${classDefResponse.status} ${classDefResponse.statusText}`);
         }
 
         // Load init.json
-        const initUrl = `${apiUrl}/data/${id}/init.json`;
+        const initUrl = `/data/${id}/init.json`;
         const initResponse = await fetch(initUrl);
         let tournamentClassifications = [];
         if (initResponse.ok) {
-          const initData = await initResponse.json();
-          tournamentClassifications = initData.classifications || [];
+          try {
+            const initData = await initResponse.json();
+            tournamentClassifications = initData.classifications || [];
+          } catch (error) {
+            console.error(`Failed to parse init.json:`, error);
+          }
+        } else {
+          console.error(`Failed to load init.json: ${initResponse.status} ${initResponse.statusText}`);
         }
 
         const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];

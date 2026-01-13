@@ -1972,21 +1972,20 @@ h2 .profilePic img {
   top: -3px;
 }
 
-#setting #fullscreenBtn {
-  position: absolute;
+#fullscreenBtn {
   top: 3vh;
   right: 3vw;
   width: 6vw;
   opacity: 0;
 }
 
-#setting #fullscreenBtn:hover {
+#fullscreenBtn:hover {
   opacity: 0.8;
   background-color: rgba(var(--color-black), 0.9);
 }
 
 /* スタンバイセクションでのフルスクリーンボタン - 常に表示 */
-[data-section="standby"] #setting #fullscreenBtn {
+[data-section="standby"] #fullscreenBtn {
   position: fixed;
   top: 3vh;
   right: 3vw;
@@ -2988,65 +2987,6 @@ h2 .profilePic img {
 
 #timeoutTimerModal .timeoutTimerModalCloseBtn:hover {
   opacity: 0.8;
-}
-
-@media screen and (max-width: 800px) {
-  .confirmModalBox {
-    width: 90vw;
-    padding: 4vmin;
-  }
-
-  .timeoutTimerModalBox {
-    width: 90vw;
-    padding: 4vmin;
-  }
-
-  .timeoutTimerDisplay {
-    font-size: 26vmin;
-  }
-
-  .timeoutTimerEndBtn {
-    font-size: 5vmin;
-    padding: 3vmin 6vmin;
-  }
-
-  /* 言語設定のモバイル調整 */
-  .languageGroup {
-    justify-content: center;
-    gap: 3vmin;
-  }
-
-  .languageIcon {
-    width: 6vmin;
-    height: 6vmin;
-  }
-
-  .radioButtonGroup {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .radioButton {
-    max-width: 100%;
-    width: 100%;
-    flex-direction: row;
-    text-align: left;
-    align-items: center;
-    padding: 3vmin;
-    flex-wrap: wrap;
-  }
-
-  .radioButtonImgBox {
-    width: 20vmin;
-    height: 20vmin;
-    flex-shrink: 0;
-  }
-
-  .radioButtonDesc {
-    flex: 1;
-    font-size: 2.5vmin;
-    margin-left: 3vmin;
-  }
 }
 
 /* ========================================
