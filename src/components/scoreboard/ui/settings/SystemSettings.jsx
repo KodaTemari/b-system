@@ -16,11 +16,11 @@ const SystemSettings = ({
   setPendingChanges,
   pendingChanges,
   gameData,
-  onUpdateField
+  onUpdateField,
+  onCustomModalChange
 }) => {
   // Fallback if currentLang prop is not provided
   const lang = currentLang || getCurrentLanguage();
-  const [showCustomModal, setShowCustomModal] = useState(false);
 
   const scene = gameData?.scene || 'official';
 
@@ -45,28 +45,12 @@ const SystemSettings = ({
     ];
   }, [lang]);
 
-  // Setup Modal Control (showModal / close)
-  React.useEffect(() => {
-    const customDialog = document.getElementById('customModal');
-    if (customDialog) {
-      if (showCustomModal) {
-        if (!customDialog.open) {
-          customDialog.showModal();
-        }
-      } else {
-        if (customDialog.open) customDialog.close();
-      }
-    }
-  }, [showCustomModal]);
+  // customModalはshowCustomModalの状態で制御される（divベースのため）
 
   // Handle Backdrop Click
   const handleDialogClick = (e, dialogId, setVisible) => {
     if (e.target === e.currentTarget) {
-      const dialog = document.getElementById(dialogId);
-      if (dialog) {
-        dialog.close();
-      }
-      setVisible(false);
+      setVisible();
     }
   };
 
@@ -102,111 +86,17 @@ const SystemSettings = ({
       {section === 'standby' && (
         <button
           className="customBtn"
-          onClick={() => setShowCustomModal(true)}
+          onClick={() => {
+            if (onCustomModalChange) {
+              onCustomModalChange(true);
+            }
+          }}
           title="Customization"
         >
           <img src={wrenchIcon} alt="Customization" className="btnIcon" />
         </button>
       )}
 
-      {/* Customization Modal */}
-      <dialog
-        id="customModal"
-        onClose={(e) => {
-          e.stopPropagation();
-          setShowCustomModal(false);
-        }}
-        onClick={(e) => handleDialogClick(e, 'customModal', setShowCustomModal)}
-      >
-        <div
-          className="customModalBox"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* 言語設定を一番上に配置 */}
-          <div id="languageSetting" className="detailSettingItem">
-            <div className="languageGroup" role="radiogroup" aria-label={getLocalizedText('labels.language', lang)}>
-              <img 
-                src={languageIcon} 
-                alt="Language" 
-                className="languageIcon" 
-                onClick={() => {
-                  // 現在の言語に応じて次の言語を選択
-                  const languages = ['ja', 'en'];
-                  const currentIndex = languages.indexOf(lang);
-                  const nextIndex = (currentIndex + 1) % languages.length;
-                  handleLanguageChange(languages[nextIndex]);
-                }}
-                style={{ cursor: 'pointer' }}
-              />
-              {[
-                { id: 'ja', label: '日本語' },
-                { id: 'en', label: 'English' }
-              ].map((l) => (
-                <div
-                  key={l.id}
-                  className={`radioButton ${lang === l.id ? 'selected' : ''}`}
-                  onClick={() => handleLanguageChange(l.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleLanguageChange(l.id);
-                    }
-                  }}
-                  tabIndex="0"
-                  role="radio"
-                  aria-checked={lang === l.id}
-                >
-                  {l.label}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div id="sceneSetting" className="detailSettingItem">
-            <h2>{getLocalizedText('labels.scene', lang)}</h2>
-            <div className="radioButtonGroup" role="radiogroup" aria-label={getLocalizedText('labels.scene', lang)}>
-              {scenes.map((s) => (
-                <div
-                  key={s.id}
-                  className={`radioButton ${scene === s.id ? 'selected' : ''}`}
-                  onClick={() => {
-                    if (onUpdateField) {
-                      onUpdateField('scene', null, s.id);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      if (onUpdateField) {
-                        onUpdateField('scene', null, s.id);
-                      }
-                    }
-                  }}
-                  tabIndex="0"
-                  role="radio"
-                  aria-checked={scene === s.id}
-                >
-                  <h3>{getLocalizedText(`options.scene.${s.id}`, lang)}</h3>
-                  <div className="radioButtonImgBox">
-                    <img src={s.icon} alt={getLocalizedText(`options.scene.${s.id}`, lang)} className="radioButtonImg" />
-                  </div>
-                  <p className="radioButtonDesc">{getLocalizedText(`options.scene.${s.id}Desc`, lang)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* OKボタンを最後に配置 */}
-          <div className="confirmBtnBox">
-            <button
-              className="confirmBtn primaryBtn"
-              onClick={() => setShowCustomModal(false)}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      </dialog>
     </>
   );
 };

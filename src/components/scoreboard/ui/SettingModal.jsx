@@ -31,7 +31,9 @@ const SettingModal = ({
   setSearchParams,
   classParam,
   genderParam,
-  onPendingChangesChange
+  onPendingChangesChange,
+  isOpen,
+  onCustomModalChange
 }) => {
   // Class options and gender state
   const [classificationOptions, setClassificationOptions] = useState([]);
@@ -930,15 +932,8 @@ const SettingModal = ({
     savedRef.current = true;
   };
 
-  // ダイアログが閉じるときのハンドラー
+  // ダイアログが閉じるときのハンドラー（OKボタンなどから呼ばれる）
   const handleDialogClose = (e) => {
-    // 子要素（カスタム設定モーダルなど）からのcloseイベント伝播を防止
-    if (e) {
-      e.stopPropagation();
-      // イベントの発生元がこのダイアログ自身でない場合は何もしない
-      if (e.target !== e.currentTarget) return;
-    }
-
     // 保存されずに閉じられた場合（キャンセル時）、親コンポーネントのpendingChangesをクリア
     if (!savedRef.current) {
       if (onPendingChangesChange) {
@@ -999,8 +994,12 @@ const SettingModal = ({
   };
 
   return (
-    <dialog id="settingModal" data-section={section} onClose={handleDialogClose}>
-      <div id="indexModal" className="modalBox">
+    <div 
+      id="settingModal" 
+      data-section={section} 
+      className={isOpen ? 'modalOpen' : ''}
+    >
+      <div id="indexModal" className="modalBox" onClick={(e) => e.stopPropagation()}>
         <SystemSettings
           handleReset={handleReset}
           handleLanguageChange={handleLanguageChange}
@@ -1010,6 +1009,7 @@ const SettingModal = ({
           pendingChanges={pendingChanges}
           gameData={gameData}
           onUpdateField={onUpdateField}
+          onCustomModalChange={onCustomModalChange}
         />
 
         {section !== 'standby' && (
@@ -1187,7 +1187,6 @@ const SettingModal = ({
                   className="primaryBtn"
                   onClick={() => {
                     const scoreboard = document.getElementById('scoreboard');
-                    const dialog = document.getElementById('settingModal');
                     
                     // 画面全体を一瞬で非表示
                     if (scoreboard) {
@@ -1303,15 +1302,12 @@ const SettingModal = ({
                         // すべての変更を一度に保存
                         saveData(updatedGameData);
 
-                        // 保存済みフラグを立てる
-                        savedRef.current = true;
-                      }
-                      
-                      // モーダルを閉じる
-                      if (dialog) {
-                        dialog.close();
-                      }
-                      onClose();
+                      // 保存済みフラグを立てる
+                      savedRef.current = true;
+                    }
+                    
+                    // モーダルを閉じる
+                    onClose();
                       
                       // 少し待ってからフェードイン
                       setTimeout(() => {
@@ -1337,10 +1333,6 @@ const SettingModal = ({
               className="btn restartEnd"
               onClick={() => {
                 onRestartEnd();
-                const dialog = document.getElementById('settingModal');
-                if (dialog) {
-                  dialog.close();
-                }
                 onClose();
               }}
             >
@@ -1478,14 +1470,16 @@ const SettingModal = ({
           </div>
         )}
 
-        <form method="dialog">
+        <div>
           <button
+            type="button"
             className={`settingModalCloseBtn ${section === 'standby' ? 'primaryBtn' : ''}`}
             onClick={() => {
               // Save changes on OK click
               if (section === 'standby') {
                 handleSaveChanges();
               }
+              handleDialogClose();
             }}
           >
             {section === 'standby' ? (
@@ -1494,9 +1488,9 @@ const SettingModal = ({
               <img src={setting2Icon} alt={getLocalizedText('sections.ok', getCurrentLanguage())} />
             )}
           </button>
-        </form>
+        </div>
       </div>
-    </dialog>
+    </div>
   );
 };
 

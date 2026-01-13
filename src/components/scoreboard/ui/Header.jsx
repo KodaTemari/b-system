@@ -1,7 +1,8 @@
 import React from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../locales';
 import settingIcon from '../img/icon_setting.png';
-import fullScreenIcon from '../img/icon_fullScreen.png';
+import fullScreenIcon from '../img/icon_fullscreen.png';
+import fullScreenIcon2 from '../img/icon_fullscreen_2.png';
 
 /**
  * スコアボードのヘッダーコンポーネント
@@ -15,7 +16,9 @@ const Header = ({
   option,
   onSettingToggle,
   onFullscreenToggle,
-  isCtrl = false
+  isCtrl = false,
+  isFullscreen = false,
+  isFullscreenSupported = true
 }) => {
   return (
     <header>
@@ -59,12 +62,17 @@ const Header = ({
             <img src={settingIcon} alt={getLocalizedText('buttons.setting', getCurrentLanguage())} />
           </button>
         )}
-        <button
-          id="fullscreenBtn"
-          onClick={onFullscreenToggle}
-        >
-          <img src={fullScreenIcon} alt={getLocalizedText('buttons.fullscreen', getCurrentLanguage())} />
-        </button>
+        {isFullscreenSupported && (
+          <button
+            id="fullscreenBtn"
+            onClick={onFullscreenToggle}
+          >
+            <img 
+              src={isFullscreen ? fullScreenIcon2 : fullScreenIcon} 
+              alt={getLocalizedText('buttons.fullscreen', getCurrentLanguage())} 
+            />
+          </button>
+        )}
       </nav>
     </header>
   );

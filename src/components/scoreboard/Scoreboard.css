@@ -233,6 +233,11 @@ button:disabled {
   height: 2vh;
 }
 
+/* customModal表示時はheaderのz-indexを上げる */
+#scoreboard.customModalOpen header {
+  z-index: 102;
+}
+
 #scoreboard header h1 {
   font-size: 3rem;
 }
@@ -275,6 +280,10 @@ button:disabled {
 /* ========================================
    設定ボタン
    ======================================== */
+
+#setting {
+  position: relative;
+}
 
 #setting button {
   position: absolute;
@@ -610,13 +619,12 @@ button:disabled {
    ======================================== */
 
 /* プレイヤー名表示 */
-#scoreboard main section h2 {
+main h2 {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 13vh;
-  padding: 0 4vw;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -625,19 +633,16 @@ button:disabled {
   gap: 2vmin;
 }
 
-#scoreboard #blue h2 {
-  flex-direction: row-reverse;
-}
-
-#scoreboard main #red h2 {
+#red h2 {
   margin: 0 4vw 0 2vw;
 }
 
-#scoreboard main #blue h2 {
+#blue h2 {
+  flex-direction: row-reverse;
   margin: 0 2vw 0 4vw;
 }
 
-#scoreboard main section h2 .name {
+main h2 .name {
   transition: transform 0.3s ease;
   transform: scaleX(var(--textScale, 1));
   transform-origin: center;
@@ -662,11 +667,16 @@ h2 .profilePic img {
 [data-section="standby"] main h2 {
   position: relative;
   top: 40vh;
-  z-index: 100;
+  z-index: 1;
+}
+
+/* customModal表示時はh2をモーダルの下に */
+.customModalOpen [data-section="standby"] main h2 {
+  z-index: 0;
 }
 
 /* スコア表示エリア */
-#scoreboard .score {
+.score {
   position: relative;
   display: flex;
   align-items: center;
@@ -675,7 +685,7 @@ h2 .profilePic img {
   height: 31vh;
   margin: 3vh 0;
   border-radius: 2vmin;
-  transition: height 0.5s;
+  /* transition: height 0.5s; */
 }
 
 /* スコアボタン */
@@ -688,7 +698,7 @@ h2 .profilePic img {
   font-size: 35vmin;
   font-weight: bold;
   line-height: 0.8;
-  transition: font-size 0.5s;
+  /* transition: font-size 0.5s; */
 }
 
 /* スコア調整ボタン（Plus/Minus/TieBreak） */
@@ -761,44 +771,45 @@ h2 .profilePic img {
 /* タイマー表示 */
 .time {
   height: 31vh;
-  transition: height 0.5s;
+  /* transition: height 0.5s; */
 }
 
 .timer {
   border-radius: 2vmin;
-  font-size: 30vmin;
+  /* 縦横比に応じてフォントサイズを調整（.time要素の幅と高さの小さい方に基づく） */
+  font-size: clamp(8vmin, min(21vw, 31vh), 30vmin);
   font-weight: bold;
   line-height: 1;
 }
 
-.time button {
+.time .timer {
   display: block;
   width: 100%;
   height: 100%;
-  transition: font-size 0.5s;
+  /* transition: font-size 0.5s; */
 }
 
 /* チームカラー背景 */
 #red .score button,
-#red .time button {
+#red .time .timer {
   background-color: rgba(var(--color-red), 0.3);
 }
 
 #blue .score button,
-#blue .time button {
+#blue .time .timer {
   background-color: rgba(var(--color-blue), 0.3);
 }
 
-[data-mode="ctrl"] #red .time button:disabled,
-[data-mode="ctrl"] #blue .time button:disabled,
-#blue .time button:disabled {
+[data-mode="ctrl"] #red .time .timer:disabled,
+[data-mode="ctrl"] #blue .time .timer:disabled,
+#blue .time .timer:disabled {
   opacity: 0.5;
 }
 
 /* アクティブ状態のカラー */
 [data-active="score"] #red .score button,
 [data-active="red-score"] #red [name="redScoreBtn"],
-[data-active="red-time"] #red .time button,
+[data-active="red-time"] #red .time .timer,
 [data-section="matchFinished"] #red [name="redScoreBtn"],
 [data-section="resultApproval"] #red [name="redScoreBtn"],
 [data-tiebreak="red"] #red [name="redScoreBtn"],
@@ -808,7 +819,7 @@ h2 .profilePic img {
 
 [data-active="score"] #blue .score button,
 [data-active="blue-score"] #blue [name="blueScoreBtn"],
-[data-active="blue-time"] #blue .time button,
+[data-active="blue-time"] #blue .time .timer,
 [data-section="matchFinished"] #blue [name="blueScoreBtn"],
 [data-section="resultApproval"] #blue [name="blueScoreBtn"],
 [data-tiebreak="blue"] #blue [name="blueScoreBtn"],
@@ -829,9 +840,10 @@ h2 .profilePic img {
   height: 17vh;
 }
 
-[data-active="score"] .time button {
+[data-active="score"] .time .timer {
   color: rgba(var(--color-white), 0.5);
-  font-size: 15vmin;
+  /* 縦横比に応じてフォントサイズを調整（.time要素の幅と高さの小さい方に基づく） */
+  font-size: clamp(4vmin, min(7vw, 17vh), 15vmin);
 }
 
 /* スコア調整モード（viewモード） */
@@ -847,8 +859,9 @@ h2 .profilePic img {
   height: 17vh;
 }
 
-[data-mode="view"][data-scoreadjust="true"] .time button {
-  font-size: 15vmin;
+[data-mode="view"][data-scoreadjust="true"] .time .timer {
+  /* 縦横比に応じてフォントサイズを調整（.time要素の幅と高さの小さい方に基づく） */
+  font-size: clamp(4vmin, min(7vw, 17vh), 15vmin);
 }
 
 /* 試合終了時のスコアサイズ */
@@ -858,6 +871,10 @@ h2 .profilePic img {
 
 [data-mode="view"][data-section="matchFinished"] .score {
   height: 59vh;
+}
+
+[data-scene="recreation"] [data-section="matchFinished"] .score {
+  height: 47vh;
 }
 
 [data-section="resultApproval"] .score,
@@ -897,6 +914,7 @@ h2 .profilePic img {
 #blue .win {
   margin-left: auto;
 }
+
 
 /* ========================================
    結果承認セクション
@@ -967,7 +985,7 @@ h2 .profilePic img {
    ======================================== */
 
 /* ペナルティアイコンコンテナ */
-#scoreboard .score .penaltyIcons {
+.score .penaltyIcons {
   position: absolute;
   left: 2vw;
   z-index: 10;
@@ -978,7 +996,7 @@ h2 .profilePic img {
 }
 
 /* ペナルティアイコン基本 */
-#scoreboard .score .penaltyIcon {
+.score .penaltyIcon {
   position: relative;
   display: inline-block;
   width: 7vmin;
@@ -987,12 +1005,12 @@ h2 .profilePic img {
   border-radius: 0.5vmin;
 }
 
-#scoreboard .score .penaltyIcon.penaltyIconClickable {
+.score .penaltyIcon.penaltyIconClickable {
   cursor: pointer;
 }
 
 /* ペナルティボール */
-#scoreboard .score .penaltyIcon.penaltyBall {
+.score .penaltyIcon.penaltyBall {
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
@@ -1017,7 +1035,7 @@ h2 .profilePic img {
   position: fixed;
   bottom: 0;
   left: 0;
-  z-index: 1000;
+  z-index: 51;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1030,7 +1048,7 @@ h2 .profilePic img {
 }
 
 /* イエローカード */
-#scoreboard .score .penaltyIcon.yellowCard {
+.score .penaltyIcon.yellowCard {
   width: 5vmin;
   height: 7vmin;
   background-color: #FFD700;
@@ -1039,7 +1057,7 @@ h2 .profilePic img {
 }
 
 /* レッドカード */
-#scoreboard .score .penaltyIcon.redCard {
+.score .penaltyIcon.redCard {
   width: 5vmin;
   height: 7vmin;
   background-color: rgb(var(--color-red));
@@ -1048,7 +1066,7 @@ h2 .profilePic img {
 }
 
 /* カード枚数表示 */
-#scoreboard .score .penaltyIcon[data-count]::after {
+.score .penaltyIcon[data-count]::after {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1065,13 +1083,13 @@ h2 .profilePic img {
   transform: translate(-50%, -50%);
 }
 
-#scoreboard .score .penaltyIcon.redCard[data-count]::after,
-#scoreboard .score .penaltyIcon.yellowCard[data-count="1"]::after {
+.score .penaltyIcon.redCard[data-count]::after,
+.score .penaltyIcon.yellowCard[data-count="1"]::after {
   display: none;
 }
 
 /* ペナルティアイコン削除ボタン */
-#scoreboard .score .penaltyIcon .penaltyIconDelete {
+.score .penaltyIcon .penaltyIconDelete {
   position: absolute;
   top: -1vmin;
   right: -1vmin;
@@ -1105,7 +1123,7 @@ h2 .profilePic img {
   transition: transform 0.5s;
 }
 
-/* Winマーク表示条件 */
+/* タイブレーク時のみ、Winマーク表示 */
 [data-section="finalShot"][data-tieBreak="red"] #red .winMark,
 [data-section="finalShot"][data-tieBreak="blue"] #blue .winMark,
 [data-section="tieBreak"][data-tieBreak="red"] #red .winMark,
@@ -1113,42 +1131,30 @@ h2 .profilePic img {
 [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
 [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
 [data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
-[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
-[data-section="matchFinished"][data-win="red"] #red .winMark,
-[data-section="matchFinished"][data-win="blue"] #blue .winMark,
-[data-section="resultApproval"][data-win="red"] #red .winMark,
-[data-section="resultApproval"][data-win="blue"] #blue .winMark {
+[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark {
   display: block;
 }
 
 /* matchFinished時のWinマークサイズ */
 [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
-[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
-[data-section="matchFinished"][data-win="red"] #red .winMark,
-[data-section="matchFinished"][data-win="blue"] #blue .winMark {
+[data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark {
   transform: scale(1.5);
 }
 
 /* resultApproval時のWinマークサイズ */
 [data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
-[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
-[data-section="resultApproval"][data-win="red"] #red .winMark,
-[data-section="resultApproval"][data-win="blue"] #blue .winMark {
+[data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark {
   transform: scale(1.15);
 }
 
 /* viewモード時のWinマークサイズ調整 */
 [data-mode="view"] [data-section="matchFinished"][data-tieBreak="red"] #red .winMark,
-[data-mode="view"] [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark,
-[data-mode="view"] [data-section="matchFinished"][data-win="red"] #red .winMark,
-[data-mode="view"] [data-section="matchFinished"][data-win="blue"] #blue .winMark {
+[data-mode="view"] [data-section="matchFinished"][data-tieBreak="blue"] #blue .winMark {
   transform: scale(1.3);
 }
 
 [data-mode="view"] [data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
-[data-mode="view"] [data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark,
-[data-mode="view"] [data-section="resultApproval"][data-win="red"] #red .winMark,
-[data-mode="view"] [data-section="resultApproval"][data-win="blue"] #blue .winMark {
+[data-mode="view"] [data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark {
   transform: scale(1.15);
 }
 
@@ -1549,7 +1555,7 @@ h2 .profilePic img {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 9999;
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1582,9 +1588,15 @@ h2 .profilePic img {
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 50;
+  display: none;
   width: 100%;
   height: 100%;
   background-color: rgba(var(--color-black), 0.7);
+}
+
+#settingModal.modalOpen {
+  display: block;
 }
 
 [data-mode="view"] #settingModal {
@@ -1604,7 +1616,7 @@ h2 .profilePic img {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1001;
+  z-index: 101;
   display: none;
   width: 100%;
   height: 100%;
@@ -1822,11 +1834,12 @@ h2 .profilePic img {
 
 [data-scene="recreation"] .profilePic,
 [data-scene="recreation"] #matchNameInput,
-[data-scene="recreation"] #scoreboard [data-section="standby"] .settingModalCloseBtn {
+[data-scene="recreation"] [data-section="standby"] .settingModalCloseBtn,
+[data-scene="recreation"] [data-section="matchFinished"] [name="settingBtn"] {
   display: none !important;
 }
 
-[data-scene="recreation"] #scoreboard #classificationInput {
+[data-scene="recreation"] #classificationInput {
   pointer-events: none;
   left: 2vw;
   width: 96vw;
@@ -1972,8 +1985,25 @@ h2 .profilePic img {
   background-color: rgba(var(--color-black), 0.9);
 }
 
-/* 設定オープン時の透明度 */
-.settingOpen #setting,
+/* スタンバイセクションでのフルスクリーンボタン - 常に表示 */
+[data-section="standby"] #setting #fullscreenBtn {
+  position: fixed;
+  top: 3vh;
+  right: 3vw;
+  z-index: 200;
+  opacity: 1;
+}
+
+/* viewモードでフルスクリーン時の解除ボタンを透明度0にする（ボタンは機能する） */
+[data-mode="view"] #scoreboard[data-fullscreen="true"] #fullscreenBtn {
+  opacity: 0;
+}
+[data-mode="view"] #scoreboard[data-fullscreen="true"] #fullscreenBtn:hover {
+  opacity: 0.5;
+}
+
+.settingOpen:not([data-section="standby"]) #setting,
+.settingOpen[data-section="standby"] [name="settingBtn"],
 [data-mode="view"] .settingOpen #indexModal {
   display: none;
 }
@@ -2084,7 +2114,7 @@ h2 .profilePic img {
   position: absolute;
   top: 10vh;
   right: 3vw;
-  z-index: 1000;
+  z-index: 52;
   min-width: 150px;
   padding: 1vh 0;
   background-color: rgba(var(--color-black), 0.95);
@@ -2525,7 +2555,7 @@ h2 .profilePic img {
 #penaltyModal {
   position: fixed;
   inset: 0;
-  z-index: 1002;
+  z-index: 102;
   width: 100vw;
   height: 100vh;
   max-width: none;
@@ -2639,7 +2669,7 @@ h2 .profilePic img {
 #timeoutModal {
   position: fixed;
   inset: 0;
-  z-index: 1002;
+  z-index: 54;
   width: 100vw;
   height: 100vh;
   max-width: none;
@@ -2773,7 +2803,7 @@ h2 .profilePic img {
 #confirmModal {
   position: fixed;
   inset: 0;
-  z-index: 1003;
+  z-index: 103;
   width: 100vw;
   height: 100vh;
   max-width: none;
@@ -2861,7 +2891,7 @@ h2 .profilePic img {
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 1003;
+  z-index: 56;
   width: 100vw;
   height: 100vh;
   max-width: none;
@@ -3056,20 +3086,22 @@ h2 .profilePic img {
 #customModal {
   position: fixed;
   inset: 0;
-  z-index: 1002;
+  z-index: 101;
+  display: block;
   width: 100vw;
   height: 100vh;
   max-width: none;
   max-height: none;
   margin: 0;
   padding: 0;
-  background-color: transparent;
+  background-color: rgba(var(--color-black), 0.9);
   border: none;
   box-sizing: border-box;
+  pointer-events: auto; /* 背景クリックを検知できるようにする */
 }
 
-#customModal::backdrop {
-  background-color: rgba(var(--color-black), 0.9);
+#customModal .customModalBox {
+  pointer-events: auto; /* モーダルボックス内はクリック可能 */
 }
 
 .customModalBox {
@@ -3113,7 +3145,7 @@ h2 .profilePic img {
   color: rgb(var(--color-white));
   background-color: transparent;
   border: 0.3vmin solid rgb(var(--color-white));
-  border-radius: 6vmin;
+  border-radius: 10vmin;
   font-size: 5.5vmin;
   font-family: var(--font-family-base);
   text-align: center;
@@ -3236,4 +3268,63 @@ h2 .profilePic img {
   font-size: 1.8vmin;
   line-height: 1.4;
   text-align: left;
+}
+
+
+
+/* ========================================
+   スマホの縦画面時の調整
+   ======================================== */
+
+@media screen and (max-width: 800px) and (orientation: portrait) {
+  #ends {
+    top: 1vh;
+    display: inline-block;
+    height: 6.5vh;
+  }
+
+  #endsBox {
+    padding: 0 3vw;
+  }
+  
+  #scoreboard main h2 {
+    height: 7vh;
+    margin: 8vh 0 0;
+  }
+
+  .score,
+  .time {
+    height: 28vh;
+  }
+
+  .ball {
+    flex-wrap: wrap;
+    margin-top: 1vh;
+  }
+
+  .ball li button {
+    max-width: 48px;
+    max-height: 48px;
+    width: 9vw;
+    height: 9vw;
+  }
+
+  #fullscreenBtn,
+  .resetBtn,
+  .customBtn {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  #scoreboard .primaryBtn {
+    min-width: 40vw;
+    padding: 2.5vh 8vw;
+    border-width: 3px;
+    font-size: 6vmin;
+  }
+
+  #timeSetting {
+    top: 55vh;
+    height: 20vh;
+  }
 }

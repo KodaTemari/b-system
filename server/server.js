@@ -98,5 +98,7 @@ app.put('/api/game/:eventId/court/:courtId', async (req, res) => {
 // サーバー起動
 app.listen(PORT, () => {
   const localIP = getLocalIPAddress();
+  console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Server running on http://${localIP}:${PORT}`);
+  console.log(`IP: ${localIP}:${PORT}`);
 });

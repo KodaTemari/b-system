@@ -30,7 +30,7 @@
     "scores": [],
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 240000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -43,7 +43,7 @@
     "scores": [],
     "ball": 6,
     "isRunning": false,
-    "time": 300000,
+    "time": 240000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
@@ -52,6 +52,6 @@
     "redCard": 0
   },
   "courtId": "",
-  "scene": "general",
-  "lastUpdated": "2026-01-12T14:28:48.891Z"
+  "scene": "recreation",
+  "lastUpdated": "2026-01-13T12:32:22.984Z"
 }

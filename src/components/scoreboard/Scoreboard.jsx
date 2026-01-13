@@ -12,6 +12,7 @@ import TimeoutModal from './ui/TimeoutModal';
 import TimeoutTimerModal from './ui/TimeoutTimerModal';
 import ConfirmModal from './ui/ConfirmModal';
 import ResultTable from './ui/ResultTable';
+import CustomModal from './ui/CustomModal';
 import './Scoreboard.css';
 
 /**
@@ -94,16 +95,115 @@ const Scoreboard = () => {
 
   // Tracks pending changes in the settings modal
   const [settingPendingChanges, setSettingPendingChanges] = useState({});
+  
+  // フルスクリーン状態を管理
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // Fullscreen APIがサポートされているかを判定
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(false);
+  
+  // Fullscreen APIのサポートをチェック
+  useEffect(() => {
+    const docEl = document.documentElement;
+    const isSupported = !!(
+      docEl.requestFullscreen ||
+      docEl.webkitRequestFullscreen ||
+      docEl.mozRequestFullScreen ||
+      docEl.msRequestFullscreen
+    );
+    setIsFullscreenSupported(isSupported);
+  }, []);
+
+  // フルスクリーン状態を検知する関数
+  const checkFullscreenState = useCallback(() => {
+    // Fullscreen APIによるフルスクリーン（各ブラウザのプレフィックス対応）
+    const isFullscreenAPI = !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    );
+    // F11による全画面表示（おおよその判定、デスクトップのみ）
+    const isF11Fullscreen = window.innerHeight === screen.height && window.innerWidth === screen.width;
+    
+    setIsFullscreen(isFullscreenAPI || isF11Fullscreen);
+  }, []);
+
+  // フルスクリーン状態の監視
+  useEffect(() => {
+    checkFullscreenState();
+    
+    // Fullscreen APIの変更を監視
+    const handleFullscreenChange = () => {
+      checkFullscreenState();
+    };
+    
+    // F11による全画面表示の変更を監視（リサイズイベントで検知）
+    const handleResize = () => {
+      checkFullscreenState();
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [checkFullscreenState]);
 
   const handleFullscreenToggle = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.warn('フルスクリーンに移行できませんでした', err);
-      });
+    const docEl = document.documentElement;
+    
+    // フルスクリーン状態を判定（各ブラウザのプレフィックス対応）
+    const isFullscreen = !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    );
+    
+    if (!isFullscreen) {
+      // フルスクリーンでない場合、フルスクリーンにする
+      // 各ブラウザのプレフィックスに対応
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch((err) => {
+          console.warn('フルスクリーンに移行できませんでした', err);
+        });
+      } else if (docEl.webkitRequestFullscreen) {
+        // Safari (デスクトップ)
+        docEl.webkitRequestFullscreen();
+      } else if (docEl.webkitEnterFullscreen) {
+        // iOS Safari (video要素のみ、通常は使用不可)
+        docEl.webkitEnterFullscreen();
+      } else if (docEl.mozRequestFullScreen) {
+        // Firefox
+        docEl.mozRequestFullScreen();
+      } else if (docEl.msRequestFullscreen) {
+        // IE/Edge (旧版)
+        docEl.msRequestFullscreen();
+      } else {
+        console.warn('フルスクリーンAPIがサポートされていません');
+      }
     } else {
-      document.exitFullscreen().catch((err) => {
-        console.warn('フルスクリーンを終了できませんでした', err);
-      });
+      // フルスクリーン中の場合、フルスクリーンを解除する
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.warn('フルスクリーンを終了できませんでした', err);
+        });
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
     }
   }, []);
 
@@ -138,12 +238,10 @@ const Scoreboard = () => {
 
   const handleSettingModalOpen = () => {
     setSettingOpen(true);
-    document.getElementById('settingModal').showModal();
   };
 
   const handleSettingModalClose = () => {
     setSettingOpen(false);
-    document.getElementById('settingModal').close();
   };
 
   const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
@@ -158,6 +256,23 @@ const Scoreboard = () => {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [pendingPenalty, setPendingPenalty] = useState(null); // { teamColor, penaltyId }
   const [pendingReset, setPendingReset] = useState(false);
+  const [customModalOpen, setCustomModalOpen] = useState(false);
+  
+  // 初回訪問時にcustomModalを開いた状態にする
+  useEffect(() => {
+    if (!isCtrl || isLoading) return;
+    const hasSeenCustomModal = localStorage.getItem('hasSeenCustomModal');
+    if (!hasSeenCustomModal && section === 'standby' && !customModalOpen) {
+      setCustomModalOpen(true);
+    }
+  }, [isCtrl, isLoading, section]);
+  
+  // customModalの状態が変わったときにlocalStorageに保存
+  useEffect(() => {
+    if (!customModalOpen) {
+      localStorage.setItem('hasSeenCustomModal', 'true');
+    }
+  }, [customModalOpen]);
 
   const isPenaltyThrow = gameData?.screen?.isPenaltyThrow || false;
 
@@ -509,10 +624,6 @@ const Scoreboard = () => {
     if (penaltyDialog) {
       penaltyDialog.close();
     }
-    const settingDialog = document.getElementById('settingModal');
-    if (settingDialog) {
-      settingDialog.close();
-    }
     handleSettingModalClose();
   };
 
@@ -741,6 +852,17 @@ const Scoreboard = () => {
   const prevScoresRef = useRef({ red: null, blue: null });
   const prevTieBreaksRef = useRef({ red: null, blue: null });
   const hasProcessedRef = useRef(false);
+  
+  // 初回訪問時にSettingModalを開く
+  useEffect(() => {
+    if (!isCtrl || isLoading) return;
+    
+    const hasSeenCustomModal = localStorage.getItem('hasSeenCustomModal');
+    if (!hasSeenCustomModal && section === 'standby' && !settingOpen) {
+      // 初回訪問でstandbyセクションかつctrlモードの場合、SettingModalを開く
+      handleSettingModalOpen();
+    }
+  }, [isCtrl, isLoading, section, settingOpen]);
 
   useEffect(() => {
     if (section === 'matchFinished' || section === 'resultApproval') {
@@ -834,7 +956,7 @@ const Scoreboard = () => {
 
 
   return (
-    <div id="scoreboard" data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} className={settingOpen ? 'settingOpen' : ''}>
+    <div id="scoreboard" data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} data-fullscreen={isFullscreen ? 'true' : 'false'} className={`${settingOpen ? 'settingOpen' : ''} ${customModalOpen ? 'customModalOpen' : ''}`}>
       <Header
         section={section}
         sectionID={sectionID}
@@ -845,9 +967,11 @@ const Scoreboard = () => {
         onSettingToggle={isCtrl ? handleSettingModalOpen : null}
         onFullscreenToggle={handleFullscreenToggle}
         isCtrl={isCtrl}
+        isFullscreen={isFullscreen}
+        isFullscreenSupported={isFullscreenSupported}
       />
 
-      <main data-active={active}>
+      <main>
         <PlayerInfoPanel
           color="red"
           playerName={redName}
@@ -1018,6 +1142,8 @@ const Scoreboard = () => {
           classParam={classParam}
           genderParam={genderParam}
           onPendingChangesChange={setSettingPendingChanges}
+          isOpen={settingOpen}
+          onCustomModalChange={setCustomModalOpen}
           onUpdateField={(parent, child, value) => {
             if (child) {
               // red.name や blue.name の場合
@@ -1227,10 +1353,6 @@ const Scoreboard = () => {
             // ctrlモードの場合、設定モーダルも閉じる
             if (isCtrl) {
               setSettingOpen(false);
-              const settingDialog = document.getElementById('settingModal');
-              if (settingDialog) {
-                settingDialog.close();
-              }
             }
           }}
         />
@@ -1242,6 +1364,47 @@ const Scoreboard = () => {
           message={getConfirmMessage()}
           onConfirm={handleConfirmOk}
           onCancel={handleConfirmCancel}
+        />
+      )}
+
+      {/* Customization Modal - Scoreboardの直接の子要素として配置 */}
+      {customModalOpen && isCtrl && section === 'standby' && (
+        <CustomModal
+          currentLang={currentLang}
+          scene={gameData?.scene || 'official'}
+          onLanguageChange={(lang) => {
+            // SettingModalのhandleLanguageChangeと同じロジック
+            if (setSearchParams) {
+              setSearchParams(prev => {
+                const newParams = new URLSearchParams(prev);
+                newParams.set('l', lang);
+                return newParams;
+              });
+            }
+            try {
+              localStorage.setItem('scoreboard_language', lang);
+              const channel = new BroadcastChannel('scoreboard_language');
+              channel.postMessage({ language: lang });
+              channel.close();
+              window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+            } catch (error) {
+              console.error('Failed to save language settings:', error);
+            }
+          }}
+          onSceneChange={(sceneId) => {
+            // updateDirectFieldを使ってsceneを更新
+            updateDirectField('scene', sceneId);
+            if (saveData && gameData) {
+              const updatedGameData = {
+                ...gameData,
+                scene: sceneId
+              };
+              saveData(updatedGameData);
+            }
+          }}
+          onClose={() => {
+            setCustomModalOpen(false);
+          }}
         />
       )}
     </div>
