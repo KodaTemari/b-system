@@ -351,6 +351,7 @@ button:disabled {
 [data-section="warmup1"] .setting [name="settingBtn"],
 [data-section="warmup2"] .setting [name="settingBtn"] {
   top: 85vh;
+  top: 85dvh;
   opacity: 0.3;
 }
 
@@ -729,32 +730,38 @@ h2 .profilePic img {
   top: 9vh;
 }
 
-/* Plus/Minus表示条件 */
-[data-active="red-score"] #red .plus,
-[data-active="red-score"] #red .minus,
-[data-active="blue-score"] #blue .plus,
-[data-active="blue-score"] #blue .minus,
-[data-scoreadjust="true"][data-active="red-score"] #red .plus,
-[data-scoreadjust="true"][data-active="red-score"] #red .minus,
-[data-scoreadjust="true"][data-active="blue-score"] #blue .plus,
-[data-scoreadjust="true"][data-active="blue-score"] #blue .minus,
-[data-section="finalShot"] [data-active="red-score"] #red .tieBreak,
-[data-section="finalShot"] [data-active="blue-score"] #blue .tieBreak,
-[data-section="tieBreak"] [data-active="red-score"] #red .tieBreak,
-[data-section="tieBreak"] [data-active="blue-score"] #blue .tieBreak {
+/* Plus/Minus表示条件（通常のエンドのみ） */
+[data-active="red-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #red .plus,
+[data-active="red-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #red .minus,
+[data-active="blue-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #blue .plus,
+[data-active="blue-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #blue .minus,
+[data-scoreadjust="true"][data-active="red-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #red .plus,
+[data-scoreadjust="true"][data-active="red-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #red .minus,
+[data-scoreadjust="true"][data-active="blue-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #blue .plus,
+[data-scoreadjust="true"][data-active="blue-score"]:not([data-section="tieBreak"]):not([data-section="finalShot"]) #blue .minus {
   display: block;
   opacity: 0.8;
 }
 
-[data-section="finalShot"] [data-active="red-score"] #red .plus,
-[data-section="finalShot"] [data-active="red-score"] #red .minus,
-[data-section="finalShot"] [data-active="blue-score"] #blue .plus,
-[data-section="finalShot"] [data-active="blue-score"] #blue .minus,
-[data-section="tieBreak"] [data-active="red-score"] #red .plus,
-[data-section="tieBreak"] [data-active="red-score"] #red .minus,
-[data-section="tieBreak"] [data-active="blue-score"] #blue .plus,
-[data-section="tieBreak"] [data-active="blue-score"] #blue .minus {
-  display: none;
+/* TieBreakボタン表示条件（finalShotとtieBreakセクションのみ） */
+#scoreboard[data-section="finalShot"][data-active="red-score"] #red .score .tieBreak,
+#scoreboard[data-section="finalShot"][data-active="blue-score"] #blue .score .tieBreak,
+#scoreboard[data-section="tieBreak"][data-active="red-score"] #red .score .tieBreak,
+#scoreboard[data-section="tieBreak"][data-active="blue-score"] #blue .score .tieBreak {
+  display: block !important;
+  opacity: 0.8;
+}
+
+/* finalShotとtieBreakセクションでは得点調整ボタンを非表示 */
+#scoreboard[data-section="finalShot"][data-active="red-score"] #red .plus,
+#scoreboard[data-section="finalShot"][data-active="red-score"] #red .minus,
+#scoreboard[data-section="finalShot"][data-active="blue-score"] #blue .plus,
+#scoreboard[data-section="finalShot"][data-active="blue-score"] #blue .minus,
+#scoreboard[data-section="tieBreak"][data-active="red-score"] #red .plus,
+#scoreboard[data-section="tieBreak"][data-active="red-score"] #red .minus,
+#scoreboard[data-section="tieBreak"][data-active="blue-score"] #blue .plus,
+#scoreboard[data-section="tieBreak"][data-active="blue-score"] #blue .minus {
+  display: none !important;
 }
 
 .tieBreak[value="true"] {
@@ -1289,6 +1296,7 @@ h2 .profilePic img {
 /* セクションごとの調整 */
 [data-section="standby"] #sectionNav {
   height: 100vh;
+  height: 100dvh;
 }
 
 /* スタンバイセクション */
@@ -1346,6 +1354,7 @@ h2 .profilePic img {
 [data-section="warmup2"] #secWarmup {
   height: 82vh;
   padding-top: 8vh;
+  background-color: rgb(var(--color-gray-dark));
 }
 
 [data-mode="ctrl"] [data-section="warmup"] #secWarmup,
@@ -3204,7 +3213,6 @@ h2 .profilePic img {
   }
   
   #scoreboard:not([data-section="standby"]) main h2 {
-    height: 7vh;
     margin: 8vh 0 0;
   }
 
@@ -3386,6 +3394,24 @@ h2 .profilePic img {
     top: 55vh;
     height: 20vh;
   }
+
+  [data-section="warmup"] #secWarmup,
+  [data-section="warmup1"] #secWarmup,
+  [data-section="warmup2"] #secWarmup {
+    height: 73dvh;
+  }
+
+  #sectionNav .timer {
+    padding: 2vh 5vw;
+  }
+
+  #scoreboard .confirmModalButtons .primaryBtn {
+    font-size: 4vmin;
+  }
+
+  #sectionNav div .primaryBtn {
+    margin: 5dvh 0;
+  }
 }
 
 @media screen and (max-width: 480px) and (orientation: portrait) {
@@ -3395,14 +3421,31 @@ h2 .profilePic img {
     height: 24vh;
   }
 
-  .timer span {
-    transform: scaleY(1.5);
-  }
-
   [name="redScoreBtn"] span,
   [name="blueScoreBtn"] span {
     display: block;
     transform: scaleY(1.2);
+  }
+  
+  #scoreboard:not([data-section="standby"]) main h2 {
+    height: 7vh;
+  }
+
+  [data-section="standby"] .setting [name="settingBtn"] {
+    top: 80dvh;
+  }
+
+  [data-section="standby"] main h2 {
+    top: 36dvh;
+    height: 10dvh;
+  }
+
+  #setColorBox {
+    padding-top: 9dvh;
+  }
+
+  [name="colorChangeBtn"].isColorSet {
+    margin-top: -12dvh;
   }
 
   .setting [name="settingBtn"], .settingModalCloseBtn {
@@ -3419,6 +3462,10 @@ h2 .profilePic img {
 
   [data-section="standby"] .settingModalCloseBtn {
     top: 75vh;
+  }
+
+  #sectionNav .timer {
+    font-size: 30vmin;
   }
   
 }
