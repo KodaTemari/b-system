@@ -1,5 +1,5 @@
 {
-  "classification": "IND General Male",
+  "classification": "TEAM General",
   "category": "",
   "matchName": "第1回戦",
   "match": {
@@ -15,20 +15,22 @@
       "end1",
       "interval",
       "end2",
+      "interval",
+      "tieBreak",
       "matchFinished"
     ]
   },
   "red": {
     "name": "Red",
-    "limit": 240000,
-    "country": "Azerbaijan",
-    "profilePic": "/img/flags/az.svg"
+    "limit": 300000,
+    "country": "Japan",
+    "profilePic": "/img/flags/jp.svg"
   },
   "blue": {
     "name": "Blue",
-    "limit": 240000,
-    "country": "Armenia",
-    "profilePic": "/img/flags/am.svg"
+    "limit": 300000,
+    "country": "Lao PDR",
+    "profilePic": "/img/flags/la.svg"
   },
   "warmup": {
     "limit": 120000

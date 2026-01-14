@@ -238,7 +238,7 @@ const SectionNavigation = React.memo(({
             role={isCtrl ? undefined : "none"}
             onClick={isCtrl ? onWarmupTimerToggle : undefined}
           >
-            {warmupTimer?.displayTime}
+            <span>{warmupTimer?.displayTime}</span>
           </button>
           {isCtrl && (
             <>
@@ -313,7 +313,7 @@ const SectionNavigation = React.memo(({
             role={isCtrl ? undefined : "none"}
             onClick={isCtrl ? onIntervalTimerToggle : undefined}
           >
-            {intervalTimer?.displayTime}
+            <span>{intervalTimer?.displayTime}</span>
           </button>
           {isCtrl && (
             <>

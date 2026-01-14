@@ -489,10 +489,11 @@ const Scoreboard = () => {
         // Restarted End: Reset end from beginning
         // Get current end number
         const currentEnd = gameData.match?.end || 0;
+        const totalEnds = gameData.match?.totalEnds;
         if (currentEnd > 0) {
           // Reset ball counts
-          const redBalls = calculateBallCount(currentEnd, 'red');
-          const blueBalls = calculateBallCount(currentEnd, 'blue');
+          const redBalls = calculateBallCount(currentEnd, 'red', totalEnds);
+          const blueBalls = calculateBallCount(currentEnd, 'blue', totalEnds);
           updatedTeamData.ball = redBalls;
           updatedOpponentData.ball = blueBalls;
 
@@ -568,10 +569,11 @@ const Scoreboard = () => {
     // Update balls and timer for Restarted End
     if (penaltyId === 'restartedEnd') {
       const currentEnd = gameData.match?.end || 0;
+      const totalEnds = gameData.match?.totalEnds;
       if (currentEnd > 0) {
         // ボール数をリセット
-        const redBalls = calculateBallCount(currentEnd, 'red');
-        const blueBalls = calculateBallCount(currentEnd, 'blue');
+        const redBalls = calculateBallCount(currentEnd, 'red', totalEnds);
+        const blueBalls = calculateBallCount(currentEnd, 'blue', totalEnds);
         handleBallChange('red', redBalls);
         handleBallChange('blue', blueBalls);
 

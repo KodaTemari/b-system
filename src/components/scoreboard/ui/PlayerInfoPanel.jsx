@@ -205,7 +205,7 @@ const PlayerInfoPanel = ({
           name={scoreBtnName}
           onClick={() => handleSelectLocal(color)}
         >
-          {score}
+          <span>{score}</span>
         </button>
         {showAdjust && (
           <>
@@ -248,7 +248,7 @@ const PlayerInfoPanel = ({
           onClick={handleTimerToggle}
           disabled={isRun ? false : (remainingMs <= 0 || dataBall === 0)}
         >
-          {time}
+          <span>{time}</span>
         </button>
       </div>
       <ul className="ball" data-ball={dataBall}>

@@ -5,6 +5,7 @@ import { MatchGeneralSettings, MatchRuleSettings } from './settings/MatchSetting
 import TimerSettings from './settings/TimerSettings';
 import PlayerSettings from './settings/PlayerSettings';
 import SystemSettings from './settings/SystemSettings';
+import { calculateBallCount } from '../../../utils/scoreboard/gameLogic';
 
 /**
  * 設定モーダルコンポーネント
@@ -1199,31 +1200,39 @@ const SettingModal = ({
                   type="button"
                   className="primaryBtn"
                   onClick={() => {
-                    const scoreboard = document.getElementById('scoreboard');
+                    // === 画面遷移の準備 ===
+                    // 1. 黒いオーバーレイで全画面を覆い、既存の要素が見えないようにする
+                    const overlay = document.createElement('div');
+                    overlay.id = 'quickStartOverlay';
+                    Object.assign(overlay.style, {
+                      position: 'fixed',
+                      top: '0',
+                      left: '0',
+                      width: '100vw',
+                      height: '100vh',
+                      backgroundColor: 'rgb(var(--color-black))',
+                      zIndex: '9999',
+                      transition: 'none'
+                    });
+                    document.body.appendChild(overlay);
                     
-                    // 画面全体を一瞬で非表示
+                    // 2. スコアボードを透明にして暗転準備
+                    const scoreboard = document.getElementById('scoreboard');
                     if (scoreboard) {
+                      scoreboard.style.opacity = '0';
                       scoreboard.classList.add('sectionTransition');
                     }
                     
-                    // 50ms後にデータ更新とモーダルを閉じる
+                    // === データ更新とモーダルクローズ ===
                     setTimeout(() => {
                       if (saveData && gameData) {
-                        // handleSaveChanges()のロジックを実行して設定を保存
-                        // Get current values (pending or current gameData)
-                        const currentTotalEnds = pendingChanges['match.totalEnds'] !== undefined
-                          ? pendingChanges['match.totalEnds']
-                          : (gameData?.match?.totalEnds || 4);
-                        const currentWarmup = pendingChanges['match.warmup'] !== undefined
-                          ? pendingChanges['match.warmup']
-                          : (gameData?.match?.warmup || 'simultaneous');
-                        const currentInterval = pendingChanges['match.interval'] !== undefined
-                          ? pendingChanges['match.interval']
-                          : (gameData?.match?.interval || 'enabled');
-                        const currentResultApproval = pendingChanges['match.resultApproval'] !== undefined
-                          ? pendingChanges['match.resultApproval']
-                          : (gameData?.match?.resultApproval || 'enabled');
+                        // 現在の設定値を取得（pendingChangesまたはgameDataから）
+                        const currentTotalEnds = pendingChanges['match.totalEnds'] ?? gameData?.match?.totalEnds ?? 4;
+                        const currentWarmup = pendingChanges['match.warmup'] ?? gameData?.match?.warmup ?? 'simultaneous';
+                        const currentInterval = pendingChanges['match.interval'] ?? gameData?.match?.interval ?? 'enabled';
+                        const currentResultApproval = pendingChanges['match.resultApproval'] ?? gameData?.match?.resultApproval ?? 'enabled';
 
+                        // セクション再計算が必要か判定
                         const shouldRecalculateSections =
                           pendingChanges['match.totalEnds'] !== undefined ||
                           pendingChanges['match.warmup'] !== undefined ||
@@ -1232,47 +1241,34 @@ const SettingModal = ({
 
                         const finalChanges = { ...pendingChanges };
                         if (shouldRecalculateSections) {
-                          const newSections = recalculateSections(
+                          finalChanges['match.sections'] = recalculateSections(
                             currentTotalEnds,
                             currentWarmup,
                             currentInterval,
                             currentResultApproval
                           );
-                          finalChanges['match.sections'] = newSections;
                         }
 
-                        // Update timer limits state if changed
+                        // タイマー制限の更新
                         if (finalChanges['red.limit'] !== undefined) {
-                          const redLimitValue = finalChanges['red.limit'];
-                          currentLimitsRef.current.red = redLimitValue;
-                          setSelectedRedLimit(redLimitValue);
+                          currentLimitsRef.current.red = finalChanges['red.limit'];
+                          setSelectedRedLimit(finalChanges['red.limit']);
                         }
                         if (finalChanges['blue.limit'] !== undefined) {
-                          const blueLimitValue = finalChanges['blue.limit'];
-                          currentLimitsRef.current.blue = blueLimitValue;
-                          setSelectedBlueLimit(blueLimitValue);
+                          currentLimitsRef.current.blue = finalChanges['blue.limit'];
+                          setSelectedBlueLimit(finalChanges['blue.limit']);
                         }
 
+                        // ゲームデータに変更を適用
                         const updatedGameData = { ...gameData };
-
-                        // Apply changes
                         Object.entries(finalChanges).forEach(([key, value]) => {
                           const [parent, child] = key.split('.');
                           if (child) {
-                            // ネストされたプロパティ（red.limit, blue.limit, match.warmupなど）
-                            if (parent === 'match') {
-                              updatedGameData.match = {
-                                ...updatedGameData.match,
-                                [child]: value
-                              };
-                            } else {
-                              updatedGameData[parent] = {
-                                ...updatedGameData[parent],
-                                [child]: value
-                              };
-                            }
+                            updatedGameData[parent] = {
+                              ...updatedGameData[parent],
+                              [child]: value
+                            };
                           } else {
-                            // 直接プロパティ（classification, category, matchNameなど）
                             updatedGameData[parent] = value;
                           }
                         });
@@ -1283,7 +1279,7 @@ const SettingModal = ({
                           isColorSet: true
                         };
                         
-                        // 最初のエンドに移動（ウォームアップをスキップ）
+                        // 第1エンドに移動（ウォームアップをスキップ）
                         const sections = updatedGameData.match?.sections || [];
                         const firstEndSection = sections.find(s => s.startsWith('end'));
                         const firstEndIndex = sections.indexOf(firstEndSection);
@@ -1298,34 +1294,35 @@ const SettingModal = ({
                             end: endNumber
                           };
                           
-                          // ボール数をリセット（エンド開始時のボール数）
-                          const redBalls = endNumber === 1 ? 6 : (endNumber % 2 === 0 ? 5 : 6);
-                          const blueBalls = endNumber === 1 ? 6 : (endNumber % 2 === 1 ? 5 : 6);
+                          // ボール数を設定
+                          const totalEnds = updatedGameData.match?.totalEnds;
+                          const redBalls = calculateBallCount(endNumber, 'red', totalEnds);
+                          const blueBalls = calculateBallCount(endNumber, 'blue', totalEnds);
                           
-                          updatedGameData.red = {
-                            ...updatedGameData.red,
-                            ball: redBalls
-                          };
-                          updatedGameData.blue = {
-                            ...updatedGameData.blue,
-                            ball: blueBalls
-                          };
+                          updatedGameData.red = { ...updatedGameData.red, ball: redBalls };
+                          updatedGameData.blue = { ...updatedGameData.blue, ball: blueBalls };
                         }
                         
-                        // すべての変更を一度に保存
+                        // 変更を保存
                         saveData(updatedGameData);
-
-                      // 保存済みフラグを立てる
-                      savedRef.current = true;
-                    }
+                        savedRef.current = true;
+                      }
                     
-                    // モーダルを閉じる
-                    onClose();
+                      // モーダルを閉じる
+                      onClose();
                       
-                      // 少し待ってからフェードイン
+                      // === 画面遷移の完了 ===
                       setTimeout(() => {
+                        // スコアボードをフェードイン
                         if (scoreboard) {
+                          scoreboard.style.opacity = '';
                           scoreboard.classList.remove('sectionTransition');
+                        }
+                        
+                        // オーバーレイを削除
+                        const overlayElement = document.getElementById('quickStartOverlay');
+                        if (overlayElement) {
+                          overlayElement.remove();
                         }
                       }, 50);
                     }, 50);

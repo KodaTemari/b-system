@@ -265,6 +265,11 @@ button:disabled {
   border-radius: 2vmin;
 }
 
+[data-section="tieBreak"] #ends {
+  width: 9vw;
+  transform: scaleX(0.7);
+}
+
 #endsBox {
   display: flex;
   align-items: center;
@@ -298,9 +303,10 @@ button:disabled {
 
 .setting [name="settingBtn"] {
   top: 62vh;
-  left: 47vw;
+  left: 50%;
   z-index: 100;
   border-radius: 50%;
+  transform: translateX(-50%);
 }
 
 #scoreboard .settingModalCloseBtn {
@@ -320,11 +326,6 @@ button:disabled {
 }
 
 /* セクションごとの設定ボタン位置調整 */
-.next .setting [name="settingBtn"] {
-  top: 25vh;
-  opacity: 0.3;
-}
-
 [data-scoreadjust="true"] .setting [name="settingBtn"] {
   opacity: 0.1;
 }
@@ -1283,7 +1284,7 @@ h2 .profilePic img {
   left: 0;
   width: 100%;
   box-sizing: border-box;
-  background-color: rgb(var(--color-gray-dark));
+  background: linear-gradient(to bottom, transparent 0%, rgb(var(--color-gray-dark)) 50%);
   text-align: center;
 }
 
@@ -1962,15 +1963,11 @@ h2 .profilePic img {
 .settingModalCloseBtn {
   position: absolute;
   top: 62vh;
-  left: calc(47vw - 3px);
+  left: 50%;
   width: 6vw;
   opacity: 1;
   border-radius: 50%;
-}
-
-.settingModalCloseBtn img {
-  position: relative;
-  top: -3px;
+  transform: translateX(-50%);
 }
 
 #fullscreenBtn {
@@ -3079,7 +3076,7 @@ h2 .profilePic img {
   color: rgb(var(--color-white));
   background-color: transparent;
   border: 0.3vmin solid rgb(var(--color-white));
-  border-radius: 10vmin;
+  border-radius: 12vmin;
   font-size: 5.5vmin;
   font-family: var(--font-family-base);
   text-align: center;
@@ -3210,14 +3207,11 @@ h2 .profilePic img {
    ======================================== */
 
 @media screen and (max-width: 800px) and (orientation: portrait) {
-  #ends {
+  #scoreboard #ends {
     top: 1vh;
-    display: inline-block;
+    width: 12vw;
     height: 6.5vh;
-  }
-
-  #endsBox {
-    padding: 0 3vw;
+    transform: scaleX(1);
   }
   
   #scoreboard main h2 {
@@ -3230,9 +3224,25 @@ h2 .profilePic img {
     height: 28vh;
   }
 
+  .timer span {
+    display: block;
+    transform: scaleY(1.3);
+  }
+
   .ball {
     flex-wrap: wrap;
-    margin-top: 1vh;
+    justify-content: flex-start;
+    height: 10vh;
+    margin-top: 2vh;
+  }
+
+  .ball li {
+    width: 10.5vw;
+    margin-bottom: 1vh;
+  }
+
+  .ball li:nth-child(4) {
+    margin-right: 10vw;
   }
 
   .ball li button {
@@ -3244,9 +3254,16 @@ h2 .profilePic img {
 
   #fullscreenBtn,
   .resetBtn,
-  .customBtn {
+  .customBtn,
+  [name="settingBtn"],
+  .settingModalCloseBtn {
     min-width: 48px;
     min-height: 48px;
+  }
+
+  #fullscreenBtn {
+    top: 2vh;
+    right: 2vw;
   }
 
   .languageIcon {
@@ -3254,9 +3271,9 @@ h2 .profilePic img {
     min-height: 32px;
   }
 
-  #fullscreenBtn {
-    top: 2vh;
-    right: 2vw;
+  .setting [name="settingBtn"],
+  .settingModalCloseBtn {
+    top: 47vh;
   }
 
   .customBtn {
@@ -3360,6 +3377,10 @@ h2 .profilePic img {
     width: 30vw;
   }
 
+  [data-scene="recreation"] #standbySetting #detailSettings {
+    width: 87vw;
+  }
+
   #scoreboard .primaryBtn {
     min-width: 40vw;
     padding: 2.5vh 8vw;
@@ -3371,4 +3392,27 @@ h2 .profilePic img {
     top: 55vh;
     height: 20vh;
   }
+}
+
+@media screen and (max-width: 480px) and (orientation: portrait) {
+
+  .score,
+  .time {
+    height: 24vh;
+  }
+
+  .timer span {
+    transform: scaleY(1.5);
+  }
+
+  [name="redScoreBtn"] span,
+  [name="blueScoreBtn"] span {
+    display: block;
+    transform: scaleY(1.4);
+  }
+
+  .setting [name="settingBtn"], .settingModalCloseBtn {
+    top: 42vh;
+  }
+  
 }

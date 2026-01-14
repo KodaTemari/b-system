@@ -461,8 +461,6 @@ export const useScoreboardHandlers = ({
         };
         saveData(updatedGameData);
       }
-      
-      scoreboardElement.classList.add('next');
     }
   }, [isCtrl, saveData, gameData, updateScreenActive, updateScoreAdjusting]);
 
@@ -608,8 +606,9 @@ export const useScoreboardHandlers = ({
       // セクション変更時のリセット処理（すべてのセクション変更時に適用）
       // エンドセクションの場合はボール数をエンド番号に応じて設定
       if (nextSection.startsWith('end')) {
-        const redBalls = calculateBallCount(endNumber, 'red');
-        const blueBalls = calculateBallCount(endNumber, 'blue');
+        const totalEnds = gameData?.match?.totalEnds;
+        const redBalls = calculateBallCount(endNumber, 'red', totalEnds);
+        const blueBalls = calculateBallCount(endNumber, 'blue', totalEnds);
         updateBall('red', redBalls);
         updateBall('blue', blueBalls);
       } else {
@@ -765,8 +764,9 @@ export const useScoreboardHandlers = ({
         
         // エンドセクションの場合、ボール数をエンド番号に応じて設定
         if (nextSection.startsWith('end')) {
-          const redBalls = calculateBallCount(endNumber, 'red');
-          const blueBalls = calculateBallCount(endNumber, 'blue');
+          const totalEnds = gameData?.match?.totalEnds;
+          const redBalls = calculateBallCount(endNumber, 'red', totalEnds);
+          const blueBalls = calculateBallCount(endNumber, 'blue', totalEnds);
           updatedGameData.red = {
             ...gameData.red,
             ball: redBalls,
@@ -924,10 +924,11 @@ export const useScoreboardHandlers = ({
       if (firstEndSection) {
         const firstEndIndex = sections.indexOf(firstEndSection);
         const endNumber = parseInt(firstEndSection.replace('end', ''), 10);
+        const totalEnds = gameData?.match?.totalEnds;
         
         // 最初のエンドのボール数とタイマーを設定
-        const redBalls = calculateBallCount(endNumber, 'red');
-        const blueBalls = calculateBallCount(endNumber, 'blue');
+        const redBalls = calculateBallCount(endNumber, 'red', totalEnds);
+        const blueBalls = calculateBallCount(endNumber, 'blue', totalEnds);
         
         updateBall('red', redBalls);
         updateBall('blue', blueBalls);
@@ -1329,8 +1330,9 @@ export const useScoreboardHandlers = ({
       // セクション変更時のリセット処理（すべてのセクション変更時に適用）
       // エンドセクションの場合、ボール数をエンド番号に応じて設定
       if (section.startsWith('end')) {
-        const redBalls = calculateBallCount(endNumber, 'red');
-        const blueBalls = calculateBallCount(endNumber, 'blue');
+        const totalEnds = gameData?.match?.totalEnds;
+        const redBalls = calculateBallCount(endNumber, 'red', totalEnds);
+        const blueBalls = calculateBallCount(endNumber, 'blue', totalEnds);
         updateBall('red', redBalls);
         updateBall('blue', blueBalls);
       } else {
@@ -1397,8 +1399,9 @@ export const useScoreboardHandlers = ({
       
       // エンドセクションの場合、ボール数をエンド番号に応じて設定
       if (section.startsWith('end')) {
-        const redBalls = calculateBallCount(endNumber, 'red');
-        const blueBalls = calculateBallCount(endNumber, 'blue');
+        const totalEnds = gameData?.match?.totalEnds;
+        const redBalls = calculateBallCount(endNumber, 'red', totalEnds);
+        const blueBalls = calculateBallCount(endNumber, 'blue', totalEnds);
         updatedGameData.red = {
           ...gameData.red,
           ball: redBalls,

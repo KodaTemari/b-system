@@ -44,9 +44,16 @@ export const getEndsBoxText = (sectionName) => {
  * ボール数を計算（エンド番号に基づく）
  * @param {number} endNumber - エンド番号
  * @param {string} color - 色（'red' または 'blue'）
+ * @param {number} totalEnds - 総エンド数（オプション）
  * @returns {number} ボール数
  */
-export const calculateBallCount = (endNumber, color) => {
+export const calculateBallCount = (endNumber, color, totalEnds) => {
+  // 最終エンドが奇数の場合、両チーム6球ずつ（公平のため）
+  if (totalEnds && endNumber === totalEnds && totalEnds % 2 === 1) {
+    return 6;
+  }
+  
+  // 通常のルール
   if (color === 'red') {
     return endNumber % 2 === 1 ? 7 : 6;
   } else if (color === 'blue') {
