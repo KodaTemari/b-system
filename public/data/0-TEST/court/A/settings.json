@@ -1,5 +1,5 @@
 {
-  "classification": "TEAM General",
+  "classification": "IND General Male",
   "category": "",
   "matchName": "第1回戦",
   "match": {
@@ -22,13 +22,13 @@
   },
   "red": {
     "name": "Red",
-    "limit": 300000,
+    "limit": 240000,
     "country": "Japan",
     "profilePic": "/img/flags/jp.svg"
   },
   "blue": {
     "name": "Blue",
-    "limit": 300000,
+    "limit": 240000,
     "country": "Lao PDR",
     "profilePic": "/img/flags/la.svg"
   },

@@ -1150,7 +1150,10 @@ const SettingModal = ({
 
         {/* Standby Section Inputs */}
         {section === 'standby' && (
-          <div id="standbySetting">
+          <div 
+            id="standbySetting" 
+            className={selectedClassId && filteredClassificationOptions.find(opt => opt.value === selectedClassId)?.hasGender ? 'hasGender' : ''}
+          >
             <MatchGeneralSettings
               classificationOptions={filteredClassificationOptions}
               selectedClassId={selectedClassId}

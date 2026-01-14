@@ -29,7 +29,7 @@ export const MatchGeneralSettings = ({
       </select>
       <select
         id="genderInput"
-        className="settingSelect"
+        className="settingSelect genderSelect"
         value={selectedGender}
         onChange={(e) => handleGenderChange(e.target.value)}
         disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}

@@ -101,7 +101,14 @@ const PlayerInfoPanel = ({
 
   const handleBallClick = (ballValue) => {
     if (onBallChange) {
-      onBallChange(ballValue);
+      // 現在のボール数と比較して挙動を変更
+      if (ballValue > dataBall) {
+        // 投球済みボール（透明度0.1）を押した場合：そのボール数まで復活
+        onBallChange(ballValue);
+      } else {
+        // 残っているボール（透明度1）を押した場合：そのボール数-1
+        onBallChange(ballValue - 1);
+      }
     }
   };
 
@@ -252,7 +259,6 @@ const PlayerInfoPanel = ({
         </button>
       </div>
       <ul className="ball" data-ball={dataBall}>
-        <li><button type="button" name={ballButtonName} value="0" aria-label='0' onClick={() => handleBallClick(0)}></button></li>
         <li><button type="button" name={ballButtonName} value="1" aria-label='1' onClick={() => handleBallClick(1)}></button></li>
         <li><button type="button" name={ballButtonName} value="2" aria-label='2' onClick={() => handleBallClick(2)}></button></li>
         <li><button type="button" name={ballButtonName} value="3" aria-label='3' onClick={() => handleBallClick(3)}></button></li>
