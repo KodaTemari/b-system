@@ -752,10 +752,8 @@ const SettingModal = ({
   // Load class definitions and tournament settings
   useEffect(() => {
     const loadClassifications = async () => {
-      if (!id) return;
-
       try {
-        // Load classDefinitions.json
+        // Load classDefinitions.json（スタンドアロンモードでも読み込む）
         const classDefUrl = `/data/classDefinitions.json`;
         const classDefResponse = await fetch(classDefUrl);
         let classDefinitions = {};
@@ -770,22 +768,22 @@ const SettingModal = ({
           console.error(`Failed to load classDefinitions.json: ${classDefResponse.status} ${classDefResponse.statusText}`);
         }
 
-        // Load init.json
-        const initUrl = `/data/${id}/init.json`;
-        const initResponse = await fetch(initUrl);
+        // Load init.json（スタンドアロンモードではスキップ）
         let tournamentClassifications = [];
-        if (initResponse.ok) {
-          try {
-            const initData = await initResponse.json();
-            tournamentClassifications = initData.classifications || [];
-          } catch (error) {
-            console.error(`Failed to parse init.json:`, error);
+        if (id) {
+          const initUrl = `/data/${id}/init.json`;
+          const initResponse = await fetch(initUrl);
+          if (initResponse.ok) {
+            try {
+              const initData = await initResponse.json();
+              tournamentClassifications = initData.classifications || [];
+            } catch (error) {
+              console.error(`Failed to parse init.json:`, error);
+            }
+          } else {
+            console.error(`Failed to load init.json: ${initResponse.status} ${initResponse.statusText}`);
           }
-        } else {
-          console.error(`Failed to load init.json: ${initResponse.status} ${initResponse.statusText}`);
         }
-
-        const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];
 
         const classOrder = [
           'BC1', 'BC2', 'BC3', 'BC4',
@@ -795,7 +793,16 @@ const SettingModal = ({
           'Recreation'
         ];
 
-        const sortedClassIds = classOrder.filter(id => uniqueClassIds.includes(id));
+        // スタンドアロンモードの場合は全てのクラスを表示、大会モードの場合はinit.jsonで定義されたクラスのみ
+        let sortedClassIds;
+        if (!id) {
+          // スタンドアロンモード：classOrder内の全クラスを表示
+          sortedClassIds = classOrder.filter(classId => classDefinitions[classId]);
+        } else {
+          // 大会モード：init.jsonで定義されたクラスのみ
+          const uniqueClassIds = [...new Set(tournamentClassifications.map(tc => tc.id))];
+          sortedClassIds = classOrder.filter(id => uniqueClassIds.includes(id));
+        }
 
         const options = sortedClassIds.map(classId => {
           const classDef = classDefinitions[classId];

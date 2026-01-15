@@ -10,8 +10,41 @@ export const useDataSync = (id, cls, court, isCtrl) => {
   const [error, setError] = useState(null);
   const [localData, setLocalData] = useState(null);
   
+  // スタンドアロンモード判定（id, courtがない場合）
+  const isStandaloneMode = !id || !court;
+  
 
   const loadGameData = useCallback(async () => {
+    // スタンドアロンモードの場合は、サーバーからの読み込みをスキップ
+    if (isStandaloneMode) {
+      setIsLoading(true);
+      setError(null);
+      
+      // デフォルトデータを生成
+      const defaultData = JSON.parse(JSON.stringify(DEFAULT_GAME_DATA));
+      setLocalData(defaultData);
+      
+      // LocalStorageキーをスタンドアロン用に設定
+      const standaloneKey = 'scoreboard_standalone_data';
+      const storedData = localStorage.getItem(standaloneKey);
+      
+      if (storedData) {
+        try {
+          const parsedData = JSON.parse(storedData);
+          setLocalData(parsedData);
+        } catch (err) {
+          console.error('LocalStorage読み込みエラー:', err);
+          localStorage.setItem(standaloneKey, JSON.stringify(defaultData));
+        }
+      } else {
+        localStorage.setItem(standaloneKey, JSON.stringify(defaultData));
+      }
+      
+      setIsLoading(false);
+      return;
+    }
+
+    // 大会モードの場合は通常通りサーバーから読み込み
     if (!id || !court) return;
 
     setIsLoading(true);
@@ -135,11 +168,12 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     } finally {
       setIsLoading(false);
     }
-  }, [id, court]);
+  }, [id, court, isStandaloneMode]);
 
   // データを保存（設定と進行を分離して保存）
   const saveToGameJson = useCallback(async (data) => {
-    if (!id || !court || !data) return;
+    // スタンドアロンモードの場合は、サーバー保存をスキップ
+    if (isStandaloneMode || !id || !court || !data) return;
 
     try {
       // 1. 設定データ (settings.json)
@@ -230,12 +264,17 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     } catch (error) {
       console.error('保存エラー:', error);
     }
-  }, [id, court]);
+  }, [id, court, isStandaloneMode]);
 
 
   // Local Storageからデータを取得
   const loadFromLocalStorage = useCallback(() => {
-    const storedData = localStorage.getItem(`scoreboard_${id}_${court}_data`);
+    // スタンドアロンモードと大会モードでキーを分ける
+    const storageKey = isStandaloneMode 
+      ? 'scoreboard_standalone_data'
+      : `scoreboard_${id}_${court}_data`;
+    
+    const storedData = localStorage.getItem(storageKey);
     if (storedData) {
       try {
         setLocalData(JSON.parse(storedData));
@@ -244,11 +283,15 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         setError('データの読み込みに失敗しました');
       }
     }
-  }, [id, court]);
+  }, [id, court, isStandaloneMode]);
 
   // データをLocal Storageに保存
   const saveToLocalStorage = useCallback((data) => {
-    const key = `scoreboard_${id}_${court}_data`;
+    // スタンドアロンモードと大会モードでキーを分ける
+    const key = isStandaloneMode 
+      ? 'scoreboard_standalone_data'
+      : `scoreboard_${id}_${court}_data`;
+    
     localStorage.setItem(key, JSON.stringify(data));
     setLocalData(data);
     
@@ -256,7 +299,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     window.dispatchEvent(new CustomEvent('scoreboardDataUpdate', {
       detail: { key, data }
     }));
-  }, [id, court]);
+  }, [id, court, isStandaloneMode]);
 
   // データをLocal Storageとgame.jsonの両方に保存
   const saveData = useCallback(async (data) => {
@@ -293,8 +336,13 @@ export const useDataSync = (id, cls, court, isCtrl) => {
 
   // Local Storageの変更を監視
   useEffect(() => {
+    // スタンドアロンモードと大会モードでキーを分ける
+    const storageKey = isStandaloneMode 
+      ? 'scoreboard_standalone_data'
+      : `scoreboard_${id}_${court}_data`;
+    
     const handleStorageChange = (e) => {
-      if (e.key === `scoreboard_${id}_${court}_data` && e.newValue) {
+      if (e.key === storageKey && e.newValue) {
         try {
           const newData = JSON.parse(e.newValue);
           setLocalData(newData);
@@ -305,7 +353,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     };
 
     const handleCustomEvent = (e) => {
-      if (e.detail.key === `scoreboard_${id}_${court}_data`) {
+      if (e.detail.key === storageKey) {
         setLocalData(e.detail.data);
       }
     };
@@ -317,14 +365,18 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('scoreboardDataUpdate', handleCustomEvent);
     };
-  }, [id, court]);
+  }, [id, court, isStandaloneMode]);
 
   // 初期データ読み込み
   useEffect(() => {
-    if (isCtrl) {
+    if (isStandaloneMode) {
+      // スタンドアロンモードは常にloadGameData()を呼ぶ（LocalStorageから読み込む）
+      loadGameData();
+    } else if (isCtrl) {
+      // 大会モードのctrlは常にサーバーから読み込み
       loadGameData();
     } else {
-      // まずLocal Storageを確認し、データがない場合はJSONファイルから読み込み
+      // 大会モードのviewはLocalStorageを優先
       const storedData = localStorage.getItem(`scoreboard_${id}_${court}_data`);
       if (storedData) {
         loadFromLocalStorage();
@@ -332,7 +384,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         loadGameData();
       }
     }
-  }, [loadGameData, loadFromLocalStorage, isCtrl, id, court]);
+  }, [loadGameData, loadFromLocalStorage, isCtrl, id, court, isStandaloneMode]);
 
   return {
     localData,

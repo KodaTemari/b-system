@@ -8,11 +8,20 @@ const App = () => {
     return (
         <BrowserRouter>
             <Routes>
+                {/* 大会モード（サーバー連携） */}
                 <Route path="/event/:id/court/:court/scoreboard" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <Scoreboard />
                     </Suspense>
-                } /> 
+                } />
+                
+                {/* スタンドアロンモード（ローカルのみ） */}
+                <Route path="/scoreboard" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <Scoreboard />
+                    </Suspense>
+                } />
+                
                 <Route path="*" element={<h1>Not Found Page</h1>} />
             </Routes>
         </BrowserRouter>

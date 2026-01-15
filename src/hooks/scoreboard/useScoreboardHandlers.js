@@ -1189,7 +1189,8 @@ export const useScoreboardHandlers = ({
 
   // リセットハンドラー（試合をやりなおすためのリセット）
   const handleReset = useCallback(async () => {
-    if (!id || !court || !saveData || !gameData) return;
+    // スタンドアロンモードでも動作するように、saveDataとgameDataのみチェック
+    if (!saveData || !gameData) return;
     
     try {
       // 現在のgameDataから設定項目のみを抽出（状態は含めない）

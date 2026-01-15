@@ -1,12 +1,10 @@
 {
   "matchID": "",
   "match": {
-    "end": 1,
-    "ends": [
-      { "end": 1, "shots": [ "B" ], "redScore": 0, "blueScore": 0 }
-    ],
-    "sectionID": 2,
-    "section": "end1",
+    "end": 0,
+    "ends": [],
+    "sectionID": 0,
+    "section": "standby",
     "approvals": {
       "red": false,
       "referee": false,
@@ -19,7 +17,6 @@
     "isScoreAdjusting": false,
     "isPenaltyThrow": false
   },
-  "scene": "official",
   "warmup": {
     "time": 120000,
     "isRunning": false
@@ -30,32 +27,31 @@
   },
   "red": {
     "score": 0,
-    "ball": 7,
+    "scores": [],
+    "ball": 6,
     "isRunning": false,
     "time": 270000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
-    "affiliation": "",
-    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
   },
   "blue": {
     "score": 0,
-    "ball": 5,
+    "scores": [],
+    "ball": 6,
     "isRunning": false,
-    "time": 269486,
+    "time": 270000,
     "isTieBreak": false,
     "result": "",
     "playerID": "",
-    "affiliation": "",
-    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
   },
   "courtId": "",
-  "lastUpdated": "2026-01-15T10:22:50.008Z"
+  "scene": "official",
+  "lastUpdated": "2026-01-15T11:17:57.376Z"
 }
