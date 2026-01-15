@@ -110,24 +110,11 @@ const ResultTable = ({ ends = [] }) => {
       {penaltyLegend.length > 0 && (
         <div id="resultTableFooter">
           <div className="penaltyLegend">
-            <div className="penaltyGroup red">
-              {penaltyLegend
-                .filter(p => p.color === 'red')
-                .map((p, i) => (
-                  <div key={i} className="legendItem">
-                    *{p.index} {getLocalizedText('match.end', currentLang)}{p.end} / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
-                  </div>
-                ))}
-            </div>
-            <div className="penaltyGroup blue">
-              {penaltyLegend
-                .filter(p => p.color === 'blue')
-                .map((p, i) => (
-                  <div key={i} className="legendItem">
-                    *{p.index} {getLocalizedText('match.end', currentLang)}{p.end} / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
-                  </div>
-                ))}
-            </div>
+            {penaltyLegend.map((p, i) => (
+              <div key={i} className="legendItem">
+                *{p.index} {getLocalizedText('match.end', currentLang)}{p.end} / {p.colorName} / {getLocalizedText(`penalties.${p.penaltyId}`, currentLang) || p.penaltyId}
+              </div>
+            ))}
           </div>
         </div>
       )}

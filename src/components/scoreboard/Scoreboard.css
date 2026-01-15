@@ -559,7 +559,8 @@ button:disabled {
 
 /* テーブルフッター */
 #resultTableFooter {
-  margin-top: 2vh;
+  max-width: 96vw;
+  margin: 2vh 2vw 0;
   padding: 1vh;
   color: rgb(var(--color-white));
   background-color: rgba(var(--color-black), 0.5);
@@ -569,28 +570,17 @@ button:disabled {
 
 .penaltyLegend {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   width: 100%;
   gap: 1.5vw;
 }
 
-.penaltyGroup {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.5vh;
-}
-
-.penaltyGroup.red {
-  text-align: left;
-}
-
-.penaltyGroup.blue {
-  text-align: right;
-}
-
 .legendItem {
-  white-space: nowrap;
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+  font-size: var(--font-size-3s);
+  text-align: left;
+  box-sizing: border-box;
 }
 
 /* ========================================
@@ -919,7 +909,7 @@ h2 .profilePic img {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding-top: 8vh;
+  padding-top: 5vh;
 }
 
 #resultApproval .approvalButtons {
@@ -927,6 +917,10 @@ h2 .profilePic img {
   align-items: center;
   justify-content: space-evenly;
   width: 100%;
+}
+
+#resultTableContainer + #resultApproval {
+  padding-top: 3vh;
 }
 
 #resultApproval .approvalButtons .btn.approval {
@@ -1035,8 +1029,9 @@ h2 .profilePic img {
   justify-content: center;
   width: 100%;
   height: 17vh;
+  height: 17dvh;
   color: rgb(var(--color-white));
-  background-color: rgb(var(--color-gray-darker));
+  background-color: rgb(var(--color-gray-dark));
   font-size: var(--font-size-l);
   font-weight: bold;
 }
@@ -1163,6 +1158,7 @@ h2 .profilePic img {
   justify-content: space-around;
   width: 100%;
   height: 17vh;
+  height: 17dvh;
   margin: 0 auto;
 }
 
@@ -1816,7 +1812,7 @@ h2 .profilePic img {
   display: none !important;
 }
 
-[data-scene="recreation"] #classificationInput {
+[data-scene="recreation"] #standbySetting  #classificationInput {
   pointer-events: none;
   left: 2vw;
   width: 96vw;
@@ -3115,26 +3111,94 @@ h2 .profilePic img {
 
 @media screen and (max-width: 800px) and (orientation: portrait) {
 
+  /* ========================================
+     ヘッダー・エンド表示
+     ======================================== */
+
   #scoreboard #ends {
     top: 1vh;
     width: 12vw;
     height: 6.5vh;
     transform: scaleX(1);
   }
-  
+
+  /* ========================================
+     設定ボタン・共通ボタン
+     ======================================== */
+
+  #fullscreenBtn,
+  .resetBtn,
+  .customBtn,
+  [name="settingBtn"],
+  .settingModalCloseBtn {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  #fullscreenBtn {
+    top: 2vh;
+    right: 2vw;
+  }
+
+  .customBtn {
+    top: 2vh;
+    left: 2vw;
+  }
+
+  .setting [name="settingBtn"] {
+    top: 47vh;
+  }
+
+  [data-section="interval"] .setting [name="settingBtn"] {
+    top: 50dvh;
+  }
+
+  [data-section="resultApproval"] .setting [name="settingBtn"]{
+    top: 70dvh;
+  }
+
+  .languageIcon {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  /* ========================================
+     プレイヤー名・スコア・タイマー
+     ======================================== */
+
   #scoreboard:not([data-section="standby"]) main h2 {
     margin: 8dvh 0 0;
   }
 
   .score,
   .time {
-    height: 28vh;
+    height: 25dvh;
   }
 
   .timer span {
     display: block;
     transform: scaleY(1.3);
   }
+
+  /* ========================================
+     結果承認セクション
+     ======================================== */
+
+  #resultApproval {
+    padding-top: 3dvh;
+  }
+
+  /* ========================================
+     結果テーブル
+     ======================================== */
+
+  #resultTable {
+    top: 26dvh;
+  }
+
+  /* ========================================
+     ボールマーカー
+     ======================================== */
 
   .ball {
     flex-wrap: wrap;
@@ -3155,91 +3219,35 @@ h2 .profilePic img {
     height: 9vw;
   }
 
-  #fullscreenBtn,
-  .resetBtn,
-  .customBtn,
-  [name="settingBtn"],
-  .settingModalCloseBtn {
-    min-width: 48px;
-    min-height: 48px;
+  /* ========================================
+     セクションナビゲーション
+     ======================================== */
+
+  [data-section^="warmup"] #secWarmup {
+    height: 73dvh;
   }
 
-  #fullscreenBtn {
-    top: 2vh;
-    right: 2vw;
+  #sectionNav .timer {
+    font-size: 23vmin;
   }
 
-  .languageIcon {
-    min-width: 32px;
-    min-height: 32px;
+  [data-section="interval"] #sectionNav [name="intervalTimerBtn"] {
+    font-size: min(35vmin, 170px);
   }
 
-  .setting [name="settingBtn"] {
-    top: 47vh;
+  #secInterval {
+    height: 45dvh;
   }
 
-  .customBtn {
-    top: 2vh;
-    left: 2vw;
+  #sectionNav div .primaryBtn {
+    margin: 5dvh 0;
   }
 
-  .customModalBox {
-    width: 98vw;
-  }
+  /* ========================================
+     設定モーダル
+     ======================================== */
 
-  .radioButton {
-    border-width: 2px;
-  }
-
-  .languageGroup .radioButton {
-    min-width: inherit;
-    padding: 1vh 2vw;
-    border-radius: 2vmin;
-  }
-
-  #sceneSetting .radioButtonGroup {
-    flex-wrap: wrap;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  #sceneSetting .radioButton {
-    position: relative;
-    max-width: inherit;
-    display: block;
-    width: 80vw;
-    text-align: left;
-  }
-
-  #sceneSetting .radioButtonImgBox {
-    position: absolute;
-    top: 1vh;
-    left: 1vw;
-    width: 15vw;
-    height: 15vw;
-    max-width: 64px;
-    max-height: 64px;
-  }
-
-  .customModalBox {
-    top: 9vh;
-  }
-
-  #customModal h2 {
-    font-size: min(5vmin, 20px);
-  }
-
-  #sceneSetting .radioButton h3 {
-    margin-bottom: 1vh;
-    padding-left: 16vw;
-    font-size: min(5vmin, 20px);
-  }
-
-  #sceneSetting .radioButtonDesc {
-    padding-left: 16vw;
-    font-size: var(--font-size-2s);
-  }
-
+  /* スタンバイ設定 */
   #standbySetting #classificationInput {
     top: 3vh;
     left: 20vw;
@@ -3288,34 +3296,7 @@ h2 .profilePic img {
     width: 87vw;
   }
 
-  #scoreboard .primaryBtn {
-    min-width: 40vw;
-    padding: 2vh 8vw;
-    border-width: 3px;
-    font-size: 6vmin;
-  }
-
-  #timeSetting {
-    top: 56dvh;
-    height: 30dvh;
-  }
-
-  [data-section^="warmup"] #secWarmup {
-    height: 73dvh;
-  }
-
-  #sectionNav .timer {
-    font-size: 23vmin;
-  }
-
-  #scoreboard .confirmModalButtons .primaryBtn {
-    font-size: var(--font-size-m);
-  }
-
-  #sectionNav div .primaryBtn {
-    margin: 5dvh 0;
-  }
-
+  /* ペナルティ・タイムアウト設定 */
   #penaltyTimeoutSetting {
     top: 28dvh;
   }
@@ -3331,7 +3312,42 @@ h2 .profilePic img {
     font-size: max(3vmin, 16px);
   }
 
-  /* ステップバーを横スクロール可能にする */
+  #penaltyModal .penaltyModalTitle,
+  #timeoutModal .timeoutModalTitle {
+    margin-bottom: 2vh;
+  }
+
+  #penaltyModal .penaltyItem,
+  #timeoutModal .timeoutItem {
+    padding: 2vh 2vw;
+  }
+
+  .penaltyList,
+  .timeoutList {
+    gap: 5vmin;
+  }
+
+  #penaltyThrowLabel {
+    height: 24dvh;
+    font-size: var(--font-size-2l);
+  }
+
+  /* タイマー設定 */
+  #timeSetting {
+    top: 56dvh;
+    height: 30dvh;
+  }
+
+  [data-section^="warmup"] #timeSetting .warmupTimer {
+    margin-top: 5dvh;
+    height: 32vw;
+  }
+
+  [data-section="interval"] #timeSetting .intervalTimer {
+    height: 30vw;
+  }
+
+  /* ステップバー */
   #endsSetting {
     overflow-x: auto;
     overflow-y: hidden;
@@ -3344,61 +3360,106 @@ h2 .profilePic img {
     flex-shrink: 0;
   }
 
-  [data-section^="warmup"] #timeSetting .warmupTimer {
-    margin-top: 5dvh;
-    height: 32vw;
+  /* ========================================
+     確認モーダル
+     ======================================== */
+
+  #scoreboard .confirmModalButtons .primaryBtn {
+    font-size: var(--font-size-m);
   }
 
-  [data-section="interval"] .setting [name="settingBtn"] {
-    top: 50dvh;
+  /* ========================================
+     カスタムモーダル
+     ======================================== */
+
+  .customModalBox {
+    top: 9vh;
+    width: 98vw;
   }
 
-  [data-section="interval"] #timeSetting .intervalTimer {
-    height: 30vw;
+  #customModal h2 {
+    font-size: min(5vmin, 20px);
   }
 
-  [data-section="interval"] #sectionNav [name="intervalTimerBtn"] {
-    font-size: min(35vmin, 170px);
+  .radioButton {
+    border-width: 2px;
   }
 
-  #secInterval {
-    height: 45dvh;
+  .languageGroup .radioButton {
+    min-width: inherit;
+    padding: 1vh 2vw;
+    border-radius: 2vmin;
   }
 
-  #resultTable {
-    top: 26dvh;
+  #sceneSetting .radioButtonGroup {
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
   }
 
-  #resultApproval {
-    padding-top: 3dvh;
+  #sceneSetting .radioButton {
+    position: relative;
+    max-width: inherit;
+    display: block;
+    width: 80vw;
+    text-align: left;
   }
- 
-  [data-section="resultApproval"] .setting [name="settingBtn"]{
-    top: 70dvh;
+
+  #sceneSetting .radioButtonImgBox {
+    position: absolute;
+    top: 1vh;
+    left: 1vw;
+    width: 15vw;
+    height: 15vw;
+    max-width: 64px;
+    max-height: 64px;
+  }
+
+  #sceneSetting .radioButton h3 {
+    margin-bottom: 1vh;
+    padding-left: 16vw;
+    font-size: min(5vmin, 20px);
+  }
+
+  #sceneSetting .radioButtonDesc {
+    padding-left: 16vw;
+    font-size: var(--font-size-2s);
+  }
+
+  /* ========================================
+     共通ボタンスタイル
+     ======================================== */
+
+  #scoreboard .primaryBtn {
+    min-width: 40vw;
+    padding: 2vh 8vw;
+    border-width: 3px;
+    font-size: 6vmin;
   }
 
 }
 
 @media screen and (max-width: 480px) and (orientation: portrait) {
 
-  .score,
-  .time {
-    height: 26dvh;
-  }
+  /* ========================================
+     設定ボタン
+     ======================================== */
 
-  [name="redScoreBtn"] span,
-  [name="blueScoreBtn"] span {
-    display: block;
-    transform: scaleY(1.2);
-  }
-  
-  #scoreboard:not([data-section="standby"]) main h2 {
-    height: 7dvh;
+  .setting [name="settingBtn"] {
+    top: 44.5dvh;
   }
 
   [data-section="standby"] .setting [name="settingBtn"] {
     top: 80dvh;
   }
+
+  [data-section="resultApproval"] .setting [name="settingBtn"]{
+    top: 70dvh;
+  }
+
+  /* ========================================
+     スタンバイセクション
+     ======================================== */
 
   [data-section="standby"] main h2 {
     top: 36dvh;
@@ -3413,31 +3474,39 @@ h2 .profilePic img {
     margin-top: -12dvh;
   }
 
-  .setting [name="settingBtn"] {
-    top: 44.5dvh;
+  /* ========================================
+     プレイヤー名・スコア・タイマー
+     ======================================== */
+
+  #scoreboard:not([data-section="standby"]) main h2 {
+    height: 7dvh;
   }
 
-  #playerInput {
-    left: 1vw;
-    width: 98vw;
-    top: 26dvh;
+  .score,
+  .time {
+    height: 26dvh;
   }
 
-  #standbySetting #detailSettings {
-    top: 54dvh;
+  [name="redScoreBtn"] span,
+  [name="blueScoreBtn"] span {
+    display: block;
+    transform: scaleY(1.2);
   }
+
+  /* ========================================
+     結果テーブル
+     ======================================== */
+
+  #resultTable {
+    top: 20dvh;
+  }
+
+  /* ========================================
+     セクションナビゲーション
+     ======================================== */
 
   #sectionNav .timer {
     font-size: 30vmin;
-  }
-
-  #timeSetting {
-    top: 53dvh;
-    height: 20dvh;
-  }
-
-  #timeSetting .btnList > div:first-child {
-    margin-right: 3vw;
   }
 
   #secInterval {
@@ -3448,11 +3517,33 @@ h2 .profilePic img {
     margin-top: 0;
   }
 
-  #resultTable {
-    top: 20dvh;
+  /* ========================================
+     設定モーダル
+     ======================================== */
+
+  /* スタンバイ設定 */
+  #standbySetting #detailSettings {
+    top: 54dvh;
   }
 
-  /* ステップ状態：現在 */
+  /* プレイヤー入力 */
+  #playerInput {
+    left: 1vw;
+    width: 98vw;
+    top: 26dvh;
+  }
+
+  /* タイマー設定 */
+  #timeSetting {
+    top: 53dvh;
+    height: 20dvh;
+  }
+
+  #timeSetting .btnList > div:first-child {
+    margin-right: 3vw;
+  }
+
+  /* ステップバー */
   #endsSetting .stepItem.stepCurrent .stepIndicator {
     transform: scale(2.5);
   }

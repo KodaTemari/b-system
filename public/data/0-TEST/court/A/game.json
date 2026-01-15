@@ -1,19 +1,16 @@
 {
   "matchID": "",
   "match": {
-    "end": 0,
+    "end": 1,
     "ends": [
-      { "end": 1, "shots": [], "redScore": 0, "blueScore": 1 },
-      { "end": 2, "shots": [], "redScore": 0, "blueScore": 2 },
-      { "end": 3, "shots": [], "redScore": 2, "blueScore": 0 },
-      { "end": 4, "shots": [], "redScore": 1, "blueScore": 0 }
+      { "end": 1, "shots": [ "B" ], "redScore": 0, "blueScore": 0 }
     ],
-    "sectionID": 12,
-    "section": "resultApproval",
+    "sectionID": 2,
+    "section": "end1",
     "approvals": {
-      "red": true,
-      "referee": true,
-      "blue": true
+      "red": false,
+      "referee": false,
+      "blue": false
     }
   },
   "screen": {
@@ -32,12 +29,12 @@
     "isRunning": false
   },
   "red": {
-    "score": 3,
-    "ball": 6,
+    "score": 0,
+    "ball": 7,
     "isRunning": false,
     "time": 270000,
     "isTieBreak": false,
-    "result": "lose",
+    "result": "",
     "playerID": "",
     "affiliation": "",
     "scores": [],
@@ -46,12 +43,12 @@
     "redCard": 0
   },
   "blue": {
-    "score": 3,
-    "ball": 6,
+    "score": 0,
+    "ball": 5,
     "isRunning": false,
-    "time": 270000,
-    "isTieBreak": true,
-    "result": "win",
+    "time": 269486,
+    "isTieBreak": false,
+    "result": "",
     "playerID": "",
     "affiliation": "",
     "scores": [],
@@ -60,5 +57,5 @@
     "redCard": 0
   },
   "courtId": "",
-  "lastUpdated": "2026-01-15T06:20:20.720Z"
+  "lastUpdated": "2026-01-15T10:22:50.008Z"
 }
