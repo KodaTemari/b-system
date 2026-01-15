@@ -6,6 +6,7 @@
 
 :root {
   /* フォントサイズ */
+  --font-size-3s: max(10px, 1.5vmin);
   --font-size-2s: max(12px, 2vmin);
   --font-size-s: max(14px, 3vmin);
   --font-size-m: max(16px, 4vmin);
@@ -225,6 +226,7 @@ button:disabled {
   position: relative;
   z-index: 90;
   height: 2vh;
+  height: 2dvh;
 }
 
 /* customModal表示時はheaderのz-indexを上げる */
@@ -401,11 +403,11 @@ button:disabled {
 
 #resultTable {
   position: absolute;
-  top: 18vh;
+  top: 20dvh;
   left: 50%;
   z-index: 10;
   width: 23vw;
-  height: 57vh;
+  height: 57dvh;
   padding: 0;
   box-sizing: border-box;
   transform: translateX(-50%);
@@ -416,6 +418,7 @@ button:disabled {
   display: table;
   width: 100%;
   height: 41vh;
+  height: 41dvh;
   overflow: hidden;
   color: rgb(var(--color-white));
   background-color: rgba(var(--color-black), 0.5);
@@ -436,7 +439,7 @@ button:disabled {
   padding: 1vh 1vw;
   background-color: rgb(var(--color-gray));
   border: 0.4vmin solid rgb(var(--color-gray-dark));
-  font-size: 1.5vmin;
+  font-size: var(--font-size-3s);
   font-weight: bold;
   text-align: center;
 }
@@ -1103,7 +1106,7 @@ h2 .profilePic img {
 /* Winマーク */
 .winMark {
   position: absolute;
-  z-index: 10;
+  z-index: 100;
   display: none;
   width: 30vmin;
   height: 30vmin;
@@ -3399,6 +3402,10 @@ h2 .profilePic img {
 
   .setting [name="settingBtn"] {
     top: 44.5dvh;
+  }
+ 
+  [data-section="resultApproval"] .setting [name="settingBtn"]{
+    top: 70dvh;
   }
 
   #playerInput {
