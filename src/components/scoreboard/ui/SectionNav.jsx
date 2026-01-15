@@ -41,7 +41,7 @@ const SectionNavigation = React.memo(({
   blueCountry,
   blueProfilePic,
   scene,
-  onRestartToStandby
+  onResetToStandbyWithSettings
 }) => {
   // Get text (uses current language)
   const getText = (key) => {
@@ -414,27 +414,11 @@ const SectionNavigation = React.memo(({
       {isCtrl && currentSectionId === 'secMatchFinished' && (
         <div id="secMatchFinished">
           {(() => {
-            // Check if data-scene is recreation
-            const isRecreation = scene === 'recreation';
-            
-            // Show "もう一度！" button for recreation scene
-            if (isRecreation && onRestartToStandby) {
-              return (
-                <button
-                  type="button"
-                  className="primaryBtn restart"
-                  onClick={onRestartToStandby}
-                >
-                  {getText('restart')}
-                </button>
-              );
-            }
-
             // Check if last section is resultApproval
             const lastSection = sections && sections.length > 0 ? sections[sections.length - 1] : null;
             const hasResultApproval = lastSection === 'resultApproval';
 
-            // Show "Result Approval" button only if resultApproval is last
+            // Show "Result Approval" button if resultApproval exists
             if (hasResultApproval) {
               return (
                 <button
@@ -447,7 +431,23 @@ const SectionNavigation = React.memo(({
               );
             }
 
-            // Do not show anything if resultApproval is missing
+            // Show "Next Match" or "もう一度！" button if no resultApproval
+            if (!hasResultApproval && onResetToStandbyWithSettings) {
+              const isRecreation = scene === 'recreation';
+              return (
+                <button
+                  type="button"
+                  className="primaryBtn matchFinished"
+                  onClick={onResetToStandbyWithSettings}
+                >
+                  {isRecreation 
+                    ? getText('restart')
+                    : getLocalizedText('buttons.nextMatch', currentLang || getCurrentLanguage())
+                  }
+                </button>
+              );
+            }
+
             return null;
           })()}
         </div>

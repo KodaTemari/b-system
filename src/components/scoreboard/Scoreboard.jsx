@@ -638,6 +638,8 @@ const Scoreboard = () => {
   // リセット直接実行（確認モーダルなし）
   const handleResetDirect = () => {
     handleReset();
+    // リセット後に設定画面を開く
+    setSettingOpen(true);
   };
 
   // エンド選択ハンドラー（スタンバイボタンの場合は確認モーダルを表示）
@@ -792,27 +794,28 @@ const Scoreboard = () => {
     const redScore = red?.score || 0;
     const blueScore = blue?.score || 0;
 
-    // スコアに差がある場合、data-tieBreak属性を削除
-    if (redScore !== blueScore) {
-      const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
-      if (currentTieBreak) {
-        scoreboardElement.removeAttribute('data-tieBreak');
-      }
+    // タイブレークで勝者が決まっている場合は、スコアに関係なく保持
+    if (redTieBreak === true) {
+      scoreboardElement.setAttribute('data-tieBreak', 'red');
+    } else if (blueTieBreak === true) {
+      scoreboardElement.setAttribute('data-tieBreak', 'blue');
     } else {
-      // 同点の場合、redTieBreakとblueTieBreakの値に基づいてdata-tieBreak属性を設定
-      if (redTieBreak === true) {
-        scoreboardElement.setAttribute('data-tieBreak', 'red');
-      } else if (blueTieBreak === true) {
-        scoreboardElement.setAttribute('data-tieBreak', 'blue');
+      // タイブレーク勝者がいない場合
+      // スコアに差がある場合、data-tieBreak属性を削除
+      if (redScore !== blueScore) {
+        const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
+        if (currentTieBreak) {
+          scoreboardElement.removeAttribute('data-tieBreak');
+        }
       } else {
-        // タイブレークがない場合は削除
+        // 同点の場合も削除（タイブレーク前の状態）
         const currentTieBreak = scoreboardElement.getAttribute('data-tieBreak');
         if (currentTieBreak) {
           scoreboardElement.removeAttribute('data-tieBreak');
         }
       }
     }
-  }, [red?.isTieBreak, blue?.isTieBreak, red?.score, blue?.score]);
+  }, [red?.isTieBreak, blue?.isTieBreak, red?.score, blue?.score, section]);
 
   // タイブレークリセット処理のヘルパー関数
   const resetTieBreakData = useCallback((scoreboardElement, isCtrl, saveData, id, court, scoresChanged) => {
@@ -1104,7 +1107,7 @@ const Scoreboard = () => {
         onTieBreak={handleTieBreak}
         onSwapTeamNames={handleSwapTeamNames}
         scene={gameData.scene}
-        onRestartToStandby={async () => {
+        onResetToStandbyWithSettings={async () => {
           await handleReset();
           // リセット後に設定モーダルを開く
           handleSettingModalOpen();

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage, setLanguage } from '../../../locales';
-import setting2Icon from '../img/icon_setting_2.png';
 import { MatchGeneralSettings, MatchRuleSettings } from './settings/MatchSettings';
 import TimerSettings from './settings/TimerSettings';
 import PlayerSettings from './settings/PlayerSettings';
@@ -1099,7 +1098,6 @@ const SettingModal = ({
   return (
     <div 
       id="settingModal" 
-      data-section={section} 
       className={isOpen ? 'modalOpen' : ''}
     >
       <div id="indexModal" className="modalBox" onClick={(e) => e.stopPropagation()}>
@@ -1560,22 +1558,40 @@ const SettingModal = ({
         )}
 
         {/* Show 'Next Match' button for matchFinished and resultApproval */}
-        {(section === 'matchFinished' || section === 'resultApproval') && (
-          <div id="nextMatchContainer">
-            <button
-              type="button"
-              className="btn nextMatchBtn"
-              onClick={handleResetDirect}
-            >
-              {getLocalizedText('buttons.nextMatch', getCurrentLanguage()) || 'Next Match'}
-            </button>
-          </div>
-        )}
+        {(() => {
+          // Check if resultApproval exists in sections
+          const lastSection = sections && sections.length > 0 ? sections[sections.length - 1] : null;
+          const hasResultApproval = lastSection === 'resultApproval';
+          
+          // Show button conditions:
+          // 1. section === 'resultApproval': always show
+          // 2. section === 'matchFinished' && !hasResultApproval: show
+          const shouldShowButton = 
+            section === 'resultApproval' || 
+            (section === 'matchFinished' && !hasResultApproval);
+          
+          if (!shouldShowButton) return null;
+          
+          return (
+            <div id="nextMatchContainer">
+              <button
+                type="button"
+                className="btn nextMatchBtn"
+                onClick={handleResetDirect}
+              >
+                {gameData?.scene === 'recreation' 
+                  ? (getLocalizedText('buttons.restart', getCurrentLanguage()) || 'もう一度！')
+                  : (getLocalizedText('buttons.nextMatch', getCurrentLanguage()) || 'Next Match')
+                }
+              </button>
+            </div>
+          );
+        })()}
 
         <div>
           <button
             type="button"
-            className={`settingModalCloseBtn ${section === 'standby' ? 'primaryBtn' : ''}`}
+            className="settingModalCloseBtn primaryBtn"
             onClick={() => {
               // Save changes on OK click
               if (section === 'standby') {
@@ -1584,11 +1600,7 @@ const SettingModal = ({
               handleDialogClose();
             }}
           >
-            {section === 'standby' ? (
-              getLocalizedText('sections.ok', getCurrentLanguage())
-            ) : (
-              <img src={setting2Icon} alt={getLocalizedText('sections.ok', getCurrentLanguage())} />
-            )}
+            OK
           </button>
         </div>
       </div>
