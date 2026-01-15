@@ -573,6 +573,95 @@ const SettingModal = ({
     }
   }, [gameData, pendingChanges]);
 
+  // 800px以下の時にstepListのmin-widthを動的に設定
+  useEffect(() => {
+    const updateStepListWidth = () => {
+      const stepListElement = document.querySelector('#endsSetting .stepList');
+      if (!stepListElement || !sections) return;
+
+      // 画面幅が800px以下の場合のみ処理
+      if (window.innerWidth <= 800) {
+        // 表示されるステップ数を計算
+        let visibleStepCount = 0;
+        sections.forEach((sectionName, index) => {
+          // shouldShowButton()のロジックを再現
+          if (sectionName.startsWith('end')) {
+            const endNumber = parseInt(sectionName.replace('end', ''), 10);
+            if (endNumber <= (totalEnds || 4)) {
+              visibleStepCount++;
+            }
+          } else if (sectionName === 'interval') {
+            const prevSection = sections[index - 1];
+            if (prevSection && prevSection.startsWith('end')) {
+              const prevEndNumber = parseInt(prevSection.replace('end', ''), 10);
+              if (prevEndNumber < (totalEnds || 4)) {
+                visibleStepCount++;
+              } else {
+                const nextSection = sections[index + 1];
+                if (nextSection === 'tieBreak' && sections.includes('tieBreak')) {
+                  visibleStepCount++;
+                }
+              }
+            }
+          } else if (sectionName === 'tieBreak') {
+            if (sections.includes('tieBreak')) {
+              visibleStepCount++;
+            }
+          } else if (sectionName === 'warmup' || sectionName === 'warmup1' || sectionName === 'warmup2') {
+            visibleStepCount++;
+          } else {
+            visibleStepCount++;
+          }
+        });
+
+        // ステップ数 × 85px をmin-widthに設定
+        const minWidth = visibleStepCount * 85;
+        stepListElement.style.minWidth = `${minWidth}px`;
+      } else {
+        // 800pxより大きい場合はmin-widthをリセット
+        stepListElement.style.minWidth = '';
+      }
+    };
+
+    // モーダルが開かれたときにDOMの更新を待ってから実行
+    let timer;
+    if (isOpen) {
+      timer = setTimeout(() => {
+        updateStepListWidth();
+      }, 50); // DOMの更新を待つ
+    } else {
+      // モーダルが閉じている場合は即座に実行
+      updateStepListWidth();
+    }
+
+    // リサイズイベントを監視
+    window.addEventListener('resize', updateStepListWidth);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('resize', updateStepListWidth);
+    };
+  }, [sections, totalEnds, isOpen]);
+
+  // 設定モーダルを開いたときに現在のステップを中央にスクロール
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // モーダルが開かれてDOMが更新されるのを待つ
+    const scrollTimer = setTimeout(() => {
+      const currentStepElement = document.querySelector('#endsSetting .stepItem.stepCurrent');
+      if (currentStepElement) {
+        currentStepElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }, 100); // 100msの遅延でDOMの更新を待つ
+
+    return () => clearTimeout(scrollTimer);
+  }, [isOpen, sectionID]);
+
   // Parse class ID and gender from current classification string
   useEffect(() => {
     // Ignore if URL params, pending changes, or manual selection exists

@@ -6,11 +6,11 @@
 
 :root {
   /* フォントサイズ */
-  --font-size-2s: calc(12rem / 16);
-  --font-size-s: calc(14rem / 16);
-  --font-size-m: 1rem;
-  --font-size-l: calc(18rem / 16);
-  --font-size-2l: calc(20rem / 16);
+  --font-size-2s: max(12px, 2vmin);
+  --font-size-s: max(14px, 3vmin);
+  --font-size-m: max(16px, 4vmin);
+  --font-size-l: max(18px, 5vmin);
+  --font-size-2l: max(20px, 6vmin);
   --font-size-3l: calc(26rem / 16);
   --font-size-4l: calc(32rem / 16);
   --font-size-h1: calc(48rem / 16);
@@ -68,7 +68,7 @@
 /* スコアボード基本設定 */
 
 #scoreboard {
-  font-size: var(--font-size-m);
+  font-size: 1rem;
   line-height: 1.5;
   opacity: 1;
   transition: opacity 0.4s ease-in;
@@ -137,13 +137,13 @@
 #classification {
   display: inline-block;
   margin: 0 1vw;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
 }
 
 #category {
   display: inline-block;
   margin: 0 1vw;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
 }
 
 #matchName {
@@ -359,6 +359,7 @@ button:disabled {
 [data-section="warmup1"] .settingModalCloseBtn,
 [data-section="warmup2"] .settingModalCloseBtn {
   top: 85vh;
+  top: 85dvh;
 }
 
 [data-section="interval"] .setting [name="settingBtn"] {
@@ -440,7 +441,7 @@ button:disabled {
   background-color: rgba(var(--color-black), 0.5);
   border-collapse: collapse;
   border-radius: 2vmin;
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   box-sizing: border-box;
   table-layout: fixed;
 }
@@ -533,13 +534,13 @@ button:disabled {
 #resultTable td:nth-child(2) {
   width: 20%;
   background-color: rgb(var(--color-gray-medium));
-  font-size: 2vmin;
+  font-size: var(--font-size-2s);
 }
 
 #resultTable tbody td:first-child {
   background-color: rgba(var(--color-red), 0.3);
   color: rgb(var(--color-white));
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   font-weight: bold;
 }
 
@@ -550,7 +551,7 @@ button:disabled {
 #resultTable tbody td:last-child {
   background-color: rgba(var(--color-blue), 0.3);
   color: rgb(var(--color-white));
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   font-weight: bold;
 }
 
@@ -944,7 +945,7 @@ h2 .profilePic img {
   background-color: rgba(var(--color-black), 0.7);
   border: 0.3vmin solid rgb(var(--color-white));
   border-radius: 5vmin;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   transition: all 0.3s;
 }
 
@@ -970,7 +971,7 @@ h2 .profilePic img {
   padding: 1vh 0;
   opacity: 0;
   color: rgb(var(--color-white));
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   font-weight: bold;
   text-align: center;
   transition: opacity 0.3s;
@@ -1043,7 +1044,7 @@ h2 .profilePic img {
   height: 17vh;
   color: rgb(var(--color-white));
   background-color: rgb(var(--color-gray-darker));
-  font-size: 5vmin;
+  font-size: var(--font-size-l);
   font-weight: bold;
 }
 
@@ -1338,7 +1339,7 @@ h2 .profilePic img {
   min-width: 8em;
   margin: 0;
   padding: 2vh 1em;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   transition: all 0.3s;
 }
 
@@ -1629,7 +1630,7 @@ h2 .profilePic img {
   border: solid 0.2vmin rgb(var(--color-gray));
   border-radius: 1vmin;
   font-family: inherit;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   font-weight: normal;
   box-sizing: border-box;
 }
@@ -1653,7 +1654,7 @@ h2 .profilePic img {
 #standbySetting select option {
   color: rgb(var(--color-white));
   background-color: rgb(var(--color-gray-medium));
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
 }
 
 /* セレクトボックス共通スタイル（カスタム矢印付き） */
@@ -1669,7 +1670,7 @@ h2 .profilePic img {
   border: solid 0.3vmin rgb(var(--color-gray-lighter));
   border-radius: 1vmin;
   font-family: inherit;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   text-align: left;
   box-sizing: border-box;
   cursor: pointer;
@@ -1744,17 +1745,17 @@ h2 .profilePic img {
   text-align: right;
   color: rgb(var(--color-white));
   font-family: var(--font-family-base);
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   line-height: 1.2;
 }
 
 #standbySetting .detailSettingItem select {
   width: 20vw;
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
 }
 
 #standbySetting .detailSettingItem option {
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
 }
 
 /* プレイヤー入力 */
@@ -1792,7 +1793,7 @@ h2 .profilePic img {
 
 #playerInput .nameSetting input {
   width: 100%;
-  font-size: 5vmin;
+  font-size: var(--font-size-l);
   text-align: center;
 }
 
@@ -1803,7 +1804,7 @@ h2 .profilePic img {
   width: 100%;
   margin-bottom: 1vmin;
   color: rgb(var(--color-white));
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   cursor: pointer;
   gap: 3vmin;
 }
@@ -1861,7 +1862,7 @@ h2 .profilePic img {
 }
 
 [data-scene="recreation"] #scoreboard #endsInput {
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
 }
 
 /* 詳細モーダル */
@@ -2028,7 +2029,7 @@ h2 .profilePic img {
   background: transparent;
   border: solid 0.3vmin rgb(var(--color-white));
   border-radius: 15vmin;
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   cursor: pointer;
 }
 
@@ -2170,13 +2171,13 @@ h2 .profilePic img {
 }
 
 #penaltyTimeoutSetting .btn {
-  width: 20vw;
-  padding: 1.5vmin 4vmin;
+  width: 21vw;
+  padding: 1.5vmin 1vw;
   color: rgb(var(--color-white));
   background-color: rgb(var(--color-gray));
   border: solid 0.3vmin rgb(var(--color-white));
   border-radius: 2vmin;
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   cursor: pointer;
   transition: background-color 0.3s;
 }
@@ -2398,12 +2399,12 @@ h2 .profilePic img {
 
 #endsSetting .stepLabel {
   max-width: 100%;
-  margin-top: 0.5vh;
+  padding: 0.5vh 0;
   overflow: hidden;
   white-space: nowrap;
   text-align: center;
   text-overflow: ellipsis;
-  font-size: 0.9vw;
+  font-size: max(0.9vw, 10px);
 }
 
 /* ステップ状態：完了 */
@@ -2472,70 +2473,6 @@ h2 .profilePic img {
   height: 0.4vh;
 }
 
-@media screen and (max-width: 800px) {
-
-  /* ステップバーを横スクロール可能にする */
-  #endsSetting {
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    justify-content: flex-start;
-  }
-
-  #endsSetting .stepList {
-    width: 800px;
-    min-width: 800px;
-    flex-shrink: 0;
-  }
-
-  /* 線の太さを固定 */
-  #endsSetting .stepItem.stepHasLine::after,
-  #endsSetting .stepItem.stepCompleted::before,
-  #endsSetting .stepItem.stepCompleted.stepHasLine::after,
-  #endsSetting .stepItem.stepCurrent.stepHasLine::after,
-  #endsSetting .stepItem:isActive::after,
-  #endsSetting .stepItem.stepCurrent:isActive::after {
-    height: 2px;
-  }
-
-  #endsSetting .stepIndicator {
-    width: 6px;
-    height: 6px;
-    margin-top: 3px;
-    margin-bottom: 4px;
-  }
-
-  #endsSetting .stepItem.stepCurrent .stepIndicator {
-    width: 6px;
-    height: 6px;
-    margin-top: 3px;
-  }
-
-  #endsSetting .stepItem.stepHasLine::after {
-    left: calc(50% + 3px);
-    top: calc(3px + 3px);
-    width: calc(100% - 6px);
-  }
-
-  #endsSetting .stepItem.stepCompleted::before,
-  #endsSetting .stepItem.stepCompleted.stepHasLine::after,
-  #endsSetting .stepItem.stepCurrent.stepHasLine::after,
-  #endsSetting .stepItem.stepCurrent:isActive::after {
-    top: calc(3px + 3px);
-  }
-
-  #endsSetting .stepItem:isActive::after {
-    left: calc(50% + 3px);
-    top: calc(3px + 3px);
-    width: calc(100% - 6px);
-  }
-
-  #endsSetting .stepLabel {
-    font-size: 9px;
-    margin-top: 2.5px;
-  }
-}
-
 /* ========================================
    ペナルティ・タイムアウト・確認モーダル
    ======================================== */
@@ -2594,7 +2531,7 @@ h2 .profilePic img {
   opacity: 1;
   color: rgb(var(--color-white));
   border-bottom: 1vh solid;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   font-weight: bold;
   text-align: center;
 }
@@ -2622,7 +2559,7 @@ h2 .profilePic img {
   background-color: transparent;
   border: solid 0.2vmin rgb(var(--color-white));
   border-radius: 1.5vmin;
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   cursor: pointer;
 }
 
@@ -2708,7 +2645,7 @@ h2 .profilePic img {
   opacity: 1;
   color: rgb(var(--color-white));
   border-bottom: 1vh solid;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   font-weight: bold;
   text-align: center;
 }
@@ -2743,7 +2680,7 @@ h2 .profilePic img {
   background-color: transparent;
   border: solid 0.2vmin rgb(var(--color-white));
   border-radius: 1.5vmin;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   cursor: pointer;
 }
 
@@ -2759,7 +2696,7 @@ h2 .profilePic img {
 .timeoutTimer {
   color: rgb(var(--color-white));
   font-family: monospace;
-  font-size: 5vmin;
+  font-size: var(--font-size-l);
   font-weight: bold;
   text-align: center;
 }
@@ -2861,7 +2798,7 @@ h2 .profilePic img {
 .confirmModalMessage {
   margin: 0;
   color: rgb(var(--color-white));
-  font-size: 5vmin;
+  font-size: var(--font-size-l);
   line-height: 1.5;
   text-align: center;
 }
@@ -2922,7 +2859,7 @@ h2 .profilePic img {
   opacity: 1;
   color: rgb(var(--color-white));
   border-bottom: 1vh solid;
-  font-size: 5vmin;
+  font-size: var(--font-size-l);
   font-weight: bold;
   text-align: center;
 }
@@ -2951,7 +2888,7 @@ h2 .profilePic img {
   background-color: transparent;
   border: solid 0.2vmin rgb(var(--color-white));
   border-radius: 1.5vmin;
-  font-size: 4vmin;
+  font-size: var(--font-size-m);
   cursor: pointer;
 }
 
@@ -3056,7 +2993,7 @@ h2 .profilePic img {
   margin: 0 0 2vmin 0;
   opacity: 1;
   color: rgb(var(--color-gray-lighter));
-  font-size: 3vmin;
+  font-size: var(--font-size-s);
   font-weight: bold;
 }
 
@@ -3213,7 +3150,7 @@ h2 .profilePic img {
   }
   
   #scoreboard:not([data-section="standby"]) main h2 {
-    margin: 8vh 0 0;
+    margin: 8dvh 0 0;
   }
 
   .score,
@@ -3229,17 +3166,13 @@ h2 .profilePic img {
   .ball {
     flex-wrap: wrap;
     justify-content: flex-start;
-    height: 10vh;
-    margin-top: 2vh;
+    height: 10dvh;
+    margin-top: 4dvh;
   }
 
   .ball li {
     width: 10.5vw;
     margin-bottom: 1vh;
-  }
-
-  .ball li:nth-child(3) {
-    margin-right: 10vw;
   }
 
   .ball li button {
@@ -3332,7 +3265,7 @@ h2 .profilePic img {
 
   #sceneSetting .radioButtonDesc {
     padding-left: 16vw;
-    font-size: min(4vmin, 16px);
+    font-size: var(--font-size-2s);
   }
 
   #standbySetting #classificationInput {
@@ -3368,11 +3301,11 @@ h2 .profilePic img {
   }
 
   #standbySetting .detailSettingItem {
-    width: 44vw;
+    width: 46vw;
   }
 
   #standbySetting .detailSettingLabel {
-    width: 12vw;
+    width: 15vw;
   }
 
   #standbySetting .detailSettingItem select {
@@ -3391,8 +3324,8 @@ h2 .profilePic img {
   }
 
   #timeSetting {
-    top: 55vh;
-    height: 20vh;
+    top: 56dvh;
+    height: 30dvh;
   }
 
   [data-section="warmup"] #secWarmup,
@@ -3402,23 +3335,59 @@ h2 .profilePic img {
   }
 
   #sectionNav .timer {
-    padding: 2vh 5vw;
+    font-size: 25vmin;
   }
 
   #scoreboard .confirmModalButtons .primaryBtn {
-    font-size: 4vmin;
+    font-size: var(--font-size-m);
   }
 
   #sectionNav div .primaryBtn {
     margin: 5dvh 0;
   }
+
+  #penaltyTimeoutSetting {
+    top: 28dvh;
+  }
+
+  #penaltyTimeoutSetting .penaltyTimeoutGroup {
+    flex-wrap: wrap;
+  }
+
+  #penaltyTimeoutSetting .penaltyTimeoutGroup .btn {
+    width: 40vw;
+    padding: 1.5dvh 1vw;
+    font-size: max(3vmin, 16px);
+  }
+
+  /* ステップバーを横スクロール可能にする */
+  #endsSetting {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+  }
+
+  #endsSetting .stepList {
+    /* min-widthはJavaScriptで動的に設定（ステップ数 × 85px） */
+    flex-shrink: 0;
+  }
+
+  [data-section="warmup"] #timeSetting .warmupTimer,
+  [data-section="warmup1"] #timeSetting .warmupTimer,
+  [data-section="warmup2"] #timeSetting .warmupTimer,
+  [data-section="interval"] #timeSetting .intervalTimer {
+    margin-top: 5dvh;
+    height: 32vw;
+  }
+
 }
 
 @media screen and (max-width: 480px) and (orientation: portrait) {
 
   .score,
   .time {
-    height: 24vh;
+    height: 26dvh;
   }
 
   [name="redScoreBtn"] span,
@@ -3428,7 +3397,7 @@ h2 .profilePic img {
   }
   
   #scoreboard:not([data-section="standby"]) main h2 {
-    height: 7vh;
+    height: 7dvh;
   }
 
   [data-section="standby"] .setting [name="settingBtn"] {
@@ -3449,23 +3418,39 @@ h2 .profilePic img {
   }
 
   .setting [name="settingBtn"], .settingModalCloseBtn {
-    top: 42vh;
+    top: 44.5dvh;
   }
 
   #playerInput {
-    top: 24vh;
+    left: 1vw;
+    width: 98vw;
+    top: 26dvh;
   }
 
   #standbySetting #detailSettings {
-    top: 48vh;
+    top: 54dvh;
   }
 
   [data-section="standby"] .settingModalCloseBtn {
-    top: 75vh;
+    top: 86dvh;
   }
 
   #sectionNav .timer {
     font-size: 30vmin;
+  }
+
+  #timeSetting {
+    top: 53dvh;
+    height: 20dvh;
+  }
+
+  #timeSetting .btnList > div:first-child {
+    margin-right: 3vw;
+  }
+
+  /* ステップ状態：現在 */
+  #endsSetting .stepItem.stepCurrent .stepIndicator {
+    transform: scale(2.5);
   }
   
 }
