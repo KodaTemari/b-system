@@ -403,7 +403,8 @@ button:disabled {
 
 #resultTable {
   position: absolute;
-  top: 20dvh;
+  top: 18vh;
+  top: 18dvh;
   left: 50%;
   z-index: 10;
   width: 23vw;
@@ -938,7 +939,7 @@ h2 .profilePic img {
   border: 0.3vmin solid rgb(var(--color-white));
   border-radius: 5vmin;
   font-size: var(--font-size-m);
-  transition: all 0.3s;
+  transition: background 0.3s;
 }
 
 #resultApproval .approvalButtons .btn.approval.isApproved {
@@ -3109,7 +3110,7 @@ h2 .profilePic img {
 
 
 /* ========================================
-   スマホの縦画面時の調整
+   タブレット・スマホの縦画面時の調整
    ======================================== */
 
 @media screen and (max-width: 800px) and (orientation: portrait) {
@@ -3364,6 +3365,18 @@ h2 .profilePic img {
     height: 45dvh;
   }
 
+  #resultTable {
+    top: 26dvh;
+  }
+
+  #resultApproval {
+    padding-top: 3dvh;
+  }
+ 
+  [data-section="resultApproval"] .setting [name="settingBtn"]{
+    top: 70dvh;
+  }
+
 }
 
 @media screen and (max-width: 480px) and (orientation: portrait) {
@@ -3403,10 +3416,6 @@ h2 .profilePic img {
   .setting [name="settingBtn"] {
     top: 44.5dvh;
   }
- 
-  [data-section="resultApproval"] .setting [name="settingBtn"]{
-    top: 70dvh;
-  }
 
   #playerInput {
     left: 1vw;
@@ -3437,6 +3446,10 @@ h2 .profilePic img {
 
   #scoreboard:is([data-section^="end"], [data-section="tieBreak"]) .primaryBtn {
     margin-top: 0;
+  }
+
+  #resultTable {
+    top: 20dvh;
   }
 
   /* ステップ状態：現在 */

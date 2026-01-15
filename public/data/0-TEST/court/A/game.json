@@ -3,17 +3,17 @@
   "match": {
     "end": 0,
     "ends": [
-      { "end": 1, "shots": [], "redScore": 1, "blueScore": 0 },
-      { "end": 2, "shots": [], "redScore": 1, "blueScore": 1 },
-      { "end": 3, "shots": [], "redScore": 1, "blueScore": 1 },
-      { "end": 4, "shots": [], "redScore": 0, "blueScore": 1 }
+      { "end": 1, "shots": [], "redScore": 0, "blueScore": 1 },
+      { "end": 2, "shots": [], "redScore": 0, "blueScore": 2 },
+      { "end": 3, "shots": [], "redScore": 2, "blueScore": 0 },
+      { "end": 4, "shots": [], "redScore": 1, "blueScore": 0 }
     ],
     "sectionID": 12,
     "section": "resultApproval",
     "approvals": {
-      "red": false,
-      "referee": false,
-      "blue": false
+      "red": true,
+      "referee": true,
+      "blue": true
     }
   },
   "screen": {
@@ -60,5 +60,5 @@
     "redCard": 0
   },
   "courtId": "",
-  "lastUpdated": "2026-01-15T06:00:46.135Z"
+  "lastUpdated": "2026-01-15T06:20:20.720Z"
 }
