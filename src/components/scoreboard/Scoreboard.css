@@ -229,9 +229,12 @@ button:disabled {
   height: 2dvh;
 }
 
-/* customModal表示時はheaderのz-indexを上げる */
 #scoreboard.customModalOpen header {
   z-index: 102;
+}
+
+#scoreboard.customModalOpen [name="settingBtn"] {
+  display: none;
 }
 
 /* ========================================
@@ -3293,8 +3296,11 @@ h2 .profilePic img {
   }
 
   [data-scene="recreation"] #standbySetting #detailSettings {
-    width: 87vw;
-  }
+    top: 55dvh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: inherit;
+  } 
 
   /* ペナルティ・タイムアウト設定 */
   #penaltyTimeoutSetting {

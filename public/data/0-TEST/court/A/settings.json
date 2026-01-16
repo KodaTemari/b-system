@@ -1,41 +1,34 @@
 {
-  "classification": "IND BC1 Male",
+  "classification": "TEAM General",
   "category": "",
-  "matchName": "第1回戦",
+  "matchName": "",
   "match": {
-    "totalEnds": 4,
+    "totalEnds": 2,
     "warmup": "simultaneous",
     "interval": "enabled",
-    "rules": "worldBoccia",
-    "resultApproval": "enabled",
-    "tieBreak": "extraEnd",
+    "rules": "friendlyMatch",
+    "resultApproval": "none",
+    "tieBreak": "finalShot",
     "sections": [
       "standby",
       "warmup",
       "end1",
       "interval",
       "end2",
-      "interval",
-      "end3",
-      "interval",
-      "end4",
-      "interval",
-      "tieBreak",
-      "matchFinished",
-      "resultApproval"
+      "matchFinished"
     ]
   },
   "red": {
-    "name": "Blue",
-    "limit": 270000,
-    "country": "Lao PDR",
-    "profilePic": "/img/flags/la.svg"
+    "name": "Red",
+    "limit": 300000,
+    "country": "",
+    "profilePic": ""
   },
   "blue": {
-    "name": "Red",
-    "limit": 270000,
-    "country": "Japan",
-    "profilePic": "/img/flags/jp.svg"
+    "name": "Blue",
+    "limit": 300000,
+    "country": "",
+    "profilePic": ""
   },
   "warmup": {
     "limit": 120000
