@@ -78,6 +78,46 @@ app.get('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
   }
 });
 
+// 大会の全コート一覧を取得
+app.get('/api/data/:eventId/courts', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const courtDir = path.join(__dirname, '../public/data', eventId, 'court');
+    if (!(await fs.pathExists(courtDir))) {
+      return res.json([]);
+    }
+    const entries = await fs.readdir(courtDir, { withFileTypes: true });
+    const courts = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+    res.json(courts);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 大会の全コートの game.json を一括取得（グループリーグ結果表示用）
+app.get('/api/data/:eventId/results/all-games', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const courtDir = path.join(__dirname, '../public/data', eventId, 'court');
+    if (!(await fs.pathExists(courtDir))) {
+      return res.json({ games: [] });
+    }
+    const entries = await fs.readdir(courtDir, { withFileTypes: true });
+    const courtIds = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+    const games = [];
+    for (const courtId of courtIds) {
+      const gamePath = path.join(courtDir, courtId, 'game.json');
+      if (await fs.pathExists(gamePath)) {
+        const game = await fs.readJson(gamePath);
+        games.push({ courtId, game });
+      }
+    }
+    res.json({ games });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 後方互換性のための既存エンドポイント
 app.get('/api/game/:eventId/court/:courtId', async (req, res) => {
   const { eventId, courtId } = req.params;

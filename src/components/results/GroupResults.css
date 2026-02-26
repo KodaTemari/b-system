@@ -1,0 +1,181 @@
+/* グループリーグ結果表示 */
+
+.groupResults {
+  min-height: 100vh;
+  padding: 1.5rem;
+  background-color: #222;
+  color: #fff;
+}
+
+.groupResults.loading,
+.groupResults.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.groupResults.error p {
+  color: #f66;
+}
+
+.groupResultsHeader {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.groupResultsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+}
+
+.groupResultsSubtitle {
+  font-size: 0.875rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.groupResultsEmpty {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+}
+
+.groupResultsBlocks {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.groupResultsBlock {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 1.25rem;
+  border: 1px solid #444;
+  min-width: 0;
+  flex: 1 1 400px;
+  max-width: 560px;
+}
+
+.groupResultsBlockTitle {
+  font-size: 1.125rem;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #444;
+}
+
+/* 対戦成績マトリックス（リーグ表） */
+.groupResultsMatrixWrap {
+  overflow-x: auto;
+}
+
+.groupResultsMatrix {
+  width: 100%;
+  font-size: 0.8125rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.groupResultsMatrix th,
+.groupResultsMatrix td {
+  border: 1px solid #555;
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.groupResultsMatrixTeamHeader {
+  width: 8rem;
+  min-width: 6rem;
+  text-align: left;
+  border: 1px solid #555;
+}
+
+.groupResultsMatrixColHeader {
+  width: 3.5rem;
+  min-width: 2.5rem;
+  color: #bbb;
+  font-weight: 600;
+}
+
+.groupResultsMatrixSummaryHeader {
+  width: 2.5rem;
+  min-width: 2rem;
+  color: #bbb;
+  font-weight: 600;
+}
+
+.groupResultsMatrixTeamCell {
+  text-align: left;
+  padding-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.groupResultsTeamIcon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.groupResultsTeamName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.groupResultsMatrixCell {
+  white-space: nowrap;
+}
+
+.groupResultsMatrixCell .resultWin {
+  color: #8c8;
+}
+
+.groupResultsMatrixCell .resultLose {
+  color: #c88;
+}
+
+.groupResultsMatrixSummaryCell {
+  font-weight: 600;
+}
+
+.groupResultsMatrixSummaryCell.diffPlus {
+  color: #8c8;
+}
+
+.groupResultsMatrixSummaryCell.diffMinus {
+  color: #c88;
+}
+
+.diffPlus {
+  color: #8c8;
+}
+
+.diffMinus {
+  color: #c88;
+}
+
+@media (min-width: 768px) {
+  .groupResultsTitle {
+    font-size: 1.75rem;
+  }
+
+  .groupResultsMatrix {
+    font-size: 0.875rem;
+  }
+
+  .groupResultsMatrix th,
+  .groupResultsMatrix td {
+    padding: 0.45rem 0.5rem;
+  }
+}

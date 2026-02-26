@@ -48,6 +48,7 @@ node server.js
 ```
 タブレット: http://localhost:5173/event/0-TEST/court/A/scoreboard?p=ctrl
 ディスプレイ: http://localhost:5173/event/0-TEST/court/A/scoreboard
+グループリーグ結果: http://localhost:5173/event/0-TEST/results/group
 ```
 
 ## 🏗️ ビルド
@@ -117,6 +118,12 @@ npm run build
 - 選手情報表示
 - エンドスコア履歴
 
+### 5) グループリーグ結果表示 ✅ 実装済み
+- 全コートの試合結果を一括表示
+- クラス分類ごとの順位表（勝・敗・分・得点・失点・得失点差）
+- 試合結果一覧
+- 5秒ごとの自動更新（Polling）
+
 ### スタンドアロンモード ✅ 実装済み
 - サーバー不要で動作
 - LocalStorageのみ使用
@@ -170,7 +177,7 @@ node server.js
 
 - [ ] 1) 大会管理画面
 - [ ] 2) 全コート進捗管理画面
-- [ ] 5) グループリーグ結果表示
+- [x] 5) グループリーグ結果表示
 - [ ] 6) トーナメント結果表示
 - [ ] WebSocketによるリアルタイム通知
 
