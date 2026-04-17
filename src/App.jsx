@@ -4,6 +4,7 @@ import { Suspense, lazy } from 'react';
 
 const Scoreboard = lazy(() => import('./components/scoreboard/Scoreboard'));
 const PoolResults = lazy(() => import('./components/results/PoolResults'));
+const Tournament = lazy(() => import('./components/tournament'));
 
 const App = () => {
     return (
@@ -27,6 +28,18 @@ const App = () => {
                 <Route path="/scoreboard" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <Scoreboard />
+                    </Suspense>
+                } />
+
+                <Route path="/tournament" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <Tournament />
+                    </Suspense>
+                } />
+
+                <Route path="/event/:id/tournament" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <Tournament />
                     </Suspense>
                 } />
                 
