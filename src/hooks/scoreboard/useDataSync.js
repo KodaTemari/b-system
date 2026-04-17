@@ -9,6 +9,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [localData, setLocalData] = useState(null);
+  const [eventName, setEventName] = useState('');
+  const [classificationCount, setClassificationCount] = useState(null);
   
   // スタンドアロンモード判定（id, courtがない場合）
   const isStandaloneMode = !id || !court;
@@ -68,6 +70,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         const initRes = await fetch(initUrl);
         if (initRes.ok) {
           const initData = await initRes.json();
+          setEventName(initData.gameName || initData.eventName || id);
+          setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
           settingsData = {
             classification: '',
             category: '',
@@ -81,8 +85,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
               tieBreak: initData.match?.tieBreak || 'finalShot',
               sections: initData.match?.sections
             },
-            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
-            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME },
+            red: { name: 'Red Name', limit: TIMER_LIMITS.GAME },
+            blue: { name: 'Blue Name', limit: TIMER_LIMITS.GAME },
             warmup: { limit: TIMER_LIMITS.WARMUP },
             interval: { limit: TIMER_LIMITS.INTERVAL }
           };
@@ -90,10 +94,25 @@ export const useDataSync = (id, cls, court, isCtrl) => {
           // init.json もない場合の最小限のデフォルト
           settingsData = {
             match: { totalEnds: 6, warmup: 'simultaneous', interval: 'enabled', rules: 'worldBoccia', resultApproval: 'enabled', tieBreak: 'finalShot' },
-            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
-            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME }
+            red: { name: 'Red Name', limit: TIMER_LIMITS.GAME },
+            blue: { name: 'Blue Name', limit: TIMER_LIMITS.GAME }
           };
         }
+      }
+
+      // settings.json の有無にかかわらず、init.json があれば classificationCount / eventName を補完
+      try {
+        const initUrl = `/data/${id}/init.json`;
+        const initRes = await fetch(initUrl);
+        if (initRes.ok) {
+          const initData = await initRes.json();
+          if (!eventName) {
+            setEventName(initData.gameName || initData.eventName || id);
+          }
+          setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
+        }
+      } catch {
+        // 補完に失敗しても致命的ではないので握りつぶす
       }
 
       if (gameRes.ok) {
@@ -390,6 +409,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     localData,
     isLoading,
     error,
+    eventName,
+    classificationCount,
     saveToLocalStorage,
     saveData
   };

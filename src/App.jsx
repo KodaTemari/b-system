@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 
 const Scoreboard = lazy(() => import('./components/scoreboard/Scoreboard'));
-const GroupResults = lazy(() => import('./components/results/GroupResults'));
+const PoolResults = lazy(() => import('./components/results/PoolResults'));
 
 const App = () => {
     return (
@@ -16,10 +16,10 @@ const App = () => {
                     </Suspense>
                 } />
                 
-                {/* グループリーグ結果表示 */}
-                <Route path="/event/:id/results/group" element={
+                {/* プール結果表示 */}
+                <Route path="/event/:id/results/pool" element={
                     <Suspense fallback={<div>Loading...</div>}>
-                        <GroupResults />
+                        <PoolResults />
                     </Suspense>
                 } />
                 

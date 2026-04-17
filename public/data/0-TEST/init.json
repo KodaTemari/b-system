@@ -1,87 +1,35 @@
 {
-  "gameName": "テスト大会",
+  "gameName": "?????",
   "classifications": [
-    {
-      "id": "BC1",
-      "gender": "M"
-    },
-    {
-      "id": "BC1",
-      "gender": "F"
-    },
-    {
-      "id": "BC2",
-      "gender": "M"
-    },
-    {
-      "id": "BC2",
-      "gender": "F"
-    },
-    {
-      "id": "BC3",
-      "gender": "M"
-    },
-    {
-      "id": "BC3",
-      "gender": "F"
-    },
-    {
-      "id": "BC4",
-      "gender": "M"
-    },
-    {
-      "id": "BC4",
-      "gender": "F"
-    },
-    {
-      "id": "OPStanding",
-      "gender": "M"
-    },
-    {
-      "id": "OPStanding",
-      "gender": "F"
-    },
-    {
-      "id": "OPSeated",
-      "gender": "M"
-    },
-    {
-      "id": "OPSeated",
-      "gender": "F"
-    },
-    {
-      "id": "Friendly",
-      "gender": "M"
-    },
-    {
-      "id": "Friendly",
-      "gender": "F"
-    },
-    {
-      "id": "PairBC3"
-    },
-    {
-      "id": "PairBC4"
-    },
-    {
-      "id": "TeamsBC1BC2"
-    },
-    {
-      "id": "TeamFriendly"
-    },
-    {
-      "id": "Recreation"
-    }
+    { "id": "BC1", "gender": "M" },
+    { "id": "BC1", "gender": "F" },
+    { "id": "BC2", "gender": "M" },
+    { "id": "BC2", "gender": "F" },
+    { "id": "BC3", "gender": "M" },
+    { "id": "BC3", "gender": "F" },
+    { "id": "BC4", "gender": "M" },
+    { "id": "BC4", "gender": "F" },
+    { "id": "OPStanding", "gender": "M" },
+    { "id": "OPStanding", "gender": "F" },
+    { "id": "OPSeated", "gender": "M" },
+    { "id": "OPSeated", "gender": "F" },
+    { "id": "Friendly", "gender": "M" },
+    { "id": "Friendly", "gender": "F" },
+    { "id": "PairBC3" },
+    { "id": "PairBC4" },
+    { "id": "TeamsBC1BC2" },
+    { "id": "TeamFriendly" },
+    { "id": "Recreation" }
   ],
   "courts": [
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
   ],
   "match": {
     "sections": [
@@ -104,3 +52,4 @@
     "tieBreak": "finalShot"
   }
 }
+

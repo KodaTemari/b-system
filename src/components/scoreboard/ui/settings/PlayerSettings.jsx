@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../../../locales';
 import { COUNTRIES } from '../../../../utils/scoreboard/countries';
 
@@ -31,11 +31,16 @@ const PlayerSettings = ({
   selectedRedLimit,
   setSelectedRedLimit,
   selectedBlueLimit,
-  setSelectedBlueLimit
+  setSelectedBlueLimit,
+  playerOptions = [],
+  selectedRedPlayerId = '',
+  selectedBluePlayerId = ''
 }) => {
   const currentLang = getCurrentLanguage();
   const [showRedSelect, setShowRedSelect] = useState(false);
   const [showBlueSelect, setShowBlueSelect] = useState(false);
+  const [showRedSuggestions, setShowRedSuggestions] = useState(false);
+  const [showBlueSuggestions, setShowBlueSuggestions] = useState(false);
 
   // Sort country list based on language
   const sortedCountries = useMemo(() => {
@@ -71,23 +76,116 @@ const PlayerSettings = ({
     if (side === 'blue') setShowBlueSelect(false);
   };
 
+  const renderPlayerOptionLabel = (player) => {
+    return (
+      <>
+        <span className="playerSuggestionId" aria-hidden="true">{player.id || ''}</span>
+        <span className="playerSuggestionContent">
+          <span className="playerSuggestionName">{player.name}</span>
+          {player.categoryLabel && (
+            <span className="playerSuggestionMeta">（{player.categoryLabel}）</span>
+          )}
+        </span>
+      </>
+    );
+  };
+
+  const externalRedName = pendingChanges['red.name'] !== undefined ? pendingChanges['red.name'] : (gameData?.red?.name || '');
+  const externalBlueName = pendingChanges['blue.name'] !== undefined ? pendingChanges['blue.name'] : (gameData?.blue?.name || '');
+  const [redInputValue, setRedInputValue] = useState(externalRedName);
+  const [blueInputValue, setBlueInputValue] = useState(externalBlueName);
+
+  // 外部値変更時にローカル入力値を追従（編集中でない場合）
+  useEffect(() => {
+    if (!showRedSuggestions && redInputValue !== externalRedName) {
+      setRedInputValue(externalRedName);
+    }
+  }, [externalRedName, showRedSuggestions]);
+  useEffect(() => {
+    if (!showBlueSuggestions && blueInputValue !== externalBlueName) {
+      setBlueInputValue(externalBlueName);
+    }
+  }, [externalBlueName, showBlueSuggestions]);
+
+  const redSuggestions = useMemo(
+    () => (showRedSuggestions ? playerOptions : []),
+    [showRedSuggestions, playerOptions]
+  );
+  const blueSuggestions = useMemo(
+    () => (showBlueSuggestions ? playerOptions : []),
+    [showBlueSuggestions, playerOptions]
+  );
+
+  const commitNameChange = (side, nameValue, selectedPlayerId) => {
+    const value = nameValue || '';
+    const selectedPlayer = playerOptions.find((p) => p.id === selectedPlayerId);
+    const keepPlayerId = selectedPlayer && selectedPlayer.name === value ? selectedPlayerId : '';
+    setPendingChanges((prev) => ({
+      ...prev,
+      [`${side}.name`]: value,
+      [`${side}.playerID`]: keepPlayerId
+    }));
+  };
+
+  const applyPlayerSelection = (side, player) => {
+    setPendingChanges((prev) => ({
+      ...prev,
+      [`${side}.playerID`]: player?.id || '',
+      [`${side}.name`]: player?.name || ''
+    }));
+    if (side === 'red') {
+      setRedInputValue(player?.name || '');
+      setShowRedSuggestions(false);
+    } else {
+      setBlueInputValue(player?.name || '');
+      setShowBlueSuggestions(false);
+    }
+  };
+
   return (
     <div id="playerInput">
       {/* Red Player Settings */}
       <div id="redPlayerInput" className="playerSettingGroup">
         <div className="nameSetting">
+          <div className="playerAutocomplete">
           <input
             id="redNameInput"
             type="text"
             placeholder={getLocalizedText('labels.redName', currentLang) || 'Red Name'}
-            value={pendingChanges['red.name'] !== undefined ? pendingChanges['red.name'] : (gameData?.red?.name || '')}
+            value={redInputValue}
+            autoComplete="off"
+            onFocus={() => setShowRedSuggestions(true)}
+            onBlur={() => {
+              setTimeout(() => setShowRedSuggestions(false), 120);
+              commitNameChange('red', redInputValue, selectedRedPlayerId);
+            }}
             onChange={(e) => {
-              setPendingChanges(prev => ({
-                ...prev,
-                'red.name': e.target.value
-              }));
+              const value = e.target.value;
+              setRedInputValue(value);
+              setShowRedSuggestions(true);
             }}
           />
+          {showRedSuggestions && (
+            <ul className="playerSuggestionList">
+              {redSuggestions.length === 0 ? (
+                <li className="playerSuggestionEmpty">候補がありません</li>
+              ) : (
+                redSuggestions.map((player) => (
+                  <li
+                    key={player.id}
+                    className={`playerSuggestionItem ${selectedRedPlayerId === player.id ? 'isSelected' : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyPlayerSelection('red', player);
+                    }}
+                  >
+                    {renderPlayerOptionLabel(player)}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+          </div>
         </div>
         <div className="profilePic">
           <label 
@@ -159,18 +257,45 @@ const PlayerSettings = ({
       {/* Blue Player Settings */}
       <div id="bluePlayerInput" className="playerSettingGroup">
         <div className="nameSetting">
+          <div className="playerAutocomplete">
           <input
             id="blueNameInput"
             type="text"
             placeholder={getLocalizedText('labels.blueName', currentLang) || 'Blue Name'}
-            value={pendingChanges['blue.name'] !== undefined ? pendingChanges['blue.name'] : (gameData?.blue?.name || '')}
+            value={blueInputValue}
+            autoComplete="off"
+            onFocus={() => setShowBlueSuggestions(true)}
+            onBlur={() => {
+              setTimeout(() => setShowBlueSuggestions(false), 120);
+              commitNameChange('blue', blueInputValue, selectedBluePlayerId);
+            }}
             onChange={(e) => {
-              setPendingChanges(prev => ({
-                ...prev,
-                'blue.name': e.target.value
-              }));
+              const value = e.target.value;
+              setBlueInputValue(value);
+              setShowBlueSuggestions(true);
             }}
           />
+          {showBlueSuggestions && (
+            <ul className="playerSuggestionList">
+              {blueSuggestions.length === 0 ? (
+                <li className="playerSuggestionEmpty">候補がありません</li>
+              ) : (
+                blueSuggestions.map((player) => (
+                  <li
+                    key={player.id}
+                    className={`playerSuggestionItem ${selectedBluePlayerId === player.id ? 'isSelected' : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyPlayerSelection('blue', player);
+                    }}
+                  >
+                    {renderPlayerOptionLabel(player)}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+          </div>
         </div>
         <div className="profilePic">
           <label 

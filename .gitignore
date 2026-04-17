@@ -34,8 +34,12 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
-# テストデータ（実際の大会データは除外しない）
-# public/data/0-TEST/ は開発用なので含める
+# 非公開データ（本番/実名など）
+# private/README.md は運用説明のためコミットする
+private/data/
+
+# 一時スクリプト（ローカル生成用）
+tools/_tmp_*.mjs
 
 # バックアップファイル
 *.backup

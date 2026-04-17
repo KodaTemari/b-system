@@ -7,6 +7,14 @@ const os = require('os');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// 大会データのルート（既定: ../public/data）
+// 開発時に本番相当データを使う場合は、環境変数 B_SYSTEM_DATA_ROOT にディレクトリを指定する
+// 例: B_SYSTEM_DATA_ROOT=C:\path\to\private\data
+const PUBLIC_DATA_ROOT = path.join(__dirname, '../public/data');
+const DATA_ROOT = process.env.B_SYSTEM_DATA_ROOT
+  ? path.resolve(process.env.B_SYSTEM_DATA_ROOT)
+  : PUBLIC_DATA_ROOT;
+
 // ローカルIPアドレスを取得する関数
 function getLocalIPAddress() {
   const interfaces = os.networkInterfaces();
@@ -25,8 +33,31 @@ function getLocalIPAddress() {
 app.use(cors());
 app.use(express.json());
 
-// 静的ファイルの提供
-app.use('/data', express.static(path.join(__dirname, '../public/data')));
+/** 読み取り: DATA_ROOT を優先し、無ければ public/data（共有 JSON・別 eventId のデモ用） */
+async function readJsonUnderEvent(eventId, ...pathSegments) {
+  const rel = path.join(eventId, ...pathSegments);
+  const primary = path.join(DATA_ROOT, rel);
+  if (await fs.pathExists(primary)) {
+    return fs.readJson(primary);
+  }
+  const fallback = path.join(PUBLIC_DATA_ROOT, rel);
+  if (await fs.pathExists(fallback)) {
+    return fs.readJson(fallback);
+  }
+  return null;
+}
+
+async function resolveCourtDir(eventId) {
+  const d1 = path.join(DATA_ROOT, eventId, 'court');
+  if (await fs.pathExists(d1)) return d1;
+  const d2 = path.join(PUBLIC_DATA_ROOT, eventId, 'court');
+  if (await fs.pathExists(d2)) return d2;
+  return null;
+}
+
+// 静的ファイルの提供（B_SYSTEM_DATA_ROOT 利用時は DATA_ROOT を優先し、無いパスは public/data にフォールバック）
+app.use('/data', express.static(DATA_ROOT));
+app.use('/data', express.static(PUBLIC_DATA_ROOT));
 
 // データを更新する汎用APIエンドポイント
 app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
@@ -35,7 +66,7 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
     const data = req.body;
 
     // ファイルパスを構築
-    const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, `${filename}.json`);
+    const filePath = path.join(DATA_ROOT, eventId, 'court', courtId, `${filename}.json`);
     
     // ディレクトリが存在しない場合は作成
     await fs.ensureDir(path.dirname(filePath));
@@ -65,10 +96,8 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
 app.get('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
   try {
     const { eventId, courtId, filename } = req.params;
-    const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, `${filename}.json`);
-    
-    if (await fs.pathExists(filePath)) {
-      const data = await fs.readJson(filePath);
+    const data = await readJsonUnderEvent(eventId, 'court', courtId, `${filename}.json`);
+    if (data != null) {
       res.json(data);
     } else {
       res.status(404).json({ error: 'File not found' });
@@ -82,8 +111,8 @@ app.get('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
 app.get('/api/data/:eventId/courts', async (req, res) => {
   try {
     const { eventId } = req.params;
-    const courtDir = path.join(__dirname, '../public/data', eventId, 'court');
-    if (!(await fs.pathExists(courtDir))) {
+    const courtDir = await resolveCourtDir(eventId);
+    if (!courtDir) {
       return res.json([]);
     }
     const entries = await fs.readdir(courtDir, { withFileTypes: true });
@@ -98,8 +127,8 @@ app.get('/api/data/:eventId/courts', async (req, res) => {
 app.get('/api/data/:eventId/results/all-games', async (req, res) => {
   try {
     const { eventId } = req.params;
-    const courtDir = path.join(__dirname, '../public/data', eventId, 'court');
-    if (!(await fs.pathExists(courtDir))) {
+    const courtDir = await resolveCourtDir(eventId);
+    if (!courtDir) {
       return res.json({ games: [] });
     }
     const entries = await fs.readdir(courtDir, { withFileTypes: true });
@@ -121,9 +150,9 @@ app.get('/api/data/:eventId/results/all-games', async (req, res) => {
 // 後方互換性のための既存エンドポイント
 app.get('/api/game/:eventId/court/:courtId', async (req, res) => {
   const { eventId, courtId } = req.params;
-  const filePath = path.join(__dirname, '../public/data', eventId, 'court', courtId, 'game.json');
-  if (await fs.pathExists(filePath)) {
-    res.json(await fs.readJson(filePath));
+  const data = await readJsonUnderEvent(eventId, 'court', courtId, 'game.json');
+  if (data != null) {
+    res.json(data);
   } else {
     res.status(404).json({ error: 'Not found' });
   }
@@ -138,6 +167,10 @@ app.put('/api/game/:eventId/court/:courtId', async (req, res) => {
 // サーバー起動
 app.listen(PORT, '0.0.0.0', () => {
   const localIP = getLocalIPAddress();
+  console.log(`Data root (primary): ${DATA_ROOT}`);
+  if (path.resolve(DATA_ROOT) !== path.resolve(PUBLIC_DATA_ROOT)) {
+    console.log(`Data root (fallback): ${PUBLIC_DATA_ROOT}`);
+  }
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Server running on http://${localIP}:${PORT}`);
   console.log(`IP: ${localIP}:${PORT}`);

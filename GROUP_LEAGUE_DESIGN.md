@@ -409,13 +409,13 @@ State更新
 ### グループリーグ表示画面
 
 ```
-https://boccia.app/event/{eventId}/results/group?class={className}&gender={gender}
+https://boccia.app/event/{eventId}/results/pool?class={className}&gender={gender}
 ```
 
 **例**:
 ```
-https://boccia.app/event/2026-tokyo/results/group?class=BC4&gender=Male
-https://boccia.app/event/2026-tokyo/results/group?class=PairBC3
+https://boccia.app/event/2026-tokyo/results/pool?class=BC4&gender=Male
+https://boccia.app/event/2026-tokyo/results/pool?class=PairBC3
 ```
 
 **クエリパラメータ**:

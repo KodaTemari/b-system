@@ -33,7 +33,8 @@ const SettingModal = ({
   genderParam,
   onPendingChangesChange,
   isOpen,
-  onCustomModalChange
+  onCustomModalChange,
+  classificationCount
 }) => {
   // Class options and gender state
   const [classificationOptions, setClassificationOptions] = useState([]);
@@ -49,6 +50,7 @@ const SettingModal = ({
   // Red/Blue timer limits (ms)
   const [selectedRedLimit, setSelectedRedLimit] = useState(gameData?.red?.limit || 300000);
   const [selectedBlueLimit, setSelectedBlueLimit] = useState(gameData?.blue?.limit || 300000);
+  const [playerOptions, setPlayerOptions] = useState([]);
 
   // Tracks automatic updates from class changes
   const lastClassChangeRef = useRef({ classId: null, timestamp: 0 });
@@ -59,11 +61,23 @@ const SettingModal = ({
 
   // Tracks pending changes (applied on OK)
   const [pendingChanges, setPendingChanges] = useState({});
+  const sceneDefaultAppliedRef = useRef(null);
 
   // Notify parent of changes
+  const lastNotifiedPendingRef = useRef('');
   useEffect(() => {
     if (onPendingChangesChange) {
-      onPendingChangesChange(pendingChanges);
+      // 参照ではなく「内容」で差分判定（無限ループ防止）
+      let serialized = '';
+      try {
+        serialized = JSON.stringify(pendingChanges);
+      } catch {
+        serialized = '';
+      }
+      if (serialized !== lastNotifiedPendingRef.current) {
+        lastNotifiedPendingRef.current = serialized;
+        onPendingChangesChange(pendingChanges);
+      }
     }
   }, [pendingChanges, onPendingChangesChange]);
 
@@ -72,6 +86,12 @@ const SettingModal = ({
 
   // Scene from gameData (for filtering classification options)
   const currentScene = gameData?.scene || 'official';
+  const selectedRedPlayerId = pendingChanges['red.playerID'] !== undefined
+    ? pendingChanges['red.playerID']
+    : (gameData?.red?.playerID || '');
+  const selectedBluePlayerId = pendingChanges['blue.playerID'] !== undefined
+    ? pendingChanges['blue.playerID']
+    : (gameData?.blue?.playerID || '');
 
   // Filter classification options based on scene
   const filteredClassificationOptions = useMemo(() => {
@@ -99,6 +119,43 @@ const SettingModal = ({
         return classificationOptions;
     }
   }, [classificationOptions, currentScene]);
+
+  // Load player ledger for selection in standby settings
+  useEffect(() => {
+    const loadPlayers = async () => {
+      if (!id) {
+        setPlayerOptions([]);
+        return;
+      }
+      try {
+        const playersUrl = `/data/${id}/classes/FRD/player.json`;
+        const response = await fetch(playersUrl);
+        if (!response.ok) {
+          setPlayerOptions([]);
+          return;
+        }
+        const playersData = await response.json();
+        if (!Array.isArray(playersData)) {
+          setPlayerOptions([]);
+          return;
+        }
+        const normalized = playersData
+          .map((p) => ({
+            id: String(p.id ?? ''),
+            name: p.name || '',
+            classId: p.classId || '',
+            gender: p.gender || '',
+            categoryLabel: p.categoryLabel || ''
+          }))
+          .filter((p) => p.id && p.name);
+        setPlayerOptions(normalized);
+      } catch (error) {
+        console.error('Failed to load player ledger:', error);
+        setPlayerOptions([]);
+      }
+    };
+    loadPlayers();
+  }, [id]);
 
   // Get settings for specific class (wrapped in useCallback for useEffect dependency)
   const getClassSettings = useCallback((classId) => {
@@ -260,6 +317,11 @@ const SettingModal = ({
   useEffect(() => {
     if (filteredClassificationOptions.length === 0) return;
 
+    // 無限ループ防止：同一sceneでの自動デフォルト適用は1回だけにする
+    if (sceneDefaultAppliedRef.current === currentScene) {
+      return;
+    }
+
     const isValidForScene = selectedClassId && filteredClassificationOptions.some(opt => opt.value === selectedClassId);
     
     // If current classification is not valid for the scene, set default classification
@@ -291,6 +353,7 @@ const SettingModal = ({
             newChanges.classification = '';
             return newChanges;
           });
+          sceneDefaultAppliedRef.current = currentScene;
           return;
       }
       
@@ -348,14 +411,17 @@ const SettingModal = ({
         
         // Update classification display value
         updateClassificationValue(defaultClassId, defaultGender, true);
+        sceneDefaultAppliedRef.current = currentScene;
       } else {
         // If default doesn't exist, clear classification
-        setSelectedClassId('');
-        setSelectedGender('');
+        if (selectedClassId !== '') setSelectedClassId('');
+        if (selectedGender !== '') setSelectedGender('');
         
         // Update URL params to clear classification
         if (setSearchParams) {
           setSearchParams(prev => {
+            // すでに消えている場合は更新しない（無限ループ防止）
+            if (!prev.has('c') && !prev.has('g')) return prev;
             const newParams = new URLSearchParams(prev);
             newParams.delete('c');
             newParams.delete('g');
@@ -364,11 +430,15 @@ const SettingModal = ({
         }
         
         setPendingChanges(prev => {
+          // すでに空なら更新しない（無限ループ防止）
+          if (prev.classification === '' && !('classification' in prev)) return prev;
+          if (prev.classification === '') return prev;
           const newChanges = { ...prev };
           delete newChanges.classification;
           newChanges.classification = '';
           return newChanges;
         });
+        sceneDefaultAppliedRef.current = currentScene;
       }
     }
   }, [currentScene, selectedClassId, filteredClassificationOptions, getClassSettings, updateClassificationValue, currentLimitsRef, setSelectedRedLimit, setSelectedBlueLimit, setSelectedWarmup, setSelectedInterval, setSelectedTieBreak, setSelectedRules, setSelectedResultApproval, setSelectedEnds, setPendingChanges, setSearchParams]);
@@ -834,6 +904,18 @@ const SettingModal = ({
         }).filter(option => option !== null);
 
         setClassificationOptions(options);
+
+        // classificationsが1つの大会は選択UI不要：自動的にそのクラスを適用
+        if (id && options.length === 1) {
+          const only = options[0];
+          if (only?.value && selectedClassId !== only.value) {
+            setSelectedClassId(only.value);
+            const defaultGender = only.hasGender ? 'M' : '';
+            if (selectedGender !== defaultGender) setSelectedGender(defaultGender);
+            // ルール等の設定はクラスに従って適用（classification はクラス名のまま）
+            updateClassificationValue(only.value, defaultGender, true);
+          }
+        }
       } catch (error) {
         console.error('Class info load error:', error);
       }
@@ -842,7 +924,7 @@ const SettingModal = ({
     if (section === 'standby') {
       loadClassifications();
     }
-  }, [id, section, currentLang]);
+  }, [id, section, currentLang, selectedClassId, selectedGender, updateClassificationValue]);
 
   // Get settings for specific class (wrapped in useCallback for useEffect dependency)
   // Handle class/gender changes
@@ -1254,6 +1336,7 @@ const SettingModal = ({
               handleClassificationChange={handleClassificationChange}
               selectedGender={selectedGender}
               handleGenderChange={handleGenderChange}
+              classificationCount={classificationCount}
               pendingChanges={pendingChanges}
               gameData={gameData}
               setPendingChanges={setPendingChanges}
@@ -1266,6 +1349,9 @@ const SettingModal = ({
               setSelectedRedLimit={setSelectedRedLimit}
               selectedBlueLimit={selectedBlueLimit}
               setSelectedBlueLimit={setSelectedBlueLimit}
+              playerOptions={playerOptions}
+              selectedRedPlayerId={selectedRedPlayerId}
+              selectedBluePlayerId={selectedBluePlayerId}
             />
             <div id="detailSettings">
               <TimerSettings

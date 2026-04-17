@@ -1,6 +1,6 @@
 /**
- * グループリーグの順位表を試合結果から計算する
- * game.json の配列を渡し、classification ごとに集計する
+ * プール（リーグ）の順位表を試合結果から計算する
+ * game.json の配列を渡し、classification ごとにプールとして集計する
  */
 
 /**
@@ -71,8 +71,8 @@ export function computeStandingsByClassification(gamesList) {
     if (!byClassification.has(key)) {
       byClassification.set(key, { matches: [], players: new Map() });
     }
-    const group = byClassification.get(key);
-    group.matches.push(toMatchSummary({ courtId, game }));
+    const poolData = byClassification.get(key);
+    poolData.matches.push(toMatchSummary({ courtId, game }));
 
     const red = game.red || {};
     const blue = game.blue || {};
@@ -82,8 +82,8 @@ export function computeStandingsByClassification(gamesList) {
     const blueScore = blue.score ?? 0;
 
     const ensurePlayer = (name) => {
-      if (!group.players.has(name)) {
-        group.players.set(name, {
+      if (!poolData.players.has(name)) {
+        poolData.players.set(name, {
           name,
           wins: 0,
           losses: 0,
@@ -92,7 +92,7 @@ export function computeStandingsByClassification(gamesList) {
           pointsAgainst: 0
         });
       }
-      return group.players.get(name);
+      return poolData.players.get(name);
     };
 
     const redP = ensurePlayer(redName);

@@ -122,6 +122,12 @@
   margin-top: 5vh;
 }
 
+#eventName {
+  margin: 0 1vw 0.6vh;
+  font-size: var(--font-size-m);
+  font-weight: 600;
+}
+
 #matchNameContainer {
   display: flex;
   align-items: center;
@@ -1670,6 +1676,7 @@ h2 .profilePic img {
   text-align: center;
   text-align-last: center;
 }
+
 #standbySetting #genderInput {
   top: 2vh;
   left: 67vw;
@@ -1767,10 +1774,94 @@ h2 .profilePic img {
   margin-bottom: 2vh;
 }
 
+#playerInput .playerAutocomplete {
+  position: relative;
+  width: 100%;
+}
+
 #playerInput .nameSetting input {
   width: 100%;
   font-size: var(--font-size-l);
   text-align: center;
+  padding-left: 1.2vw;
+}
+
+#playerInput .playerSuggestionList {
+  position: absolute;
+  top: calc(100% + 0.5vh);
+  left: 0;
+  z-index: 120;
+  width: 100%;
+  max-height: 55vh;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0.4vh 0;
+  background-color: rgb(var(--color-gray-darker));
+  border: solid 0.2vmin rgb(var(--color-gray));
+  border-radius: 1vmin;
+  box-shadow: 0 1.2vmin 2.4vmin rgba(var(--color-black), 0.35);
+}
+
+#playerInput .playerSuggestionItem,
+#playerInput .playerSuggestionEmpty {
+  padding: 1vh 1vw;
+  color: rgb(var(--color-white));
+  font-size: var(--font-size-s);
+  line-height: 1.1;
+}
+
+#playerInput .playerSuggestionItem {
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.8em;
+  align-items: start;
+}
+
+#playerInput .playerSuggestionId {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 4ch; /* 4桁分の座布団 */
+  margin-top: 0.1em;
+  padding: 0.2em;
+  background-color: rgba(var(--color-white),0.1);
+  border-radius: 0.6vmin;
+  font-size: 0.8em;
+  opacity: 0.95;
+}
+
+#playerInput .playerSuggestionContent {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.15em;
+}
+
+#playerInput .playerSuggestionName {
+  font-size: 1.2em;
+  font-weight: 600;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#playerInput .playerSuggestionMeta {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.6;
+  line-height: 1.15;
+}
+
+#playerInput .playerSuggestionItem:hover,
+#playerInput .playerSuggestionItem.isSelected {
+  background-color: rgb(var(--color-gray-medium));
+}
+
+#playerInput .playerSuggestionEmpty {
+  opacity: 0.8;
 }
 
 .profilePic label {

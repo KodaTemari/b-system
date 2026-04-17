@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 import {
   computeStandingsByClassification,
   isGameCompleted
-} from '../../utils/results/groupStandings';
-import './GroupResults.css';
+} from '../../utils/results/poolStandings';
+import './PoolResults.css';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -15,10 +15,10 @@ const TEAM_COLORS = [
 ];
 
 /**
- * グループリーグ結果表示画面
- * 前バージョンと同様の「対戦成績マトリックス＋勝ち数・得失点・得点・順位」形式で表示
+ * プール結果表示画面
+ * プール（A,B,C…）ごとに「対戦成績マトリックス＋勝ち数・得失点・得点・順位」形式で表示
  */
-const GroupResults = () => {
+const PoolResults = () => {
   const { id: eventId } = useParams();
   const [gamesList, setGamesList] = useState([]);
   const [eventName, setEventName] = useState('');
@@ -66,12 +66,12 @@ const GroupResults = () => {
     return () => clearInterval(interval);
   }, [fetchAllGames]);
 
-  const grouped = computeStandingsByClassification(gamesList);
+  const pooled = computeStandingsByClassification(gamesList);
   const completedCount = gamesList.filter(({ game }) => isGameCompleted(game)).length;
 
   if (loading && gamesList.length === 0) {
     return (
-      <div className="groupResults loading">
+      <div className="poolResults loading">
         <p>データを読み込み中...</p>
       </div>
     );
@@ -79,58 +79,58 @@ const GroupResults = () => {
 
   if (error) {
     return (
-      <div className="groupResults error">
+      <div className="poolResults error">
         <p>エラー: {error}</p>
       </div>
     );
   }
 
   return (
-    <div className="groupResults">
-      <header className="groupResultsHeader">
-        <h1 className="groupResultsTitle">{eventName}</h1>
-        <p className="groupResultsSubtitle">グループリーグ結果（{POLL_INTERVAL_MS / 1000}秒ごとに更新）</p>
+    <div className="poolResults">
+      <header className="poolResultsHeader">
+        <h1 className="poolResultsTitle">{eventName}</h1>
+        <p className="poolResultsSubtitle">プール結果（{POLL_INTERVAL_MS / 1000}秒ごとに更新）</p>
       </header>
 
-      {grouped.length === 0 ? (
-        <p className="groupResultsEmpty">
+      {pooled.length === 0 ? (
+        <p className="poolResultsEmpty">
           {completedCount === 0
             ? '完了した試合がまだありません。'
-            : '試合データはありますが、クラス分類でグループ化できる試合がありません。'}
+            : '試合データはありますが、プールでまとめられる試合がありません。'}
         </p>
       ) : (
-        <div className="groupResultsBlocks">
-          {grouped.map(({ classification, standings, matches, matrix, shortNames }) => (
-            <section key={classification} className="groupResultsBlock">
-              <h2 className="groupResultsBlockTitle">{classification}</h2>
+        <div className="poolResultsBlocks">
+          {pooled.map(({ classification, standings, matches, matrix, shortNames }, poolIndex) => (
+            <section key={classification} className="poolResultsBlock">
+              <h2 className="poolResultsBlockTitle">プール{String.fromCharCode(65 + poolIndex)}</h2>
 
-              <div className="groupResultsMatrixWrap">
-                <table className="groupResultsMatrix">
+              <div className="poolResultsMatrixWrap">
+                <table className="poolResultsMatrix">
                   <thead>
                     <tr>
-                      <th className="groupResultsMatrixTeamHeader" scope="col">チーム</th>
+                      <th className="poolResultsMatrixTeamHeader" scope="col">チーム</th>
                       {shortNames.map((short, j) => (
-                        <th key={j} className="groupResultsMatrixColHeader">{short}</th>
+                        <th key={j} className="poolResultsMatrixColHeader">{short}</th>
                       ))}
-                      <th className="groupResultsMatrixSummaryHeader">勝ち数</th>
-                      <th className="groupResultsMatrixSummaryHeader">得失点</th>
-                      <th className="groupResultsMatrixSummaryHeader">得点</th>
-                      <th className="groupResultsMatrixSummaryHeader">順位</th>
+                      <th className="poolResultsMatrixSummaryHeader">勝ち数</th>
+                      <th className="poolResultsMatrixSummaryHeader">得失点</th>
+                      <th className="poolResultsMatrixSummaryHeader">得点</th>
+                      <th className="poolResultsMatrixSummaryHeader">順位</th>
                     </tr>
                   </thead>
                   <tbody>
                     {standings.map((row, i) => (
                       <tr key={row.name}>
-                        <td className="groupResultsMatrixTeamCell">
+                        <td className="poolResultsMatrixTeamCell">
                           <span
-                            className="groupResultsTeamIcon"
+                            className="poolResultsTeamIcon"
                             style={{ backgroundColor: TEAM_COLORS[i % TEAM_COLORS.length] }}
                             aria-hidden
                           />
-                          <span className="groupResultsTeamName">{row.name}</span>
+                          <span className="poolResultsTeamName">{row.name}</span>
                         </td>
                         {matrix[i].map((cell, j) => (
-                          <td key={j} className="groupResultsMatrixCell">
+                          <td key={j} className="poolResultsMatrixCell">
                             {cell === null ? (
                               i === j ? '-' : '—'
                             ) : (
@@ -140,12 +140,12 @@ const GroupResults = () => {
                             )}
                           </td>
                         ))}
-                        <td className="groupResultsMatrixSummaryCell">{row.wins}</td>
-                        <td className={`groupResultsMatrixSummaryCell ${row.pointDiff >= 0 ? 'diffPlus' : 'diffMinus'}`}>
+                        <td className="poolResultsMatrixSummaryCell">{row.wins}</td>
+                        <td className={`poolResultsMatrixSummaryCell ${row.pointDiff >= 0 ? 'diffPlus' : 'diffMinus'}`}>
                           {row.pointDiff >= 0 ? '+' : ''}{row.pointDiff}
                         </td>
-                        <td className="groupResultsMatrixSummaryCell">{row.pointsFor}</td>
-                        <td className="groupResultsMatrixSummaryCell">{row.rank}</td>
+                        <td className="poolResultsMatrixSummaryCell">{row.pointsFor}</td>
+                        <td className="poolResultsMatrixSummaryCell">{row.rank}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -159,4 +159,4 @@ const GroupResults = () => {
   );
 };
 
-export default GroupResults;
+export default PoolResults;

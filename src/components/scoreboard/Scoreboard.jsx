@@ -58,8 +58,10 @@ const Scoreboard = () => {
     redName,
     blueName,
     category,
+    eventName,
     matchName,
     classification,
+    classificationCount,
 
     // Timers
     redTimer,
@@ -92,6 +94,9 @@ const Scoreboard = () => {
     updateField,
     updateDirectField
   } = useScoreboard();
+
+  // 大会名のフォールバック（init.json から取得できない場合でも id を表示）
+  const effectiveEventName = eventName || id || '';
 
   // Tracks pending changes in the settings modal
   const [settingPendingChanges, setSettingPendingChanges] = useState({});
@@ -1080,6 +1085,8 @@ const Scoreboard = () => {
         tieBreak={gameData.match?.tieBreak}
         sections={gameData.match?.sections}
         category={gameData.category}
+        eventName={effectiveEventName}
+        classificationCount={classificationCount}
         matchName={settingPendingChanges.matchName !== undefined ? settingPendingChanges.matchName : matchName}
         classification={settingPendingChanges.classification !== undefined ? settingPendingChanges.classification : classification}
         warmup={warmup}
@@ -1149,6 +1156,8 @@ const Scoreboard = () => {
           onPendingChangesChange={setSettingPendingChanges}
           isOpen={settingOpen}
           onCustomModalChange={setCustomModalOpen}
+          classificationCount={classificationCount}
+          eventName={effectiveEventName}
           onUpdateField={(parent, child, value) => {
             if (child) {
               // red.name や blue.name の場合

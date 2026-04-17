@@ -1,0 +1,114 @@
+{
+  "eventId": "0-TEST",
+  "classCode": "FRD",
+  "timezone": "Asia/Tokyo",
+  "courts": ["1", "2", "3", "4", "5", "6", "7", "8"],
+  "pools": [
+    {
+      "poolId": "A",
+      "playerIds": ["P001", "P002", "P003", "P004", "P005", "P006", "P007", "P008"]
+    },
+    {
+      "poolId": "B",
+      "playerIds": ["P009", "P010", "P011", "P012", "P013", "P014", "P015", "P016"]
+    }
+  ],
+  "matches": [
+    {
+      "matchId": "0TEST-RR-A-001",
+      "poolId": "A",
+      "poolMatchIndex": 1,
+      "roundRobinRound": 1,
+      "courtId": "1",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P001",
+      "bluePlayerId": "P002",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "0TEST-RR-A-002",
+      "poolId": "A",
+      "poolMatchIndex": 2,
+      "roundRobinRound": 1,
+      "courtId": "2",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P003",
+      "bluePlayerId": "P004",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "0TEST-RR-A-003",
+      "poolId": "A",
+      "poolMatchIndex": 3,
+      "roundRobinRound": 1,
+      "courtId": "3",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P005",
+      "bluePlayerId": "P006",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "0TEST-RR-A-004",
+      "poolId": "A",
+      "poolMatchIndex": 4,
+      "roundRobinRound": 1,
+      "courtId": "4",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P007",
+      "bluePlayerId": "P008",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "0TEST-RR-B-001",
+      "poolId": "B",
+      "poolMatchIndex": 1,
+      "roundRobinRound": 1,
+      "courtId": "5",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P009",
+      "bluePlayerId": "P010",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "0TEST-RR-B-002",
+      "poolId": "B",
+      "poolMatchIndex": 2,
+      "roundRobinRound": 1,
+      "courtId": "6",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P011",
+      "bluePlayerId": "P012",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "0TEST-RR-B-003",
+      "poolId": "B",
+      "poolMatchIndex": 3,
+      "roundRobinRound": 1,
+      "courtId": "7",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P013",
+      "bluePlayerId": "P014",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "0TEST-RR-B-004",
+      "poolId": "B",
+      "poolMatchIndex": 4,
+      "roundRobinRound": 1,
+      "courtId": "8",
+      "scheduledStart": "2026-04-20T09:00:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "P015",
+      "bluePlayerId": "P016",
+      "status": "scheduled"
+    }
+  ]
+}

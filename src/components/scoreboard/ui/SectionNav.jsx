@@ -14,8 +14,10 @@ const SectionNavigation = React.memo(({
   tieBreak,
   sections,
   category,
+  eventName,
   matchName,
   classification,
+  classificationCount,
   warmup,
   warmupEnabled = true,
   warmupMode = 'simultaneous',
@@ -50,7 +52,7 @@ const SectionNavigation = React.memo(({
 
   // Format classification to display with multi-language support (Standard/English or Japanese)
   const formattedClassification = useMemo(() => {
-    if (!classification) return '';
+    if (!classification || classificationCount === 1) return '';
 
     const lang = currentLang || getCurrentLanguage();
     const parts = classification.split(' ');
@@ -170,6 +172,7 @@ const SectionNavigation = React.memo(({
         <div id="secStandby">
           {/* Display on both ctrl and view */}
           <div id="matchInfo">
+            {eventName && <p id="eventName">{eventName}</p>}
             <p id="classification">{formattedClassification}</p>
             <div id="matchNameContainer">
               <h1 id="matchName">{matchName}</h1>

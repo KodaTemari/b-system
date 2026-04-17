@@ -1,0 +1,59 @@
+{
+  "matchID": "",
+  "match": {
+    "end": 0,
+    "ends": [],
+    "sectionID": 0,
+    "section": "standby",
+    "approvals": {
+      "red": false,
+      "referee": false,
+      "blue": false
+    }
+  },
+  "screen": {
+    "active": "",
+    "isColorSet": true,
+    "isScoreAdjusting": false,
+    "isPenaltyThrow": false
+  },
+  "scene": "general",
+  "warmup": {
+    "time": 120000,
+    "isRunning": false
+  },
+  "interval": {
+    "time": 60000,
+    "isRunning": false
+  },
+  "red": {
+    "score": 0,
+    "ball": 6,
+    "isRunning": false,
+    "time": 300000,
+    "isTieBreak": false,
+    "result": "",
+    "playerID": "",
+    "affiliation": "",
+    "scores": [],
+    "yellowCard": 0,
+    "penaltyBall": 0,
+    "redCard": 0
+  },
+  "blue": {
+    "score": 0,
+    "ball": 6,
+    "isRunning": false,
+    "time": 300000,
+    "isTieBreak": false,
+    "result": "",
+    "playerID": "",
+    "affiliation": "",
+    "scores": [],
+    "yellowCard": 0,
+    "penaltyBall": 0,
+    "redCard": 0
+  },
+  "courtId": "",
+  "lastUpdated": "2026-02-27T08:58:17.280Z"
+}

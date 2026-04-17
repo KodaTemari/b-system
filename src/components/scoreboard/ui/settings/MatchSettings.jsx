@@ -7,37 +7,46 @@ export const MatchGeneralSettings = ({
   handleClassificationChange,
   selectedGender,
   handleGenderChange,
+  classificationCount,
   pendingChanges,
   gameData,
   setPendingChanges
 }) => {
   const currentLang = getCurrentLanguage();
+  const isSingleClassification =
+    classificationCount === 1 ||
+    (Array.isArray(classificationOptions) && classificationOptions.length === 1);
+  const hideClassificationUi = isSingleClassification;
 
   return (
     <>
-      <select
-        id="classificationInput"
-        className="settingSelect"
-        value={selectedClassId}
-        onChange={(e) => handleClassificationChange(e.target.value)}
-      >
-        {classificationOptions.map((option, index) => (
-          <option key={index} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <select
-        id="genderInput"
-        className="settingSelect genderSelect"
-        value={selectedGender}
-        onChange={(e) => handleGenderChange(e.target.value)}
-        disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}
-      >
-        <option value="M">{getLocalizedText('options.gender.male', currentLang)}</option>
-        <option value="F">{getLocalizedText('options.gender.female', currentLang)}</option>
-        <option value="">{getLocalizedText('options.gender.mixed', currentLang)}</option>
-      </select>
+      {!hideClassificationUi && (
+        <>
+          <select
+            id="classificationInput"
+            className="settingSelect"
+            value={selectedClassId}
+            onChange={(e) => handleClassificationChange(e.target.value)}
+          >
+            {classificationOptions.map((option, index) => (
+              <option key={index} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
+            id="genderInput"
+            className="settingSelect genderSelect"
+            value={selectedGender}
+            onChange={(e) => handleGenderChange(e.target.value)}
+            disabled={!selectedClassId || !classificationOptions.find(opt => opt.value === selectedClassId)?.hasGender}
+          >
+            <option value="M">{getLocalizedText('options.gender.male', currentLang)}</option>
+            <option value="F">{getLocalizedText('options.gender.female', currentLang)}</option>
+            <option value="">{getLocalizedText('options.gender.mixed', currentLang)}</option>
+          </select>
+        </>
+      )}
 
       <input
         id="matchNameInput"

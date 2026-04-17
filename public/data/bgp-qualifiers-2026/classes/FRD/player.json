@@ -1,0 +1,398 @@
+[
+  {
+    "id": "1",
+    "name": "Demo Player 01",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "2",
+    "name": "Demo Player 02",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "3",
+    "name": "Demo Player 03",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "4",
+    "name": "Demo Player 04",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "5",
+    "name": "Demo Player 05",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "6",
+    "name": "Demo Player 06",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "7",
+    "name": "Demo Player 07",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "8",
+    "name": "Demo Player 08",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "9",
+    "name": "Demo Player 09",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "10",
+    "name": "Demo Player 10",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "11",
+    "name": "Demo Player 11",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "A"
+  },
+  {
+    "id": "12",
+    "name": "Demo Player 12",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "13",
+    "name": "Demo Player 13",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "14",
+    "name": "Demo Player 14",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "15",
+    "name": "Demo Player 15",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "16",
+    "name": "Demo Player 16",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "17",
+    "name": "Demo Player 17",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "18",
+    "name": "Demo Player 18",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "19",
+    "name": "Demo Player 19",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "20",
+    "name": "Demo Player 20",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "21",
+    "name": "Demo Player 21",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "22",
+    "name": "Demo Player 22",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool B (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "B"
+  },
+  {
+    "id": "23",
+    "name": "Demo Player 23",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "24",
+    "name": "Demo Player 24",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "25",
+    "name": "Demo Player 25",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "26",
+    "name": "Demo Player 26",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "27",
+    "name": "Demo Player 27",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "28",
+    "name": "Demo Player 28",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "29",
+    "name": "Demo Player 29",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "30",
+    "name": "Demo Player 30",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "31",
+    "name": "Demo Player 31",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "32",
+    "name": "Demo Player 32",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "33",
+    "name": "Demo Player 33",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool C (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "C"
+  },
+  {
+    "id": "34",
+    "name": "Demo Player 34",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "35",
+    "name": "Demo Player 35",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "36",
+    "name": "Demo Player 36",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "37",
+    "name": "Demo Player 37",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "38",
+    "name": "Demo Player 38",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "39",
+    "name": "Demo Player 39",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "40",
+    "name": "Demo Player 40",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "41",
+    "name": "Demo Player 41",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "42",
+    "name": "Demo Player 42",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "43",
+    "name": "Demo Player 43",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  },
+  {
+    "id": "44",
+    "name": "Demo Player 44",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool D (public demo)",
+    "note": "Anonymized demo data for public repository. Place real data under private/ (not committed).",
+    "poolId": "D"
+  }
+]

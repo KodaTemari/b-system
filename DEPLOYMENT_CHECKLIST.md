@@ -18,7 +18,7 @@
 
 - [ ] **両方のモードが動作する**
   - [ ] スタンドアロンモード: http://localhost:5173/scoreboard?p=ctrl
-  - [ ] 大会モード: http://localhost:5173/event/0-TEST/court/A/scoreboard?p=ctrl
+  - [ ] 大会モード: http://localhost:5173/event/0-TEST/court/1/scoreboard?p=ctrl
 
 - [ ] **データ保存が正常に動作する**
   - [ ] スコア入力
@@ -202,7 +202,7 @@ server {
   - https://boccia.app/scoreboard（ディスプレイ）
 
 - [ ] **大会モード**
-  - https://boccia.app/event/test/court/A/scoreboard?p=ctrl
+  - https://boccia.app/event/test/court/1/scoreboard?p=ctrl
 
 ### トラブルシューティング
 

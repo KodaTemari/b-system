@@ -1,0 +1,39 @@
+{
+  "classification": "IND Friendly",
+  "category": "",
+  "matchName": "",
+  "match": {
+    "totalEnds": 2,
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "friendlyMatch",
+    "resultApproval": "none",
+    "tieBreak": "finalShot",
+    "sections": [
+      "standby",
+      "warmup",
+      "end1",
+      "interval",
+      "end2",
+      "matchFinished"
+    ]
+  },
+  "red": {
+    "name": "Red Name",
+    "limit": 300000,
+    "country": "",
+    "profilePic": ""
+  },
+  "blue": {
+    "name": "Blue Name",
+    "limit": 300000,
+    "country": "",
+    "profilePic": ""
+  },
+  "warmup": {
+    "limit": 120000
+  },
+  "interval": {
+    "limit": 60000
+  }
+}

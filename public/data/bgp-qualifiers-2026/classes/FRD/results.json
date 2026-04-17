@@ -1,40 +1,41 @@
 {
-  "eventId": "0-TEST",
+  "eventId": "bgp-qualifiers-2026",
   "classCode": "FRD",
   "updatedAt": "2026-04-20T10:05:00+09:00",
+  "notes": "Public demo only. Sample results for the first two matches in schedule.json.",
   "matchResults": {
-    "0TEST-RR-A-001": {
+    "BGP2026-RR-A-001": {
       "status": "completed",
       "courtId": "1",
       "startedAt": "2026-04-20T09:02:00+09:00",
       "finishedAt": "2026-04-20T09:38:00+09:00",
       "red": {
-        "playerId": "P001",
+        "playerId": "1",
         "score": 2,
         "ends": [1, 0],
         "result": "win"
       },
       "blue": {
-        "playerId": "P002",
+        "playerId": "2",
         "score": 1,
         "ends": [0, 1],
         "result": "lose"
       },
       "tieBreak": false
     },
-    "0TEST-RR-A-002": {
+    "BGP2026-RR-A-002": {
       "status": "completed",
       "courtId": "2",
       "startedAt": "2026-04-20T09:01:00+09:00",
       "finishedAt": "2026-04-20T09:40:00+09:00",
       "red": {
-        "playerId": "P003",
+        "playerId": "3",
         "score": 2,
         "ends": [0, 1],
         "result": "lose"
       },
       "blue": {
-        "playerId": "P004",
+        "playerId": "4",
         "score": 2,
         "ends": [1, 0],
         "result": "win"

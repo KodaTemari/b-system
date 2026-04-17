@@ -1,48 +1,48 @@
-/* グループリーグ結果表示 */
+/* プール結果表示 */
 
-.groupResults {
+.poolResults {
   min-height: 100vh;
   padding: 1.5rem;
   background-color: #222;
   color: #fff;
 }
 
-.groupResults.loading,
-.groupResults.error {
+.poolResults.loading,
+.poolResults.error {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
 }
 
-.groupResults.error p {
+.poolResults.error p {
   color: #f66;
 }
 
-.groupResultsHeader {
+.poolResultsHeader {
   margin-bottom: 1.5rem;
   text-align: center;
 }
 
-.groupResultsTitle {
+.poolResultsTitle {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0 0 0.25rem 0;
 }
 
-.groupResultsSubtitle {
+.poolResultsSubtitle {
   font-size: 0.875rem;
   color: #aaa;
   margin: 0;
 }
 
-.groupResultsEmpty {
+.poolResultsEmpty {
   text-align: center;
   color: #999;
   padding: 2rem;
 }
 
-.groupResultsBlocks {
+.poolResultsBlocks {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -52,7 +52,7 @@
   justify-content: center;
 }
 
-.groupResultsBlock {
+.poolResultsBlock {
   background: #2a2a2a;
   border-radius: 8px;
   padding: 1.25rem;
@@ -62,7 +62,7 @@
   max-width: 560px;
 }
 
-.groupResultsBlockTitle {
+.poolResultsBlockTitle {
   font-size: 1.125rem;
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
@@ -70,47 +70,47 @@
 }
 
 /* 対戦成績マトリックス（リーグ表） */
-.groupResultsMatrixWrap {
+.poolResultsMatrixWrap {
   overflow-x: auto;
 }
 
-.groupResultsMatrix {
+.poolResultsMatrix {
   width: 100%;
   font-size: 0.8125rem;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-.groupResultsMatrix th,
-.groupResultsMatrix td {
+.poolResultsMatrix th,
+.poolResultsMatrix td {
   border: 1px solid #555;
   padding: 0.35rem 0.5rem;
   text-align: center;
   vertical-align: middle;
 }
 
-.groupResultsMatrixTeamHeader {
+.poolResultsMatrixTeamHeader {
   width: 8rem;
   min-width: 6rem;
   text-align: left;
   border: 1px solid #555;
 }
 
-.groupResultsMatrixColHeader {
+.poolResultsMatrixColHeader {
   width: 3.5rem;
   min-width: 2.5rem;
   color: #bbb;
   font-weight: 600;
 }
 
-.groupResultsMatrixSummaryHeader {
+.poolResultsMatrixSummaryHeader {
   width: 2.5rem;
   min-width: 2rem;
   color: #bbb;
   font-weight: 600;
 }
 
-.groupResultsMatrixTeamCell {
+.poolResultsMatrixTeamCell {
   text-align: left;
   padding-left: 0.5rem;
   display: flex;
@@ -118,7 +118,7 @@
   gap: 0.4rem;
 }
 
-.groupResultsTeamIcon {
+.poolResultsTeamIcon {
   flex-shrink: 0;
   width: 14px;
   height: 14px;
@@ -126,34 +126,34 @@
   display: inline-block;
 }
 
-.groupResultsTeamName {
+.poolResultsTeamName {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
 }
 
-.groupResultsMatrixCell {
+.poolResultsMatrixCell {
   white-space: nowrap;
 }
 
-.groupResultsMatrixCell .resultWin {
+.poolResultsMatrixCell .resultWin {
   color: #8c8;
 }
 
-.groupResultsMatrixCell .resultLose {
+.poolResultsMatrixCell .resultLose {
   color: #c88;
 }
 
-.groupResultsMatrixSummaryCell {
+.poolResultsMatrixSummaryCell {
   font-weight: 600;
 }
 
-.groupResultsMatrixSummaryCell.diffPlus {
+.poolResultsMatrixSummaryCell.diffPlus {
   color: #8c8;
 }
 
-.groupResultsMatrixSummaryCell.diffMinus {
+.poolResultsMatrixSummaryCell.diffMinus {
   color: #c88;
 }
 
@@ -166,16 +166,16 @@
 }
 
 @media (min-width: 768px) {
-  .groupResultsTitle {
+  .poolResultsTitle {
     font-size: 1.75rem;
   }
 
-  .groupResultsMatrix {
+  .poolResultsMatrix {
     font-size: 0.875rem;
   }
 
-  .groupResultsMatrix th,
-  .groupResultsMatrix td {
+  .poolResultsMatrix th,
+  .poolResultsMatrix td {
     padding: 0.45rem 0.5rem;
   }
 }

@@ -326,7 +326,7 @@ chmod +x deploy.sh
    - https://boccia.app/scoreboard（ディスプレイ）
 
 2. **大会モード**
-   - https://boccia.app/event/test/court/A/scoreboard?p=ctrl
+   - https://boccia.app/event/test/court/1/scoreboard?p=ctrl
 
 ### サーバー側で確認
 

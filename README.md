@@ -46,10 +46,19 @@ node server.js
 
 #### 大会モード（サーバー連携）
 ```
-タブレット: http://localhost:5173/event/0-TEST/court/A/scoreboard?p=ctrl
-ディスプレイ: http://localhost:5173/event/0-TEST/court/A/scoreboard
-グループリーグ結果: http://localhost:5173/event/0-TEST/results/group
+タブレット: http://localhost:5173/event/0-TEST/court/1/scoreboard?p=ctrl
+ディスプレイ: http://localhost:5173/event/0-TEST/court/1/scoreboard
+プール結果: http://localhost:5173/event/0-TEST/results/pool
 ```
+
+### 非公開の大会データ（BGP など）
+
+公開リポジトリに載せたくない大会データは、`private/data/` 配下に置いてください（`private/data/` は `.gitignore` 済み）。
+
+- 公開用のダミー: `public/data/bgp-qualifiers-2026/`（URL の `eventId` 用。実名は入れない）
+- 本番用の実データ: `private/data/` 直下に **ステージごとの `eventId` フォルダ**（例: `bgp-2026-preliminary`）。命名の考え方は `private/README.md` を参照。
+
+詳細は `private/README.md` を参照してください。
 
 ## 🏗️ ビルド
 
@@ -118,11 +127,11 @@ npm run build
 - 選手情報表示
 - エンドスコア履歴
 
-### 5) グループリーグ結果表示 ✅ 実装済み
+### 5) プール結果表示 ✅ 実装済み
 - 全コートの試合結果を一括表示
-- クラス分類ごとの順位表（勝・敗・分・得点・失点・得失点差）
-- 試合結果一覧
+- プール（A,B,C…）ごとの対戦マトリックス・順位表
 - 5秒ごとの自動更新（Polling）
+- **用語**: プール＝A,B,C…、コート＝1,2,3…
 
 ### スタンドアロンモード ✅ 実装済み
 - サーバー不要で動作
@@ -146,10 +155,12 @@ public/data/
 ├── classDefinitions.json    # クラス定義（共通）
 └── {eventId}/               # 大会ごと
     └── court/
-        └── {courtId}/
+        └── {courtId}/       # コートIDは 1, 2, 3, …（数値文字列）
             ├── settings.json # 試合設定
             └── game.json     # 試合進行データ
 ```
+
+**用語**: **プール**＝A,B,C…（リーグ単位）。**コート**＝1,2,3…（会場のコート番号）。プールAをコート1・2で同時に実施する運用が可能。
 
 ## 🔧 トラブルシューティング
 
@@ -177,7 +188,7 @@ node server.js
 
 - [ ] 1) 大会管理画面
 - [ ] 2) 全コート進捗管理画面
-- [x] 5) グループリーグ結果表示
+- [x] 5) プール結果表示
 - [ ] 6) トーナメント結果表示
 - [ ] WebSocketによるリアルタイム通知
 

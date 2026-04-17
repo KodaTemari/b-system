@@ -1,0 +1,32 @@
+{
+  "gameName": "BGP 2026 Qualifiers (public demo)",
+  "classifications": [
+    { "id": "Friendly"}
+  ],
+  "courts": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+  ],
+  "match": {
+    "totalEnds": 2,
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "friendlyMatch",
+    "resultApproval": "none",
+    "sections": [
+      "standby",
+      "warmup",
+      "end1",
+      "interval",
+      "end2",
+      "matchFinished"
+    ],
+    "tieBreak": "finalShot"
+  }
+}
