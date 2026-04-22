@@ -1,0 +1,108 @@
+.schedulePage {
+  padding: 20px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.scheduleSection {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.scheduleTitle {
+  font-size: 1.25rem;
+  margin-bottom: 6px;
+}
+
+.scheduleMeta {
+  font-size: 0.95rem;
+  margin-bottom: 14px;
+  color: rgb(var(--color-gray-lighter));
+}
+
+.scheduleEmpty {
+  color: rgb(var(--color-gray-lighter));
+}
+
+.scheduleTableWrap {
+  overflow: auto;
+  border: 1px solid rgb(var(--color-gray));
+  border-radius: 8px;
+}
+
+.scheduleTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+  background: rgb(var(--color-gray-medium));
+}
+
+.scheduleHeaderCell {
+  background: rgb(var(--color-gray));
+  color: rgb(var(--color-white));
+  border: 1px solid rgb(var(--color-gray-light));
+  padding: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.scheduleTable thead .scheduleHeaderCell:first-child {
+  width: 78px;
+}
+
+.scheduleTimeCell {
+  background: rgb(var(--color-gray-medium));
+  border: 1px solid rgb(var(--color-gray-light));
+  padding: 8px 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  width: 78px;
+  text-align: center;
+}
+
+.scheduleCell {
+  border: 1px solid rgb(var(--color-gray-light));
+  padding: 8px;
+  vertical-align: top;
+}
+
+.scheduleCell.isEmptyCell {
+  color: rgb(var(--color-gray-light));
+  text-align: center;
+}
+
+.scheduleMatchMain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.schedulePlayerName {
+  margin: 0;
+  min-width: 0;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.schedulePlayerName.isPlaceholderName {
+  color: rgb(var(--color-gray-mid-light));
+  font-size: 0.8rem;
+}
+
+.scheduleVersus {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgb(var(--color-gray-lighter));
+  letter-spacing: 0.03em;
+}
+
+.scheduleMatchSub {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgb(var(--color-gray-mid-light));
+  text-align: center;
+}

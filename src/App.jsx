@@ -1,10 +1,13 @@
+import './styles/tokens.css';
 import './App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 
 const Scoreboard = lazy(() => import('./components/scoreboard/Scoreboard'));
 const PoolResults = lazy(() => import('./components/results/PoolResults'));
-const Tournament = lazy(() => import('./components/tournament'));
+const PoolStandings = lazy(() => import('./components/pool/PoolStandings'));
+const Tournament = lazy(() => import('./components/tournament/Tournament'));
+const Schedule = lazy(() => import('./components/schedule/Schedule'));
 
 const App = () => {
     return (
@@ -21,6 +24,19 @@ const App = () => {
                 <Route path="/event/:id/results/pool" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <PoolResults />
+                    </Suspense>
+                } />
+
+                {/* プール順位表 */}
+                <Route path="/event/:id/pool/standings" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <PoolStandings />
+                    </Suspense>
+                } />
+
+                <Route path="/event/:id/pool/:poolId/standings" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <PoolStandings />
                     </Suspense>
                 } />
                 
@@ -40,6 +56,12 @@ const App = () => {
                 <Route path="/event/:id/tournament" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <Tournament />
+                    </Suspense>
+                } />
+
+                <Route path="/event/:id/schedule" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <Schedule />
                     </Suspense>
                 } />
                 

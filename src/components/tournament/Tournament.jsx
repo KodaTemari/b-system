@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import './tournament.css';
+import './Tournament.css';
 
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 70;

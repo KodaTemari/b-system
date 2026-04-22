@@ -1,0 +1,75 @@
+{
+  "eventId": "bgp-2026-preliminary",
+  "classCode": "FRD",
+  "timezone": "Asia/Tokyo",
+  "courts": ["1", "2"],
+  "notes": "Pool A standings mock data for UI preview.",
+  "pools": [
+    {
+      "poolId": "A",
+      "playerIds": ["A01", "A02", "A03", "A04", "A05"]
+    }
+  ],
+  "matches": [
+    {
+      "matchId": "BGP2026P-RR-A-001",
+      "poolId": "A",
+      "poolMatchIndex": 1,
+      "roundRobinRound": 1,
+      "courtId": "1",
+      "scheduledStart": "2026-04-25T09:00:00+09:00",
+      "durationMinutes": 35,
+      "redPlayerId": "A01",
+      "bluePlayerId": "A02",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "BGP2026P-RR-A-002",
+      "poolId": "A",
+      "poolMatchIndex": 2,
+      "roundRobinRound": 1,
+      "courtId": "2",
+      "scheduledStart": "2026-04-25T09:00:00+09:00",
+      "durationMinutes": 35,
+      "redPlayerId": "A03",
+      "bluePlayerId": "A04",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "BGP2026P-RR-A-003",
+      "poolId": "A",
+      "poolMatchIndex": 3,
+      "roundRobinRound": 2,
+      "courtId": "1",
+      "scheduledStart": "2026-04-25T09:40:00+09:00",
+      "durationMinutes": 35,
+      "redPlayerId": "A05",
+      "bluePlayerId": "A01",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "BGP2026P-RR-A-004",
+      "poolId": "A",
+      "poolMatchIndex": 4,
+      "roundRobinRound": 2,
+      "courtId": "2",
+      "scheduledStart": "2026-04-25T09:40:00+09:00",
+      "durationMinutes": 35,
+      "redPlayerId": "A02",
+      "bluePlayerId": "A03",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "BGP2026P-RR-A-005",
+      "poolId": "A",
+      "poolMatchIndex": 5,
+      "roundRobinRound": 3,
+      "courtId": "1",
+      "scheduledStart": "2026-04-25T10:20:00+09:00",
+      "durationMinutes": 35,
+      "redPlayerId": "A04",
+      "bluePlayerId": "A05",
+      "status": "scheduled"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "A01",
+    "name": "山田 太郎",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (mock)",
+    "poolId": "A",
+    "poolOrder": 1
+  },
+  {
+    "id": "A02",
+    "name": "佐藤 花子",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (mock)",
+    "poolId": "A",
+    "poolOrder": 2
+  },
+  {
+    "id": "A03",
+    "name": "鈴木 一郎",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (mock)",
+    "poolId": "A",
+    "poolOrder": 3
+  },
+  {
+    "id": "A04",
+    "name": "高橋 美咲",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (mock)",
+    "poolId": "A",
+    "poolOrder": 4
+  },
+  {
+    "id": "A05",
+    "name": "田中 恒一",
+    "classId": "Friendly",
+    "gender": "",
+    "categoryLabel": "Pool A (mock)",
+    "poolId": "A",
+    "poolOrder": 5
+  }
+]

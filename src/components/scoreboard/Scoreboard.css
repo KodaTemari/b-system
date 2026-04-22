@@ -1,38 +1,6 @@
 @charset "utf-8";
 
 /* ========================================
-   CSS変数定義
-   ======================================== */
-
-:root {
-  /* フォントサイズ */
-  --font-size-3s: max(10px, 1.5vmin);
-  --font-size-2s: max(12px, 2vmin);
-  --font-size-s: max(14px, 3vmin);
-  --font-size-m: max(16px, 4vmin);
-  --font-size-l: max(18px, 5vmin);
-  --font-size-2l: max(20px, 6vmin);
-
-  /* カラーパレット（RGB値のみ定義） */
-  /* グレースケール（明るい順） */
-  --color-white: 255, 255, 255;
-  --color-gray-lighter: 212, 212, 212;
-  --color-gray-light: 102, 102, 102;
-  --color-gray: 68, 68, 68;
-  --color-gray-medium: 50, 50, 50;
-  --color-gray-dark: 34, 34, 34;
-  --color-gray-darker: 26, 26, 26;
-  --color-black: 0, 0, 0;
-
-  /* テーマカラー */
-  --color-red: 162, 47, 47;
-  --color-blue: 16, 87, 193;
-  --color-green: 46, 125, 50;
-  --color-green-light: 0, 255, 127;
-  --color-yellow: 255, 215, 0;
-}
-
-/* ========================================
    基本スタイルとアニメーション
    ======================================== */
 

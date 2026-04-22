@@ -49,6 +49,8 @@ node server.js
 タブレット: http://localhost:5173/event/0-TEST/court/1/scoreboard?p=ctrl
 ディスプレイ: http://localhost:5173/event/0-TEST/court/1/scoreboard
 プール結果: http://localhost:5173/event/0-TEST/results/pool
+トーナメント: http://localhost:5173/event/0-TEST/tournament
+スケジュール: http://localhost:5173/event/0-TEST/schedule
 ```
 
 ### 非公開の大会データ（BGP など）
@@ -154,11 +156,18 @@ npm run build
 public/data/
 ├── classDefinitions.json    # クラス定義（共通）
 └── {eventId}/               # 大会ごと
+    ├── schedule.json        # 大会全体のスケジュール（クラス横断）
     └── court/
         └── {courtId}/       # コートIDは 1, 2, 3, …（数値文字列）
             ├── settings.json # 試合設定
             └── game.json     # 試合進行データ
 ```
+
+### スケジュールファイル運用ルール
+
+- `schedule.json` は **`{eventId}` 直下**に配置してください（例: `public/data/0-TEST/schedule.json`）。
+- `classes/{classCode}/schedule.json` は廃止し、今後は使用しません。
+- スケジュールは大会全体（クラス横断）で管理し、必要に応じて各試合に `classCode` を持たせてフィルタしてください。
 
 **用語**: **プール**＝A,B,C…（リーグ単位）。**コート**＝1,2,3…（会場のコート番号）。プールAをコート1・2で同時に実施する運用が可能。
 

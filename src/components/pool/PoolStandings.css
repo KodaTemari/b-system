@@ -1,0 +1,122 @@
+.poolViewPage {
+  padding: 20px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.poolViewSection {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.poolViewTitle {
+  margin: 0 0 12px;
+  font-size: 1.4rem;
+}
+
+.poolViewMeta {
+  margin: 0 0 8px;
+  color: rgb(var(--color-gray-lighter));
+  font-size: 0.9rem;
+}
+
+.poolViewBlock {
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 8px;
+  background: rgb(var(--color-gray-medium));
+}
+
+.poolViewBlockTitle {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.poolViewEmpty {
+  margin: 0;
+  color: rgb(var(--color-gray-lighter));
+}
+
+.poolList {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.poolListItemTitle {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.poolListItem {
+  --poolHeaderBg: rgb(var(--color-primary, 135 184 111));
+}
+
+.poolMatrixWrap {
+  overflow: auto;
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 6px;
+}
+
+.poolMatrixTable {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: rgb(var(--color-gray-medium));
+}
+
+.poolMatrixTable th,
+.poolMatrixTable td {
+  border: 1px solid rgb(var(--color-gray-light));
+  text-align: center;
+  padding: 8px 6px;
+  font-size: 0.82rem;
+}
+
+.poolMatrixPoolHeader {
+  width: 132px;
+  background: var(--poolHeaderBg);
+  color: rgb(var(--color-black));
+}
+
+.poolMatrixTeamHeader {
+  font-weight: 600;
+  background: rgb(var(--color-gray));
+  color: rgb(var(--color-white));
+}
+
+.poolMatrixRowHeader {
+  text-align: left;
+  padding-left: 10px;
+  background: var(--poolHeaderBg);
+  color: rgb(var(--color-black));
+  width: 132px;
+}
+
+.poolMatrixScoreCell {
+  white-space: nowrap;
+}
+
+.poolMatrixDiagonalCell {
+  position: relative;
+  background:
+    linear-gradient(
+      to top right,
+      transparent calc(50% - 0.5px),
+      rgb(var(--color-gray-light)) 50%,
+      transparent calc(50% + 0.5px)
+    ),
+    rgb(var(--color-gray-medium));
+}
+
+.poolMatrixSummaryHeader {
+  width: 44px;
+  background: rgb(var(--color-gray));
+  color: rgb(var(--color-white));
+}
+
+.poolMatrixSummaryCell {
+  font-weight: 600;
+}
