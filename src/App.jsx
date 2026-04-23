@@ -8,6 +8,7 @@ const PoolResults = lazy(() => import('./components/results/PoolResults'));
 const PoolStandings = lazy(() => import('./components/pool/PoolStandings'));
 const Tournament = lazy(() => import('./components/tournament/Tournament'));
 const Schedule = lazy(() => import('./components/schedule/Schedule'));
+const HqProgress = lazy(() => import('./components/hq/HqProgress'));
 
 const App = () => {
     return (
@@ -62,6 +63,13 @@ const App = () => {
                 <Route path="/event/:id/schedule" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <Schedule />
+                    </Suspense>
+                } />
+
+                {/* 本部・試合進行（のちほど認証をかける想定） */}
+                <Route path="/event/:eventId/hq/progress" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <HqProgress />
                     </Suspense>
                 } />
                 

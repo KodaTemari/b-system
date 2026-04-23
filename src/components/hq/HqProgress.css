@@ -1,0 +1,113 @@
+/* 本部進行画面（掲示用 Schedule.css のテーブルレイアウトを流用） */
+
+.hqProgressPage {
+  padding: 20px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.hqProgressSection {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.hqProgressTitle {
+  font-size: 1.25rem;
+  margin-bottom: 6px;
+}
+
+.hqProgressSubtitle {
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+  color: rgb(var(--color-gray-lighter));
+}
+
+.hqProgressActionsBar {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.hqProgressApproverLabel {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  gap: 4px;
+}
+
+.hqProgressApproverInput {
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 6px;
+  background: rgb(var(--color-gray-medium));
+  color: rgb(var(--color-white));
+  padding: 6px 8px;
+  min-width: 180px;
+}
+
+.hqProgressOperationMessage {
+  margin: 0 0 10px;
+  color: rgb(var(--color-green));
+  font-size: 0.85rem;
+}
+
+.hqProgressOperationError {
+  margin: 0 0 10px;
+  color: rgb(var(--color-red));
+  font-size: 0.85rem;
+}
+
+.hqProgressStatus {
+  margin: 8px 0 8px;
+  font-size: 0.75rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.hqProgressStatus.isScheduled {
+  color: rgb(var(--color-gray-mid-light));
+}
+
+.hqProgressStatus.isAnnounced {
+  color: rgb(var(--color-blue));
+}
+
+.hqProgressStatus.isInProgress {
+  color: rgb(var(--color-green-light));
+}
+
+.hqProgressStatus.isCourtApproved {
+  color: rgb(var(--color-yellow));
+}
+
+.hqProgressStatus.isHqApproved {
+  color: rgb(var(--color-blue));
+}
+
+.hqProgressStatus.isReflected {
+  color: rgb(var(--color-green));
+}
+
+.hqProgressButtonRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.hqProgressActionButton {
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 6px;
+  background: rgb(var(--color-gray));
+  color: rgb(var(--color-white));
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  padding: 6px 8px;
+  flex: 1;
+}
+
+.hqProgressActionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

@@ -94,7 +94,7 @@ export const DEFAULT_GAME_DATA = {
     isRunning: false
   },
   red: {
-    name: 'Red Name',
+    name: 'Red',
     score: 0,
     scores: [], // [{ end: number, score: number, penalties?: string[] }]
     limit: TIMER_LIMITS.GAME,
@@ -109,7 +109,7 @@ export const DEFAULT_GAME_DATA = {
     redCard: 0
   },
   blue: {
-    name: 'Blue Name',
+    name: 'Blue',
     score: 0,
     scores: [], // [{ end: number, score: number, penalties?: string[] }]
     limit: TIMER_LIMITS.GAME,

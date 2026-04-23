@@ -151,7 +151,7 @@ const PlayerSettings = ({
           <input
             id="redNameInput"
             type="text"
-            placeholder={getLocalizedText('labels.redName', currentLang) || 'Red Name'}
+            placeholder={getLocalizedText('labels.redName', currentLang) || 'Red'}
             value={redInputValue}
             autoComplete="off"
             onFocus={() => setShowRedSuggestions(true)}
@@ -261,7 +261,7 @@ const PlayerSettings = ({
           <input
             id="blueNameInput"
             type="text"
-            placeholder={getLocalizedText('labels.blueName', currentLang) || 'Blue Name'}
+            placeholder={getLocalizedText('labels.blueName', currentLang) || 'Blue'}
             value={blueInputValue}
             autoComplete="off"
             onFocus={() => setShowBlueSuggestions(true)}

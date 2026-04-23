@@ -1,6 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DEFAULT_GAME_DATA, TIMER_LIMITS } from '../../utils/scoreboard/constants';
 
+/** 本部配信などサーバー側で更新され得る項目の比較用（スコア・タイマーは含めない） */
+function buildHqBroadcastSignature(data) {
+  if (!data) {
+    return '';
+  }
+  return [
+    data.matchID ?? '',
+    data.matchName ?? '',
+    data.classification ?? '',
+    data.category ?? '',
+    data.red?.name ?? '',
+    data.red?.playerID ?? '',
+    data.blue?.name ?? '',
+    data.blue?.playerID ?? '',
+  ].join('\u0001');
+}
+
 /**
  * データ同期のカスタムフック
  * Local Storage同期を管理
@@ -16,7 +33,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
   const isStandaloneMode = !id || !court;
   
 
-  const loadGameData = useCallback(async () => {
+  const loadGameData = useCallback(async (loadOpts = {}) => {
+    const silent = Boolean(loadOpts.silent);
     // スタンドアロンモードの場合は、サーバーからの読み込みをスキップ
     if (isStandaloneMode) {
       setIsLoading(true);
@@ -49,7 +67,9 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     // 大会モードの場合は通常通りサーバーから読み込み
     if (!id || !court) return;
 
-    setIsLoading(true);
+    if (!silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -85,8 +105,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
               tieBreak: initData.match?.tieBreak || 'finalShot',
               sections: initData.match?.sections
             },
-            red: { name: 'Red Name', limit: TIMER_LIMITS.GAME },
-            blue: { name: 'Blue Name', limit: TIMER_LIMITS.GAME },
+            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
+            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME },
             warmup: { limit: TIMER_LIMITS.WARMUP },
             interval: { limit: TIMER_LIMITS.INTERVAL }
           };
@@ -94,8 +114,8 @@ export const useDataSync = (id, cls, court, isCtrl) => {
           // init.json もない場合の最小限のデフォルト
           settingsData = {
             match: { totalEnds: 6, warmup: 'simultaneous', interval: 'enabled', rules: 'worldBoccia', resultApproval: 'enabled', tieBreak: 'finalShot' },
-            red: { name: 'Red Name', limit: TIMER_LIMITS.GAME },
-            blue: { name: 'Blue Name', limit: TIMER_LIMITS.GAME }
+            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
+            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME }
           };
         }
       }
@@ -172,22 +192,70 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         }
       }
       
-      setLocalData(mergedData);
-      localStorage.setItem(`scoreboard_${id}_${court}_data`, JSON.stringify(mergedData));
+      const storageKey = `scoreboard_${id}_${court}_data`;
 
-      // 初回のみ：ファイルが存在しなかった場合、作成したデフォルトをサーバーに保存
-      if (!settingsRes.ok || !gameRes.ok) {
-        if (isCtrl) {
-          saveToGameJson(mergedData);
+      if (silent) {
+        // 本部の announce 等でサーバーだけ更新されたとき、スコア・タイマーを壊さず表示名だけ追従する
+        setLocalData((prev) => {
+          if (!prev) {
+            localStorage.setItem(storageKey, JSON.stringify(mergedData));
+            queueMicrotask(() => {
+              window.dispatchEvent(new CustomEvent('scoreboardDataUpdate', {
+                detail: { key: storageKey, data: mergedData },
+              }));
+            });
+            return mergedData;
+          }
+          if (buildHqBroadcastSignature(mergedData) === buildHqBroadcastSignature(prev)) {
+            return prev;
+          }
+          const next = {
+            ...prev,
+            matchID: mergedData.matchID,
+            matchName: mergedData.matchName,
+            classification: mergedData.classification,
+            category: mergedData.category,
+            red: {
+              ...prev.red,
+              name: mergedData.red?.name,
+              playerID: mergedData.red?.playerID,
+            },
+            blue: {
+              ...prev.blue,
+              name: mergedData.blue?.name,
+              playerID: mergedData.blue?.playerID,
+            },
+          };
+          localStorage.setItem(storageKey, JSON.stringify(next));
+          queueMicrotask(() => {
+            window.dispatchEvent(new CustomEvent('scoreboardDataUpdate', {
+              detail: { key: storageKey, data: next },
+            }));
+          });
+          return next;
+        });
+      } else {
+        setLocalData(mergedData);
+        localStorage.setItem(storageKey, JSON.stringify(mergedData));
+
+        // 初回のみ：ファイルが存在しなかった場合、作成したデフォルトをサーバーに保存
+        if (!settingsRes.ok || !gameRes.ok) {
+          if (isCtrl) {
+            saveToGameJson(mergedData);
+          }
         }
       }
     } catch (err) {
       console.error('データ読み込みエラー:', err);
-      setError('データの読み込みに失敗しました');
+      if (!silent) {
+        setError('データの読み込みに失敗しました');
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
-  }, [id, court, isStandaloneMode]);
+  }, [id, court, isStandaloneMode, isCtrl]);
 
   // データを保存（設定と進行を分離して保存）
   const saveToGameJson = useCallback(async (data) => {
@@ -404,6 +472,18 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       }
     }
   }, [loadGameData, loadFromLocalStorage, isCtrl, id, court, isStandaloneMode]);
+
+  // 本部の配信で settings/game が更新されてもリロード不要にする（2秒ごと・ローディング表示なし）
+  useEffect(() => {
+    if (!id || !court || isStandaloneMode) {
+      return undefined;
+    }
+    const intervalMs = 2000;
+    const timer = setInterval(() => {
+      loadGameData({ silent: true });
+    }, intervalMs);
+    return () => clearInterval(timer);
+  }, [id, court, isStandaloneMode, loadGameData]);
 
   return {
     localData,
