@@ -119,6 +119,10 @@
   font-size: 13vmin;
 }
 
+#matchName.isCompact {
+  font-size: 6.5vmin;
+}
+
 /* VS表示 */
 .vs {
   position: absolute;

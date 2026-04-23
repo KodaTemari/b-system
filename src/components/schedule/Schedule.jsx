@@ -27,6 +27,7 @@ const Schedule = () => {
     startTime: '',
   });
   const [players, setPlayers] = useState([]);
+  const [courtColorStateMap, setCourtColorStateMap] = useState(new Map());
 
   useEffect(() => {
     const loadData = async () => {
@@ -66,6 +67,58 @@ const Schedule = () => {
     };
 
     loadData();
+  }, [eventId]);
+
+  useEffect(() => {
+    if (!eventId) {
+      setCourtColorStateMap(new Map());
+      return undefined;
+    }
+
+    let cancelled = false;
+    const loadCourtColorStates = async () => {
+      try {
+        const response = await fetch(`/api/data/${eventId}/results/all-games`);
+        if (!response.ok) {
+          return;
+        }
+        const payload = await response.json();
+        const games = Array.isArray(payload?.games) ? payload.games : [];
+        const responses = games.map((entry) => {
+          const game = entry?.game ?? {};
+            const matchID = String(game?.matchID ?? '').trim();
+            if (!matchID) {
+              return null;
+            }
+            return {
+              matchID,
+              isColorSet: game?.screen?.isColorSet === true,
+              redPlayerId: String(game?.red?.playerID ?? '').trim(),
+              bluePlayerId: String(game?.blue?.playerID ?? '').trim(),
+            };
+          });
+        if (cancelled) {
+          return;
+        }
+        const nextMap = new Map();
+        for (const entry of responses) {
+          if (!entry) continue;
+          nextMap.set(entry.matchID, entry);
+        }
+        setCourtColorStateMap(nextMap);
+      } catch {
+        if (!cancelled) {
+          setCourtColorStateMap(new Map());
+        }
+      }
+    };
+
+    loadCourtColorStates();
+    const timer = setInterval(loadCourtColorStates, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, [eventId]);
 
   const playerNameMap = useMemo(() => {
@@ -157,19 +210,27 @@ const Schedule = () => {
                       const blueName =
                         playerNameMap.get(String(match.bluePlayerId ?? '')) ??
                         String(match.bluePlayerName ?? match.bluePlayerId ?? 'TBD');
+                      const colorState = courtColorStateMap.get(String(match.matchId ?? ''));
+                      const isColorConfirmed = colorState?.isColorSet === true;
+                      const displayRedName = isColorConfirmed
+                        ? playerNameMap.get(String(colorState?.redPlayerId ?? '')) || redName
+                        : redName;
+                      const displayBlueName = isColorConfirmed
+                        ? playerNameMap.get(String(colorState?.bluePlayerId ?? '')) || blueName
+                        : blueName;
                       return (
                         <td key={`${slot}-${court}`} className="scheduleCell">
                           <div className="scheduleMatchMain">
                             <p
-                              className={`schedulePlayerName ${isWinnerPlaceholder(redName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${isColorConfirmed ? 'isRedConfirmed' : ''} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(redName)}
+                              {renderNameWithLineBreaks(displayRedName)}
                             </p>
                             <p className="scheduleVersus">VS</p>
                             <p
-                              className={`schedulePlayerName ${isWinnerPlaceholder(blueName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${isColorConfirmed ? 'isBlueConfirmed' : ''} ${isWinnerPlaceholder(displayBlueName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(blueName)}
+                              {renderNameWithLineBreaks(displayBlueName)}
                             </p>
                           </div>
                           <p className="scheduleMatchSub">{`ID: ${toShortMatchId(match.matchId)}`}</p>

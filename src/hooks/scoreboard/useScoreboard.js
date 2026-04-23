@@ -254,6 +254,31 @@ export const useScoreboard = () => {
   const redName = gameData?.red?.name || getPlayerName(red);
   const blueName = gameData?.blue?.name || getPlayerName(blue);
 
+  const lastSyncedSectionRef = useRef('');
+  useEffect(() => {
+    if (!isCtrl) {
+      return;
+    }
+    const eventId = String(id ?? '').trim();
+    const matchId = String(gameData?.matchID ?? '').trim();
+    const sectionValue = String(gameData?.match?.section ?? '').trim();
+    if (!eventId || !matchId || !sectionValue) {
+      return;
+    }
+    const syncKey = `${matchId}:${sectionValue}`;
+    if (lastSyncedSectionRef.current === syncKey) {
+      return;
+    }
+    lastSyncedSectionRef.current = syncKey;
+    fetch(`/api/progress/${eventId}/matches/${matchId}/sync-section`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section: sectionValue }),
+    }).catch((error) => {
+      console.warn('sync-section failed', error);
+    });
+  }, [isCtrl, id, gameData?.matchID, gameData?.match?.section]);
+
   // イベントハンドラー
   const handlers = useScoreboardHandlers({
     gameData,
@@ -269,9 +294,7 @@ export const useScoreboard = () => {
     setShowTimeModal,
     saveData,
     isCtrl,
-    currentLang,
-    id,
-    court
+    currentLang
   });
 
   // ウォームアップタイマー切り替えハンドラー（warmupTimer.remainingMsを使用）

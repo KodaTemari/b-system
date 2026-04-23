@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS matches (
   status TEXT NOT NULL DEFAULT 'scheduled' CHECK (
     status IN ('scheduled', 'announced', 'in_progress', 'court_approved', 'hq_approved', 'reflected')
   ),
+  warmup_started_at TEXT,
+  warmup_finished_at TEXT,
   started_at TEXT,
   court_approved_at TEXT,
   court_referee_name TEXT,

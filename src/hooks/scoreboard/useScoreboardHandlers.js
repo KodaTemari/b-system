@@ -20,9 +20,7 @@ export const useScoreboardHandlers = ({
   setShowTimeModal,
   saveData,
   isCtrl,
-  currentLang,
-  id,
-  court
+  currentLang
 }) => {
   // スコア選択ハンドラー
   const handleSelect = useCallback((color) => {
@@ -717,7 +715,7 @@ export const useScoreboardHandlers = ({
           screen: {
             ...gameData.screen,
             active: '',
-            isColorSet: false,
+            isColorSet: gameData.screen?.isColorSet ?? false,
             isScoreAdjusting: false,
             isPenaltyThrow: false
           }
@@ -757,7 +755,7 @@ export const useScoreboardHandlers = ({
         updatedGameData.screen = {
           ...gameData.screen,
           active: '',
-          isColorSet: false,
+          isColorSet: gameData.screen?.isColorSet ?? false,
           isScoreAdjusting: false,
           isPenaltyThrow: false
         };
@@ -1306,7 +1304,7 @@ export const useScoreboardHandlers = ({
     } catch (error) {
       console.error('リセット処理エラー:', error);
     }
-  }, [id, court, saveData, gameData]);
+  }, [saveData, gameData]);
 
   // エンド選択ハンドラー
   const handleEndsSelect = useCallback((e) => {
@@ -1357,7 +1355,6 @@ export const useScoreboardHandlers = ({
           updateScoreAdjusting(false);
         }
       }
-      updateField('screen', 'isColorSet', false);
       updateField('screen', 'isPenaltyThrow', false);
       
       // ペナルティボールをリセット
@@ -1392,7 +1389,7 @@ export const useScoreboardHandlers = ({
         screen: {
           ...gameData.screen,
           active: '',
-          isColorSet: false,
+          isColorSet: gameData.screen?.isColorSet ?? false,
           isScoreAdjusting: false,
           isPenaltyThrow: false
         }
@@ -1540,10 +1537,8 @@ export const useScoreboardHandlers = ({
       updateDirectField('blue', newBlue);
     }
     
-    // ctrlモードの場合のみ保存
-    if (isCtrl && saveData) {
-      saveData(updatedGameData);
-    }
+    // 色確定前の入れ替えは仮操作としてローカル反映のみにする。
+    // 最終確定は「色確定」ボタン押下時に updateConfirmColor(saveData) で保存される。
   }, [gameData, updateDirectField, saveData, isCtrl]);
 
   return {

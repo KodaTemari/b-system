@@ -89,6 +89,22 @@
   color: rgb(var(--color-green));
 }
 
+.hqProgressTimeline {
+  margin: 6px 0 8px;
+}
+
+.hqProgressTimelineItem {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: rgb(var(--color-gray-mid-light));
+  text-align: center;
+}
+
+.hqProgressTimelineItem.isDone {
+  color: rgb(var(--color-green-light));
+}
+
 .hqProgressButtonRow {
   display: flex;
   gap: 6px;

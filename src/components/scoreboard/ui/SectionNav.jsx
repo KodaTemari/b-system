@@ -137,6 +137,14 @@ const SectionNavigation = React.memo(({
     return localizedGender ? `${prefix}${localizedClassName} ${localizedGender}` : `${prefix}${localizedClassName}`;
   }, [classification, currentLang]);
 
+  const isFinalOrSemiFinal = useMemo(() => {
+    const label = String(matchName ?? '').trim();
+    if (!label) {
+      return false;
+    }
+    return label.includes('準決勝') || label.includes('決勝');
+  }, [matchName]);
+
 
   // Display control per section
   const getCurrentSectionId = () => {
@@ -175,7 +183,7 @@ const SectionNavigation = React.memo(({
             {eventName && <p id="eventName">{eventName}</p>}
             <p id="classification">{formattedClassification}</p>
             <div id="matchNameContainer">
-              <h1 id="matchName">{matchName}</h1>
+              <h1 id="matchName" className={isFinalOrSemiFinal ? '' : 'isCompact'}>{matchName}</h1>
             </div>
           </div>
 

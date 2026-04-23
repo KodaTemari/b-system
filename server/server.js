@@ -119,6 +119,14 @@ async function getProgressionSchemaText() {
 async function ensureProgressionSchema(db) {
   const schemaSql = await getProgressionSchemaText();
   await execSql(db, schemaSql);
+  const columns = await allSql(db, `PRAGMA table_info(matches)`);
+  const columnNames = new Set(columns.map((item) => String(item.name)));
+  if (!columnNames.has('warmup_started_at')) {
+    await runSql(db, `ALTER TABLE matches ADD COLUMN warmup_started_at TEXT`);
+  }
+  if (!columnNames.has('warmup_finished_at')) {
+    await runSql(db, `ALTER TABLE matches ADD COLUMN warmup_finished_at TEXT`);
+  }
 }
 
 async function getEventDb(eventId) {
@@ -161,6 +169,8 @@ function normalizeMatchRow(row) {
     bluePlayerId: row.blue_player_id,
     scheduledAt: row.scheduled_at,
     status: row.status,
+    warmupStartedAt: row.warmup_started_at,
+    warmupFinishedAt: row.warmup_finished_at,
     startedAt: row.started_at,
     courtApprovedAt: row.court_approved_at,
     courtRefereeName: row.court_referee_name,
@@ -507,6 +517,114 @@ async function syncUnannounceToCourtFiles(eventId, match) {
   }
 }
 
+/** 再テスト向け: 全コートのスコアボードファイルを初期状態へ戻す */
+async function resetAllCourtFilesForRetest(eventId) {
+  const courtDir = await resolveCourtDir(eventId);
+  if (!courtDir) {
+    return { courtCount: 0, updatedSettings: 0, updatedGames: 0 };
+  }
+  const entries = await fs.readdir(courtDir, { withFileTypes: true });
+  const courtIds = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+  let updatedSettings = 0;
+  let updatedGames = 0;
+
+  for (const courtId of courtIds) {
+    const baseDir = path.join(courtDir, courtId);
+    const settingsPath = path.join(baseDir, 'settings.json');
+    const gamePath = path.join(baseDir, 'game.json');
+
+    if (await fs.pathExists(settingsPath)) {
+      const settings = await fs.readJson(settingsPath);
+      settings.red = { ...(settings.red || {}), name: SCOREBOARD_DEFAULT_RED_NAME };
+      settings.blue = { ...(settings.blue || {}), name: SCOREBOARD_DEFAULT_BLUE_NAME };
+      settings.matchName = '';
+      await fs.writeJson(settingsPath, settings, { spaces: 2 });
+      updatedSettings += 1;
+    }
+
+    if (await fs.pathExists(gamePath)) {
+      const game = await fs.readJson(gamePath);
+      const redLimit = Number(game?.red?.limit) || 300000;
+      const blueLimit = Number(game?.blue?.limit) || 300000;
+      const warmupLimit = Number(game?.warmup?.limit) || 120000;
+      const intervalLimit = Number(game?.interval?.limit) || 60000;
+      const resetGame = {
+        ...game,
+        matchID: '',
+        matchName: '',
+        match: {
+          ...(game.match || {}),
+          end: 0,
+          ends: [],
+          sectionID: 0,
+          section: 'standby',
+          approvals: {
+            red: false,
+            referee: false,
+            blue: false,
+          },
+        },
+        screen: {
+          ...(game.screen || {}),
+          active: '',
+          isColorSet: false,
+          isScoreAdjusting: false,
+          isPenaltyThrow: false,
+        },
+        warmup: {
+          ...(game.warmup || {}),
+          isRunning: false,
+          time: warmupLimit,
+        },
+        interval: {
+          ...(game.interval || {}),
+          isRunning: false,
+          time: intervalLimit,
+        },
+        red: {
+          ...(game.red || {}),
+          name: SCOREBOARD_DEFAULT_RED_NAME,
+          playerID: '',
+          score: 0,
+          scores: [],
+          ball: 6,
+          isRunning: false,
+          time: redLimit,
+          isTieBreak: false,
+          result: '',
+          yellowCard: 0,
+          penaltyBall: 0,
+          redCard: 0,
+        },
+        blue: {
+          ...(game.blue || {}),
+          name: SCOREBOARD_DEFAULT_BLUE_NAME,
+          playerID: '',
+          score: 0,
+          scores: [],
+          ball: 6,
+          isRunning: false,
+          time: blueLimit,
+          isTieBreak: false,
+          result: '',
+          yellowCard: 0,
+          penaltyBall: 0,
+          redCard: 0,
+        },
+        lastUpdated: toIsoNow(),
+      };
+      await fs.writeJson(gamePath, resetGame, { spaces: 2 });
+      updatedGames += 1;
+    }
+  }
+
+  return {
+    courtCount: courtIds.length,
+    updatedSettings,
+    updatedGames,
+  };
+}
+
 // 静的ファイルの提供（B_SYSTEM_DATA_ROOT 利用時は DATA_ROOT を優先し、無いパスは public/data にフォールバック）
 app.use('/data', express.static(DATA_ROOT));
 app.use('/data', express.static(PUBLIC_DATA_ROOT));
@@ -547,6 +665,40 @@ app.get('/api/progress/:eventId/matches', async (req, res) => {
   }
 });
 
+// 再テスト向け: 全コートと進行DBを初期状態へ戻す
+app.post('/api/progress/:eventId/reset-all', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const db = await getEventDb(eventId);
+    await withTransaction(db, async () => {
+      const now = toIsoNow();
+      await runSql(
+        db,
+        `UPDATE matches
+         SET status = 'scheduled',
+             warmup_started_at = NULL,
+             warmup_finished_at = NULL,
+             started_at = NULL,
+             court_approved_at = NULL,
+             court_referee_name = NULL,
+             hq_approved_at = NULL,
+             hq_approver_name = NULL,
+             reflected_at = NULL,
+             version = version + 1,
+             updated_at = ?`,
+        [now],
+      );
+      await runSql(db, `DELETE FROM results WHERE event_id = ?`, [eventId]);
+      await runSql(db, `DELETE FROM approvals WHERE event_id = ?`, [eventId]);
+      await runSql(db, `DELETE FROM active_locks WHERE event_id = ?`, [eventId]);
+    });
+    const fileResetSummary = await resetAllCourtFilesForRetest(eventId);
+    res.json({ success: true, fileResetSummary });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
 // 進行システム: announced へ遷移（ロック確保）
 app.post('/api/progress/:eventId/matches/:matchId/announce', async (req, res) => {
   try {
@@ -560,14 +712,19 @@ app.post('/api/progress/:eventId/matches/:matchId/announce', async (req, res) =>
         throw createHttpError(409, `scheduled のみ announce 可能です（現在: ${row.status}）`);
       }
 
-      await assertNoActiveConflicts(db, eventId, row);
-      await lockMatchAndPlayers(db, eventId, row);
+      // 一時対応: 配信不能の切り分けのため、announce 時の重複チェック/ロック確保を無効化
+      // 안정後に再有効化する前提。
 
       const now = toIsoNow();
       await runSql(
         db,
         `UPDATE matches
-         SET status = 'announced', version = version + 1, updated_at = ?
+         SET status = 'announced',
+             warmup_started_at = NULL,
+             warmup_finished_at = NULL,
+             started_at = NULL,
+             version = version + 1,
+             updated_at = ?
          WHERE event_id = ? AND match_id = ?`,
         [now, eventId, matchId],
       );
@@ -605,7 +762,12 @@ app.post('/api/progress/:eventId/matches/:matchId/unannounce', async (req, res) 
       await runSql(
         db,
         `UPDATE matches
-         SET status = 'scheduled', version = version + 1, updated_at = ?
+         SET status = 'scheduled',
+             warmup_started_at = NULL,
+             warmup_finished_at = NULL,
+             started_at = NULL,
+             version = version + 1,
+             updated_at = ?
          WHERE event_id = ? AND match_id = ?`,
         [now, eventId, matchId],
       );
@@ -627,6 +789,128 @@ app.post('/api/progress/:eventId/matches/:matchId/unannounce', async (req, res) 
   }
 });
 
+// 進行システム: スコアボードの section 状態を本部進行へ同期
+app.post('/api/progress/:eventId/matches/:matchId/sync-section', async (req, res) => {
+  try {
+    const { eventId, matchId } = req.params;
+    const section = String(req.body?.section ?? '').trim();
+    if (!section) {
+      throw createHttpError(400, 'section は必須です');
+    }
+    const db = await getEventDb(eventId);
+    const result = await withTransaction(db, async () => {
+      const row = await getMatchOrFail(db, eventId, matchId);
+      if (!['announced', 'in_progress'].includes(row.status)) {
+        throw createHttpError(409, `announced / in_progress のみ同期可能です（現在: ${row.status}）`);
+      }
+
+      const isStandby = section === 'standby';
+      const isWarmup = ['warmup', 'warmup1', 'warmup2'].includes(section);
+      const isInProgressSection =
+        /^end\d+$/i.test(section) ||
+        ['interval', 'tieBreak', 'finalShot', 'matchFinished', 'resultApproval'].includes(section);
+      if (!isStandby && !isWarmup && !isInProgressSection) {
+        return row;
+      }
+
+      const now = toIsoNow();
+      const nextStatus = isInProgressSection ? 'in_progress' : 'announced';
+      const nextWarmupStartedAt = isStandby ? null : (isWarmup ? (row.warmup_started_at || now) : (row.warmup_started_at || now));
+      const nextWarmupFinishedAt = isInProgressSection ? (row.warmup_finished_at || now) : null;
+      const nextStartedAt = isInProgressSection ? (row.started_at || now) : null;
+      const isNoop =
+        row.status === nextStatus &&
+        (row.warmup_started_at || null) === nextWarmupStartedAt &&
+        (row.warmup_finished_at || null) === nextWarmupFinishedAt &&
+        (row.started_at || null) === nextStartedAt;
+      if (isNoop) {
+        return row;
+      }
+
+      await runSql(
+        db,
+        `UPDATE matches
+         SET status = ?,
+             warmup_started_at = ?,
+             warmup_finished_at = ?,
+             started_at = ?,
+             version = version + 1,
+             updated_at = ?
+         WHERE event_id = ? AND match_id = ?`,
+        [
+          nextStatus,
+          nextWarmupStartedAt,
+          nextWarmupFinishedAt,
+          nextStartedAt,
+          now,
+          eventId,
+          matchId,
+        ],
+      );
+      return getMatchOrFail(db, eventId, matchId);
+    });
+    res.json({ success: true, match: normalizeMatchRow(result) });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
+// 進行システム: ウォームアップ開始時刻を記録（コート側通知）
+app.post('/api/progress/:eventId/matches/:matchId/warmup-started', async (req, res) => {
+  try {
+    const { eventId, matchId } = req.params;
+    const db = await getEventDb(eventId);
+    const result = await withTransaction(db, async () => {
+      const row = await getMatchOrFail(db, eventId, matchId);
+      if (!['announced', 'in_progress'].includes(row.status)) {
+        throw createHttpError(409, `announced / in_progress のみ記録可能です（現在: ${row.status}）`);
+      }
+      const now = toIsoNow();
+      await runSql(
+        db,
+        `UPDATE matches
+         SET warmup_started_at = COALESCE(warmup_started_at, ?),
+             version = version + 1,
+             updated_at = ?
+         WHERE event_id = ? AND match_id = ?`,
+        [now, now, eventId, matchId],
+      );
+      return getMatchOrFail(db, eventId, matchId);
+    });
+    res.json({ success: true, match: normalizeMatchRow(result) });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
+// 進行システム: ウォームアップ終了時刻を記録（コート側通知）
+app.post('/api/progress/:eventId/matches/:matchId/warmup-finished', async (req, res) => {
+  try {
+    const { eventId, matchId } = req.params;
+    const db = await getEventDb(eventId);
+    const result = await withTransaction(db, async () => {
+      const row = await getMatchOrFail(db, eventId, matchId);
+      if (!['announced', 'in_progress'].includes(row.status)) {
+        throw createHttpError(409, `announced / in_progress のみ記録可能です（現在: ${row.status}）`);
+      }
+      const now = toIsoNow();
+      await runSql(
+        db,
+        `UPDATE matches
+         SET warmup_finished_at = COALESCE(warmup_finished_at, ?),
+             version = version + 1,
+             updated_at = ?
+         WHERE event_id = ? AND match_id = ?`,
+        [now, now, eventId, matchId],
+      );
+      return getMatchOrFail(db, eventId, matchId);
+    });
+    res.json({ success: true, match: normalizeMatchRow(result) });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
 // 進行システム: in_progress へ遷移
 app.post('/api/progress/:eventId/matches/:matchId/start', async (req, res) => {
   try {
@@ -635,6 +919,9 @@ app.post('/api/progress/:eventId/matches/:matchId/start', async (req, res) => {
 
     const result = await withTransaction(db, async () => {
       const row = await getMatchOrFail(db, eventId, matchId);
+      if (row.status === 'in_progress') {
+        return row;
+      }
       if (row.status !== 'announced') {
         throw createHttpError(409, `announced のみ start 可能です（現在: ${row.status}）`);
       }

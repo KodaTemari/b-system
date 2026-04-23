@@ -30,6 +30,17 @@ const statusClassMap = {
   reflected: 'isReflected',
 };
 
+const toClockLabel = (isoText) => {
+  if (!isoText) return '';
+  const date = new Date(isoText);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(date);
+};
+
 /**
  * 本部：試合進行（announce / unannounce / start / hq-approve / reflect）
  * URL: /event/:eventId/hq/progress（のちほど認証をかける想定）
@@ -47,6 +58,7 @@ const HqProgress = () => {
   });
   const [players, setPlayers] = useState([]);
   const [progressMap, setProgressMap] = useState(new Map());
+  const [courtColorStateMap, setCourtColorStateMap] = useState(new Map());
   const [operationError, setOperationError] = useState('');
   const [operationMessage, setOperationMessage] = useState('');
   const [hqApproverName, setHqApproverName] = useState('');
@@ -110,6 +122,70 @@ const HqProgress = () => {
 
     loadData();
   }, [eventId, fetchProgress]);
+
+  useEffect(() => {
+    if (!eventId) {
+      return undefined;
+    }
+    const timer = setInterval(() => {
+      fetchProgress().catch(() => {
+        // 一時的な通信失敗は次周期で再試行する
+      });
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [eventId, fetchProgress]);
+
+  useEffect(() => {
+    if (!eventId) {
+      setCourtColorStateMap(new Map());
+      return undefined;
+    }
+
+    let cancelled = false;
+    const loadCourtColorStates = async () => {
+      try {
+        const response = await fetch(`/api/data/${eventId}/results/all-games`);
+        if (!response.ok) {
+          return;
+        }
+        const payload = await response.json();
+        const games = Array.isArray(payload?.games) ? payload.games : [];
+        const responses = games.map((entry) => {
+          const game = entry?.game ?? {};
+            const matchID = String(game?.matchID ?? '').trim();
+            if (!matchID) {
+              return null;
+            }
+            return {
+              matchID,
+              isColorSet: game?.screen?.isColorSet === true,
+              redPlayerId: String(game?.red?.playerID ?? '').trim(),
+              bluePlayerId: String(game?.blue?.playerID ?? '').trim(),
+            };
+          });
+        if (cancelled) {
+          return;
+        }
+        const nextMap = new Map();
+        for (const entry of responses) {
+          if (!entry) continue;
+          nextMap.set(entry.matchID, entry);
+        }
+        setCourtColorStateMap(nextMap);
+      } catch {
+        if (!cancelled) {
+          setCourtColorStateMap(new Map());
+        }
+      }
+    };
+
+    loadCourtColorStates();
+    const timer = setInterval(loadCourtColorStates, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [eventId]);
 
   const playerNameMap = useMemo(() => {
     return new Map(players.map((player) => [player.id, player.name]));
@@ -197,10 +273,6 @@ const HqProgress = () => {
     await callProgressAction(match, 'unannounce');
   };
 
-  const handleStart = async (match) => {
-    await callProgressAction(match, 'start');
-  };
-
   const handleHqApprove = async (match) => {
     const approverName = hqApproverName.trim();
     if (!approverName) {
@@ -255,6 +327,43 @@ const HqProgress = () => {
     }
   };
 
+  const handleResetAll = async () => {
+    if (!eventId) {
+      return;
+    }
+    const confirmed = window.confirm(
+      '全コートのスコアボードと本部進行を初期状態に戻します。\n' +
+        '（再テスト用: 配信状態・進行状態・試合中データをクリア）\n\n' +
+        '実行してよろしいですか？',
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      setActionBusyKey('reset-all');
+      setOperationError('');
+      setOperationMessage('');
+      const response = await fetch(`/api/progress/${eventId}/reset-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || '全体リセットに失敗しました。');
+      }
+      await fetchProgress();
+      const settingsCount = Number(data?.fileResetSummary?.updatedSettings ?? 0);
+      const gamesCount = Number(data?.fileResetSummary?.updatedGames ?? 0);
+      setOperationMessage(
+        `全体リセット完了（settings: ${settingsCount}件 / game: ${gamesCount}件）。`,
+      );
+    } catch (err) {
+      setOperationError(err.message || '全体リセットに失敗しました。');
+    } finally {
+      setActionBusyKey('');
+    }
+  };
+
   if (loading) {
     return (
       <main className="hqProgressPage">
@@ -295,6 +404,14 @@ const HqProgress = () => {
             disabled={importing || schedule.matches.length === 0}
           >
             {importing ? '登録中...' : 'SQLiteへ一括登録'}
+          </button>
+          <button
+            type="button"
+            className="hqProgressActionButton"
+            onClick={handleResetAll}
+            disabled={actionBusyKey !== '' || importing}
+          >
+            全コート初期化（再テスト）
           </button>
           <label className="hqProgressApproverLabel">
             本部承認者名
@@ -338,33 +455,54 @@ const HqProgress = () => {
                       const blueName =
                         playerNameMap.get(String(match.bluePlayerId ?? '')) ??
                         String(match.bluePlayerName ?? match.bluePlayerId ?? 'TBD');
+                      const colorState = courtColorStateMap.get(String(match.matchId ?? ''));
+                      const isColorConfirmed = colorState?.isColorSet === true;
+                      const displayRedName = isColorConfirmed
+                        ? playerNameMap.get(String(colorState?.redPlayerId ?? '')) || redName
+                        : redName;
+                      const displayBlueName = isColorConfirmed
+                        ? playerNameMap.get(String(colorState?.bluePlayerId ?? '')) || blueName
+                        : blueName;
                       const progress = progressMap.get(String(match.matchId));
                       const effectiveStatus = progress?.status || 'scheduled';
                       const statusLabel = statusLabelMap[effectiveStatus] || effectiveStatus;
                       const statusClassName = statusClassMap[effectiveStatus] || 'isScheduled';
                       const canAnnounce = effectiveStatus === 'scheduled';
                       const canUnannounce = effectiveStatus === 'announced';
-                      const canStart = effectiveStatus === 'announced';
                       const canHqApprove = effectiveStatus === 'court_approved';
                       const canReflect = effectiveStatus === 'hq_approved';
+                      const warmupStartedLabel = toClockLabel(progress?.warmupStartedAt);
+                      const warmupFinishedLabel = toClockLabel(progress?.warmupFinishedAt);
+                      const startedLabel = toClockLabel(progress?.startedAt);
 
                       return (
                         <td key={`${slot}-${court}`} className="scheduleCell">
                           <div className="scheduleMatchMain">
                             <p
-                              className={`schedulePlayerName ${isWinnerPlaceholder(redName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${isColorConfirmed ? 'isRedConfirmed' : ''} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(redName)}
+                              {renderNameWithLineBreaks(displayRedName)}
                             </p>
                             <p className="scheduleVersus">VS</p>
                             <p
-                              className={`schedulePlayerName ${isWinnerPlaceholder(blueName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${isColorConfirmed ? 'isBlueConfirmed' : ''} ${isWinnerPlaceholder(displayBlueName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(blueName)}
+                              {renderNameWithLineBreaks(displayBlueName)}
                             </p>
                           </div>
                           <p className="scheduleMatchSub">{`ID: ${toShortMatchId(match.matchId)}`}</p>
                           <p className={`hqProgressStatus ${statusClassName}`}>{statusLabel}</p>
+                          <div className="hqProgressTimeline">
+                            <p className={`hqProgressTimelineItem ${warmupStartedLabel ? 'isDone' : ''}`}>
+                              {warmupStartedLabel ? `WU開始 ${warmupStartedLabel}` : 'WU開始 -'}
+                            </p>
+                            <p className={`hqProgressTimelineItem ${warmupFinishedLabel ? 'isDone' : ''}`}>
+                              {warmupFinishedLabel ? `WU終了 ${warmupFinishedLabel}` : 'WU終了 -'}
+                            </p>
+                            <p className={`hqProgressTimelineItem ${startedLabel ? 'isDone' : ''}`}>
+                              {startedLabel ? `試合開始 ${startedLabel}` : '試合開始 -'}
+                            </p>
+                          </div>
                           <div className="hqProgressButtonRow">
                             <button
                               type="button"
@@ -381,14 +519,6 @@ const HqProgress = () => {
                               disabled={!canUnannounce || actionBusyKey !== '' || importing}
                             >
                               配信取り消し
-                            </button>
-                            <button
-                              type="button"
-                              className="hqProgressActionButton"
-                              onClick={() => handleStart(match)}
-                              disabled={!canStart || actionBusyKey !== '' || importing}
-                            >
-                              開始(start)
                             </button>
                           </div>
                           <div className="hqProgressButtonRow">

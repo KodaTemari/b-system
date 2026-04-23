@@ -206,24 +206,47 @@ export const useDataSync = (id, cls, court, isCtrl) => {
             });
             return mergedData;
           }
-          if (buildHqBroadcastSignature(mergedData) === buildHqBroadcastSignature(prev)) {
+          // 色未確定中（スタンバイ運用でコート側が色決め中）は、
+          // 同一 matchID に対してサーバー側の赤青表示で上書きしない。
+          const shouldPreserveLocalColorDraft =
+            prev.screen?.isColorSet === false &&
+            String(prev.matchID ?? '') !== '' &&
+            String(prev.matchID ?? '') === String(mergedData.matchID ?? '');
+
+          const incomingForMerge = shouldPreserveLocalColorDraft
+            ? {
+              ...mergedData,
+              red: {
+                ...mergedData.red,
+                name: prev.red?.name,
+                playerID: prev.red?.playerID,
+              },
+              blue: {
+                ...mergedData.blue,
+                name: prev.blue?.name,
+                playerID: prev.blue?.playerID,
+              },
+            }
+            : mergedData;
+
+          if (buildHqBroadcastSignature(incomingForMerge) === buildHqBroadcastSignature(prev)) {
             return prev;
           }
           const next = {
             ...prev,
-            matchID: mergedData.matchID,
-            matchName: mergedData.matchName,
-            classification: mergedData.classification,
-            category: mergedData.category,
+            matchID: incomingForMerge.matchID,
+            matchName: incomingForMerge.matchName,
+            classification: incomingForMerge.classification,
+            category: incomingForMerge.category,
             red: {
               ...prev.red,
-              name: mergedData.red?.name,
-              playerID: mergedData.red?.playerID,
+              name: incomingForMerge.red?.name,
+              playerID: incomingForMerge.red?.playerID,
             },
             blue: {
               ...prev.blue,
-              name: mergedData.blue?.name,
-              playerID: mergedData.blue?.playerID,
+              name: incomingForMerge.blue?.name,
+              playerID: incomingForMerge.blue?.playerID,
             },
           };
           localStorage.setItem(storageKey, JSON.stringify(next));
