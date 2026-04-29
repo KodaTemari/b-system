@@ -257,10 +257,13 @@ const Tournament = () => {
       : 1;
   const { boardWidth, boardHeight, roundLayouts } = useMemo(() => buildRoundLayout(rounds), [rounds]);
   const connectionPaths = useMemo(() => buildConnectionPaths(roundLayouts), [roundLayouts]);
+  const tournamentPageStyle = eventId
+    ? { '--tournamentBgImage': `url(/data/${encodeURIComponent(eventId)}/assets/bg.jpg)` }
+    : undefined;
 
   if (loading) {
     return (
-      <main id="tournament" data-round="0">
+      <main id="tournament" style={tournamentPageStyle} data-round="0">
         <section className="tournamentBracketSection">
           <p>トーナメントデータを読み込み中...</p>
         </section>
@@ -270,7 +273,7 @@ const Tournament = () => {
 
   if (error) {
     return (
-      <main id="tournament" data-round="0">
+      <main id="tournament" style={tournamentPageStyle} data-round="0">
         <section className="tournamentBracketSection">
           <p>{error}</p>
         </section>
@@ -280,7 +283,7 @@ const Tournament = () => {
 
   if (players.length === 0) {
     return (
-      <main id="tournament" data-round="0">
+      <main id="tournament" style={tournamentPageStyle} data-round="0">
         <section className="tournamentBracketSection">
           <h1 className="tournamentTitle">トーナメント表</h1>
           <p>プレイヤーが登録されていないため、トーナメントを生成できません。</p>
@@ -290,7 +293,7 @@ const Tournament = () => {
   }
 
   return (
-    <main id="tournament" data-round={String(activeRound)}>
+    <main id="tournament" style={tournamentPageStyle} data-round={String(activeRound)}>
       <section className="tournamentBracketSection">
         <h1 className="tournamentTitle">トーナメント表</h1>
         <div className="bracketSummary">

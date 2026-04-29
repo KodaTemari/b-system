@@ -763,7 +763,7 @@ const Scoreboard = () => {
     blue: false
   };
 
-  const handleApproval = (type) => {
+  const handleApproval = async (type) => {
     // gameDataから最新の承認状態を取得
     const currentApprovals = gameData?.match?.approvals || {
       red: false,
@@ -775,6 +775,51 @@ const Scoreboard = () => {
       ...currentApprovals,
       [type]: !currentApprovals[type]
     };
+
+    // 主審承認がONになった瞬間に、本部進行DBへ court_approved を通知
+    if (
+      type === 'referee' &&
+      !currentApprovals.referee &&
+      newApprovals.referee &&
+      isCtrl
+    ) {
+      const eventId = String(id ?? '').trim();
+      const matchId = String(gameData?.matchID ?? '').trim();
+      const redPlayerId = String(gameData?.red?.playerID ?? '').trim();
+      const bluePlayerId = String(gameData?.blue?.playerID ?? '').trim();
+      const redScore = Number(gameData?.red?.score ?? 0);
+      const blueScore = Number(gameData?.blue?.score ?? 0);
+      let winnerPlayerId = null;
+      if (redScore > blueScore) {
+        winnerPlayerId = redPlayerId || null;
+      } else if (blueScore > redScore) {
+        winnerPlayerId = bluePlayerId || null;
+      } else if (gameData?.red?.isTieBreak === true) {
+        winnerPlayerId = redPlayerId || null;
+      } else if (gameData?.blue?.isTieBreak === true) {
+        winnerPlayerId = bluePlayerId || null;
+      }
+      if (eventId && matchId) {
+        try {
+          const response = await fetch(`/api/progress/${eventId}/matches/${matchId}/court-approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              refereeName: '主審',
+              redScore,
+              blueScore,
+              winnerPlayerId,
+            }),
+          });
+          if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            console.warn('court-approve failed', payload?.error || response.statusText);
+          }
+        } catch (error) {
+          console.warn('court-approve failed', error);
+        }
+      }
+    }
 
     // gameDataに保存してctrlとviewで連動
     const updatedGameData = {
@@ -862,6 +907,7 @@ const Scoreboard = () => {
   const prevScoresRef = useRef({ red: null, blue: null });
   const prevTieBreaksRef = useRef({ red: null, blue: null });
   const hasProcessedRef = useRef(false);
+  const prevSectionForViewTransitionRef = useRef(section);
   
   // 初回訪問時にSettingModalを開く
   useEffect(() => {
@@ -946,6 +992,28 @@ const Scoreboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section, red?.score, blue?.score, red?.isTieBreak, blue?.isTieBreak, isCtrl, id, court, resetTieBreakData]);
 
+  // viewモードでは updateSection を通らないため、セクション変化時に同等の暗転を付与する
+  useEffect(() => {
+    if (isCtrl) {
+      prevSectionForViewTransitionRef.current = section;
+      return;
+    }
+    const prevSection = prevSectionForViewTransitionRef.current;
+    prevSectionForViewTransitionRef.current = section;
+    if (!prevSection || prevSection === section) {
+      return;
+    }
+    const scoreboard = document.getElementById('scoreboard');
+    if (!scoreboard) {
+      return;
+    }
+    scoreboard.classList.add('sectionTransition');
+    const timer = setTimeout(() => {
+      scoreboard.classList.remove('sectionTransition');
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [isCtrl, section]);
+
   // ローディング表示
   if (isLoading) {
     return (
@@ -964,9 +1032,14 @@ const Scoreboard = () => {
     );
   }
 
+  const scoreboardStyle = id
+    ? { '--scoreboardBgImage': `url(/data/${encodeURIComponent(id)}/assets/bg.jpg)` }
+    : undefined;
+  const profilePicMode = String(gameData?.profilePic ?? 'enabled');
+
 
   return (
-    <div id="scoreboard" data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} data-fullscreen={isFullscreen ? 'true' : 'false'} className={`${settingOpen ? 'settingOpen' : ''} ${customModalOpen ? 'customModalOpen' : ''}`}>
+    <div id="scoreboard" style={scoreboardStyle} data-profilepic={profilePicMode} data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} data-fullscreen={isFullscreen ? 'true' : 'false'} className={`${settingOpen ? 'settingOpen' : ''} ${customModalOpen ? 'customModalOpen' : ''}`}>
       <Header
         section={section}
         sectionID={sectionID}

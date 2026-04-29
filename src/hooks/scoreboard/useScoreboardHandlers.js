@@ -202,6 +202,11 @@ export const useScoreboardHandlers = ({
       
       // タイマー開始
       updateTimer(color, currentTime, true);
+      const currentSection = String(gameData.match?.section || '');
+      const shouldMarkMatchStarted = currentSection === 'end1' && color === 'red';
+      if (shouldMarkMatchStarted) {
+        updateField('screen', 'isMatchStarted', true);
+      }
       // data-activeを設定（ctrlモードのみ）
       if (isCtrl) {
         updateScreenActive(`${color}-time`);
@@ -217,7 +222,10 @@ export const useScoreboardHandlers = ({
               },
             screen: {
               ...gameData.screen,
-              active: `${color}-time`
+              active: `${color}-time`,
+              isMatchStarted: shouldMarkMatchStarted
+                ? true
+                : (gameData.screen?.isMatchStarted ?? false),
             }
           };
           saveData(updatedGameData);
@@ -717,7 +725,8 @@ export const useScoreboardHandlers = ({
             active: '',
             isColorSet: gameData.screen?.isColorSet ?? false,
             isScoreAdjusting: false,
-            isPenaltyThrow: false
+            isPenaltyThrow: false,
+            isMatchStarted: gameData.screen?.isMatchStarted ?? false,
           }
         };
         
@@ -757,7 +766,8 @@ export const useScoreboardHandlers = ({
           active: '',
           isColorSet: gameData.screen?.isColorSet ?? false,
           isScoreAdjusting: false,
-          isPenaltyThrow: false
+          isPenaltyThrow: false,
+          isMatchStarted: gameData.screen?.isMatchStarted ?? false,
         };
         
         // エンドセクションの場合、ボール数をエンド番号に応じて設定
@@ -1247,7 +1257,8 @@ export const useScoreboardHandlers = ({
           active: '',
           isColorSet: false,
           isScoreAdjusting: false,
-          isPenaltyThrow: false
+          isPenaltyThrow: false,
+          isMatchStarted: false,
         },
         warmup: {
           ...DEFAULT_GAME_DATA.warmup,
@@ -1391,7 +1402,8 @@ export const useScoreboardHandlers = ({
           active: '',
           isColorSet: gameData.screen?.isColorSet ?? false,
           isScoreAdjusting: false,
-          isPenaltyThrow: false
+          isPenaltyThrow: false,
+          isMatchStarted: section === 'standby' ? false : (gameData.screen?.isMatchStarted ?? false),
         }
       };
       

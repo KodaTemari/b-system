@@ -1,0 +1,48 @@
+{
+  "classification": "",
+  "category": "",
+  "matchName": "",
+  "match": {
+    "totalEnds": 6,
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "worldBoccia",
+    "resultApproval": "enabled",
+    "tieBreak": "finalShot",
+    "sections": [
+      "standby",
+      "warmup",
+      "end1",
+      "interval",
+      "end2",
+      "interval",
+      "end3",
+      "interval",
+      "end4",
+      "interval",
+      "end5",
+      "interval",
+      "end6",
+      "matchFinished",
+      "resultApproval"
+    ]
+  },
+  "red": {
+    "name": "Red",
+    "limit": 300000,
+    "country": "",
+    "profilePic": ""
+  },
+  "blue": {
+    "name": "Blue",
+    "limit": 300000,
+    "country": "",
+    "profilePic": ""
+  },
+  "warmup": {
+    "limit": 120000
+  },
+  "interval": {
+    "limit": 60000
+  }
+}

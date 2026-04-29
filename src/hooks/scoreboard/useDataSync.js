@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { DEFAULT_GAME_DATA, TIMER_LIMITS } from '../../utils/scoreboard/constants';
 
 /** 本部配信などサーバー側で更新され得る項目の比較用（スコア・タイマーは含めない） */
@@ -28,6 +28,10 @@ export const useDataSync = (id, cls, court, isCtrl) => {
   const [localData, setLocalData] = useState(null);
   const [eventName, setEventName] = useState('');
   const [classificationCount, setClassificationCount] = useState(null);
+  const [realtimeStatus, setRealtimeStatus] = useState('disconnected');
+  const wsRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
   
   // スタンドアロンモード判定（id, courtがない場合）
   const isStandaloneMode = !id || !court;
@@ -35,6 +39,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
 
   const loadGameData = useCallback(async (loadOpts = {}) => {
     const silent = Boolean(loadOpts.silent);
+    let initProfilePicMode = 'enabled';
     // スタンドアロンモードの場合は、サーバーからの読み込みをスキップ
     if (isStandaloneMode) {
       setIsLoading(true);
@@ -90,6 +95,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         const initRes = await fetch(initUrl);
         if (initRes.ok) {
           const initData = await initRes.json();
+          initProfilePicMode = String(initData.profilePic ?? 'enabled');
           setEventName(initData.gameName || initData.eventName || id);
           setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
           settingsData = {
@@ -126,6 +132,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         const initRes = await fetch(initUrl);
         if (initRes.ok) {
           const initData = await initRes.json();
+          initProfilePicMode = String(initData.profilePic ?? 'enabled');
           if (!eventName) {
             setEventName(initData.gameName || initData.eventName || id);
           }
@@ -146,6 +153,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       const mergedData = {
         ...gameDataState,
         ...settingsData,
+        profilePic: initProfilePicMode,
         match: {
           ...gameDataState.match,
           ...(settingsData.match || {})
@@ -159,6 +167,17 @@ export const useDataSync = (id, cls, court, isCtrl) => {
           ...(settingsData.blue || {})
         }
       };
+
+      if (initProfilePicMode === 'none') {
+        mergedData.red = {
+          ...mergedData.red,
+          profilePic: '',
+        };
+        mergedData.blue = {
+          ...mergedData.blue,
+          profilePic: '',
+        };
+      }
 
       // totalEndsとsectionsの不整合を解消
       if (mergedData.match?.totalEnds && mergedData.match?.sections) {
@@ -228,6 +247,22 @@ export const useDataSync = (id, cls, court, isCtrl) => {
               },
             }
             : mergedData;
+
+          const prevMatchId = String(prev.matchID ?? '');
+          const nextMatchId = String(incomingForMerge.matchID ?? '');
+          const isMatchSwitched = prevMatchId !== nextMatchId;
+
+          // 試合IDが切り替わったら、旧試合の section / score / approvals を引き継がない。
+          // 配信直後はサーバー側の game.json（standby初期状態）をそのまま採用する。
+          if (isMatchSwitched) {
+            localStorage.setItem(storageKey, JSON.stringify(incomingForMerge));
+            queueMicrotask(() => {
+              window.dispatchEvent(new CustomEvent('scoreboardDataUpdate', {
+                detail: { key: storageKey, data: incomingForMerge },
+              }));
+            });
+            return incomingForMerge;
+          }
 
           if (buildHqBroadcastSignature(incomingForMerge) === buildHqBroadcastSignature(prev)) {
             return prev;
@@ -496,9 +531,92 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     }
   }, [loadGameData, loadFromLocalStorage, isCtrl, id, court, isStandaloneMode]);
 
-  // 本部の配信で settings/game が更新されてもリロード不要にする（2秒ごと・ローディング表示なし）
+  // WebSocket を主経路として接続し、更新通知を受けたらサイレント再取得する
   useEffect(() => {
     if (!id || !court || isStandaloneMode) {
+      setRealtimeStatus('disconnected');
+      return undefined;
+    }
+    if (isCtrl) {
+      setRealtimeStatus('disabled');
+      return undefined;
+    }
+    if (typeof window === 'undefined' || typeof window.WebSocket === 'undefined') {
+      setRealtimeStatus('unsupported');
+      return undefined;
+    }
+
+    let disposed = false;
+
+    const clearReconnectTimer = () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+
+    const connect = () => {
+      clearReconnectTimer();
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const endpoint = `${protocol}//${window.location.host}/api/realtime?eventId=${encodeURIComponent(id)}&courtId=${encodeURIComponent(court)}`;
+      setRealtimeStatus('connecting');
+      const ws = new window.WebSocket(endpoint);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectAttemptsRef.current = 0;
+        setRealtimeStatus('connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload?.type === 'scoreboard-updated') {
+            loadGameData({ silent: true });
+          }
+        } catch {
+          // 想定外メッセージは無視
+        }
+      };
+
+      ws.onclose = () => {
+        if (disposed) {
+          return;
+        }
+        setRealtimeStatus('degraded');
+        reconnectAttemptsRef.current += 1;
+        const retryMs = Math.min(1000 * (2 ** reconnectAttemptsRef.current), 10000);
+        reconnectTimerRef.current = setTimeout(connect, retryMs);
+      };
+
+      ws.onerror = () => {
+        setRealtimeStatus('degraded');
+      };
+    };
+
+    connect();
+    return () => {
+      disposed = true;
+      clearReconnectTimer();
+      const ws = wsRef.current;
+      wsRef.current = null;
+      if (ws) {
+        ws.close();
+      }
+      setRealtimeStatus('disconnected');
+    };
+  }, [id, court, isStandaloneMode, isCtrl, loadGameData]);
+
+  // ポーリングはバックアップのみ（WS未対応/切断中のみ）
+  useEffect(() => {
+    if (!id || !court || isStandaloneMode) {
+      return undefined;
+    }
+    if (isCtrl) {
+      return undefined;
+    }
+    const shouldPoll = realtimeStatus === 'unsupported' || realtimeStatus === 'degraded' || realtimeStatus === 'disconnected';
+    if (!shouldPoll) {
       return undefined;
     }
     const intervalMs = 2000;
@@ -506,7 +624,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       loadGameData({ silent: true });
     }, intervalMs);
     return () => clearInterval(timer);
-  }, [id, court, isStandaloneMode, loadGameData]);
+  }, [id, court, isStandaloneMode, isCtrl, loadGameData, realtimeStatus]);
 
   return {
     localData,
@@ -514,6 +632,7 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     error,
     eventName,
     classificationCount,
+    realtimeStatus,
     saveToLocalStorage,
     saveData
   };

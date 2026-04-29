@@ -40,7 +40,6 @@ export const useScoreboard = () => {
     updateConfirmColor,
     updateScreenActive,
     updateScoreAdjusting,
-    updatePlayerName,
     resetForFinalShot
   } = useGameState(localData, isCtrl);
 
@@ -265,7 +264,8 @@ export const useScoreboard = () => {
     if (!eventId || !matchId || !sectionValue) {
       return;
     }
-    const syncKey = `${matchId}:${sectionValue}`;
+    const startedFlag = gameData?.screen?.isMatchStarted === true;
+    const syncKey = `${matchId}:${sectionValue}:${startedFlag ? 'started' : 'not-started'}`;
     if (lastSyncedSectionRef.current === syncKey) {
       return;
     }
@@ -273,11 +273,11 @@ export const useScoreboard = () => {
     fetch(`/api/progress/${eventId}/matches/${matchId}/sync-section`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section: sectionValue }),
+      body: JSON.stringify({ section: sectionValue, matchStarted: startedFlag }),
     }).catch((error) => {
       console.warn('sync-section failed', error);
     });
-  }, [isCtrl, id, gameData?.matchID, gameData?.match?.section]);
+  }, [isCtrl, id, gameData?.matchID, gameData?.match?.section, gameData?.screen?.isMatchStarted]);
 
   // イベントハンドラー
   const handlers = useScoreboardHandlers({
@@ -707,7 +707,6 @@ export const useScoreboard = () => {
     eventName,
     matchName: gameData.matchName,
     classification: gameData.classification,
-    classificationCount,
     classificationCount,
     
     // タイマー

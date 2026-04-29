@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { getCurrentLanguage } from '../../locales';
 import './PoolStandings.css';
 
+const RESULTS_POLL_INTERVAL_MS = 2000;
+
 const normalizePlayers = (players) => {
   if (!Array.isArray(players)) {
     return [];
@@ -73,7 +75,13 @@ const getNotationMode = (lang) => {
   return lang === 'ja' ? 'jp' : 'wl';
 };
 
-const getResultMarker = (myScore, oppScore, notationMode) => {
+const getResultMarker = (myScore, oppScore, notationMode, isWinner = null) => {
+  if (isWinner === true) {
+    return notationMode === 'jp' ? '○' : 'W';
+  }
+  if (isWinner === false) {
+    return notationMode === 'jp' ? '×' : 'L';
+  }
   if (myScore > oppScore) {
     return notationMode === 'jp' ? '○' : 'W';
   }
@@ -118,10 +126,25 @@ const collectPoolIds = (players, schedulePools, matches) => {
   return Array.from(poolSet).sort((a, b) => a.localeCompare(b, 'ja'));
 };
 
-const buildPoolViewData = (poolId, players, schedule, playerNameMap) => {
+const resolveMatchPoolId = (match, playerPoolGroupMap) => {
+  const explicitPool = String(match.poolId ?? '').trim().toUpperCase();
+  if (explicitPool) {
+    return explicitPool;
+  }
+  const redId = String(match.redPlayerId ?? '').trim();
+  const blueId = String(match.bluePlayerId ?? '').trim();
+  const redPool = playerPoolGroupMap.get(redId) ?? '';
+  const bluePool = playerPoolGroupMap.get(blueId) ?? '';
+  if (redPool && bluePool && redPool === bluePool) {
+    return redPool;
+  }
+  return '';
+};
+
+const buildPoolViewData = (poolId, players, schedule, playerNameMap, playerPoolGroupMap) => {
   const targetPool = schedule.pools.find((pool) => pool.poolId.toUpperCase() === poolId) ?? null;
   const poolMatches = schedule.matches
-    .filter((match) => String(match.poolId ?? '').trim().toUpperCase() === poolId)
+    .filter((match) => resolveMatchPoolId(match, playerPoolGroupMap) === poolId)
     .slice()
     .sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime());
 
@@ -195,18 +218,31 @@ const buildPoolViewData = (poolId, players, schedule, playerNameMap) => {
     redStats.pointsAgainst += score.blue;
     blueStats.pointsFor += score.blue;
     blueStats.pointsAgainst += score.red;
-    if (score.red > score.blue) {
+    const winnerPlayerId = String(match.winnerPlayerId ?? '').trim();
+    const redIsWinner = score.red > score.blue
+      ? true
+      : score.red < score.blue
+        ? false
+        : (winnerPlayerId ? winnerPlayerId === redId : null);
+    const blueIsWinner = score.blue > score.red
+      ? true
+      : score.blue < score.red
+        ? false
+        : (winnerPlayerId ? winnerPlayerId === blueId : null);
+    if (redIsWinner === true) {
       redStats.wins += 1;
-    } else if (score.blue > score.red) {
+    } else if (blueIsWinner === true) {
       blueStats.wins += 1;
     }
     cellMap.set(`${redId}:${blueId}`, {
       myScore: score.red,
       oppScore: score.blue,
+      isWinner: redIsWinner,
     });
     cellMap.set(`${blueId}:${redId}`, {
       myScore: score.blue,
       oppScore: score.red,
+      isWinner: blueIsWinner,
     });
   }
 
@@ -248,6 +284,60 @@ const PoolStandings = () => {
     pools: [],
     matches: [],
   });
+
+  useEffect(() => {
+    if (!eventId) {
+      return undefined;
+    }
+    let cancelled = false;
+    const syncReflectedResults = async () => {
+      try {
+        const response = await fetch(`/api/progress/${eventId}/pool/standings?includeHqApproved=true`);
+        if (!response.ok) {
+          return;
+        }
+        const payload = await response.json();
+        const rows = Array.isArray(payload?.matches) ? payload.matches : [];
+        const resultMap = new Map();
+        for (const row of rows) {
+          const matchId = String(row?.match_id ?? '').trim();
+          if (!matchId) continue;
+          resultMap.set(matchId, row);
+        }
+        if (cancelled || resultMap.size === 0) {
+          return;
+        }
+        setSchedule((prev) => {
+          const mergedMatches = prev.matches.map((match) => {
+            const matchId = String(match?.matchId ?? '').trim();
+            const result = resultMap.get(matchId);
+            if (!result) {
+              return match;
+            }
+            return {
+              ...match,
+              redScore: Number(result?.red_score ?? 0),
+              blueScore: Number(result?.blue_score ?? 0),
+              winnerPlayerId: String(result?.winner_player_id ?? '').trim(),
+            };
+          });
+          return {
+            ...prev,
+            matches: mergedMatches,
+          };
+        });
+      } catch {
+        // 一時的な通信失敗は次回ポーリングで再試行
+      }
+    };
+
+    syncReflectedResults();
+    const timer = setInterval(syncReflectedResults, RESULTS_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [eventId]);
 
   useEffect(() => {
     const onLanguageChanged = (event) => {
@@ -300,6 +390,17 @@ const PoolStandings = () => {
     return new Map(players.map((player) => [player.id, player.name]));
   }, [players]);
 
+  const playerPoolGroupMap = useMemo(() => {
+    const map = new Map();
+    for (const player of players) {
+      const parsed = parsePoolMeta(player.poolId);
+      if (parsed.groupId) {
+        map.set(player.id, parsed.groupId);
+      }
+    }
+    return map;
+  }, [players]);
+
   const allPoolIds = useMemo(() => {
     return collectPoolIds(players, schedule.pools, schedule.matches);
   }, [players, schedule.matches, schedule.pools]);
@@ -327,17 +428,20 @@ const PoolStandings = () => {
 
   const poolViews = useMemo(() => {
     return visiblePoolIds.map((id) => ({
-      ...buildPoolViewData(id, players, schedule, playerNameMap),
+      ...buildPoolViewData(id, players, schedule, playerNameMap, playerPoolGroupMap),
       hue: poolHueMap.get(id) ?? 110,
     }));
-  }, [playerNameMap, players, poolHueMap, schedule, visiblePoolIds]);
+  }, [playerNameMap, playerPoolGroupMap, players, poolHueMap, schedule, visiblePoolIds]);
 
   const hasAnyPool = poolViews.some((view) => view.hasTargetPool);
   const notationMode = useMemo(() => getNotationMode(language), [language]);
+  const poolViewStyle = eventId
+    ? { '--poolBgImage': `url(/data/${encodeURIComponent(eventId)}/assets/bg.jpg)` }
+    : undefined;
 
   if (loading) {
     return (
-      <main className="poolViewPage">
+      <main className="poolViewPage" style={poolViewStyle}>
         <section className="poolViewSection">
           <p>プール表示を読み込み中...</p>
         </section>
@@ -347,7 +451,7 @@ const PoolStandings = () => {
 
   if (error) {
     return (
-      <main className="poolViewPage">
+      <main className="poolViewPage" style={poolViewStyle}>
         <section className="poolViewSection">
           <p>{error}</p>
         </section>
@@ -356,7 +460,7 @@ const PoolStandings = () => {
   }
 
   return (
-    <main className="poolViewPage">
+    <main className="poolViewPage" style={poolViewStyle}>
       <section className="poolViewSection">
         <h1 className="poolViewTitle">{targetPoolId ? `プール ${targetPoolId}` : 'プール順位表一覧'}</h1>
 
@@ -404,7 +508,7 @@ const PoolStandings = () => {
                                 }
                                 const cell = view.cellMap.get(`${rowTeam.id}:${colTeam.id}`) ?? null;
                                 const scoreText = cell
-                                  ? `${getResultMarker(cell.myScore, cell.oppScore, notationMode)} ${cell.myScore} - ${cell.oppScore}`
+                                  ? `${getResultMarker(cell.myScore, cell.oppScore, notationMode, cell.isWinner)} ${cell.myScore} - ${cell.oppScore}`
                                   : '';
                                 return (
                                   <td key={`${rowTeam.id}:${colTeam.id}`} className="poolMatrixScoreCell">

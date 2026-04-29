@@ -66,7 +66,7 @@
 
 [data-mode="view"] [data-section="standby"]::before {
   z-index: 0;
-  background-image: url('./img/bg.jpg');
+  background-image: var(--scoreboardBgImage, url('./img/bg.jpg'));
 }
 
 [data-mode="view"].cover::after {
@@ -712,6 +712,12 @@ h2 .profilePic img {
   opacity: 0.8;
 }
 
+/* viewモードではタイブレーク決定ボタン（〇）を常に非表示 */
+[data-mode="view"]#scoreboard #red .score .tieBreak,
+[data-mode="view"]#scoreboard #blue .score .tieBreak {
+  display: none !important;
+}
+
 /* finalShotとtieBreakセクションでは得点調整ボタンを非表示 */
 #scoreboard[data-section="finalShot"][data-active="red-score"] #red .plus,
 #scoreboard[data-section="finalShot"][data-active="red-score"] #red .minus,
@@ -1270,6 +1276,10 @@ h2 .profilePic img {
   height: 100dvh;
 }
 
+[data-mode="view"] [data-section="standby"] #sectionNav {
+  background: linear-gradient(to top, rgba(var(--color-black), 0.8) 0%, rgba(var(--color-black), 0.9) 100%);
+}
+
 /* スタンバイセクション */
 [data-section="standby"] main > section > div,
 [data-section="standby"] main > section > ul {
@@ -1731,6 +1741,10 @@ h2 .profilePic img {
   padding: 2vh 2vw;
   border-radius: 2vmin;
   box-sizing: border-box;
+}
+
+[data-profilepic="none"] .playerSettingGroup {
+  justify-content: flex-end;
 }
 
 #redPlayerInput {

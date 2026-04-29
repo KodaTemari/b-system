@@ -78,7 +78,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         active: '',
         isColorSet: false,
         isScoreAdjusting: false,
-        isPenaltyThrow: false
+        isPenaltyThrow: false,
+        isMatchStarted: false
       },
       scene: 'official',
       warmup: {
@@ -492,7 +493,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           active: '',
           isColorSet: false,
           isScoreAdjusting: false,
-          isPenaltyThrow: false
+          isPenaltyThrow: false,
+          isMatchStarted: false
         },
         lastUpdated: new Date().toISOString()
       };

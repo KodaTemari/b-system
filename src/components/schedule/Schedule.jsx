@@ -11,6 +11,9 @@ import {
   toTimeSlotKey,
 } from './scheduleDisplayUtils';
 
+// 将来復活できるよう、試合ID表示はトグルで制御する
+const SHOW_MATCH_ID = false;
+
 /**
  * 掲示用スケジュール表（選手・観客向け）
  * URL: /event/:id/schedule
@@ -78,11 +81,14 @@ const Schedule = () => {
     let cancelled = false;
     const loadCourtColorStates = async () => {
       try {
-        const response = await fetch(`/api/data/${eventId}/results/all-games`);
-        if (!response.ok) {
+        const [gamesResponse, standingsResponse] = await Promise.all([
+          fetch(`/api/data/${eventId}/results/all-games`),
+          fetch(`/api/progress/${eventId}/pool/standings?includeHqApproved=true`),
+        ]);
+        if (!gamesResponse.ok) {
           return;
         }
-        const payload = await response.json();
+        const payload = await gamesResponse.json();
         const games = Array.isArray(payload?.games) ? payload.games : [];
         const responses = games.map((entry) => {
           const game = entry?.game ?? {};
@@ -90,11 +96,34 @@ const Schedule = () => {
             if (!matchID) {
               return null;
             }
+            const section = String(game?.match?.section ?? '').trim();
+            const isInMatchSection =
+              /^end\d+$/i.test(section) ||
+              ['interval', 'tieBreak', 'finalShot', 'matchFinished', 'resultApproval'].includes(section);
+            const redScore = Number(game?.red?.score ?? 0);
+            const blueScore = Number(game?.blue?.score ?? 0);
+            const isScoreVisible = game?.screen?.isMatchStarted === true || isInMatchSection;
+            let winnerSide = '';
+            if (isScoreVisible) {
+              if (redScore > blueScore) {
+                winnerSide = 'red';
+              } else if (blueScore > redScore) {
+                winnerSide = 'blue';
+              } else if (game?.red?.isTieBreak === true) {
+                winnerSide = 'red';
+              } else if (game?.blue?.isTieBreak === true) {
+                winnerSide = 'blue';
+              }
+            }
             return {
               matchID,
               isColorSet: game?.screen?.isColorSet === true,
               redPlayerId: String(game?.red?.playerID ?? '').trim(),
               bluePlayerId: String(game?.blue?.playerID ?? '').trim(),
+              redScore,
+              blueScore,
+              isScoreVisible,
+              winnerSide,
             };
           });
         if (cancelled) {
@@ -104,6 +133,40 @@ const Schedule = () => {
         for (const entry of responses) {
           if (!entry) continue;
           nextMap.set(entry.matchID, entry);
+        }
+        if (standingsResponse.ok) {
+          const standingsPayload = await standingsResponse.json();
+          const rows = Array.isArray(standingsPayload?.matches) ? standingsPayload.matches : [];
+          for (const row of rows) {
+            const matchID = String(row?.match_id ?? '').trim();
+            if (!matchID) continue;
+            const redScore = Number(row?.red_score);
+            const blueScore = Number(row?.blue_score);
+            if (!Number.isFinite(redScore) || !Number.isFinite(blueScore)) continue;
+            const redPlayerId = String(row?.red_player_id ?? '').trim();
+            const bluePlayerId = String(row?.blue_player_id ?? '').trim();
+            const winnerPlayerId = String(row?.winner_player_id ?? '').trim();
+            let winnerSide = '';
+            if (winnerPlayerId && winnerPlayerId === redPlayerId) {
+              winnerSide = 'red';
+            } else if (winnerPlayerId && winnerPlayerId === bluePlayerId) {
+              winnerSide = 'blue';
+            } else if (redScore > blueScore) {
+              winnerSide = 'red';
+            } else if (blueScore > redScore) {
+              winnerSide = 'blue';
+            }
+            nextMap.set(matchID, {
+              ...(nextMap.get(matchID) || {}),
+              matchID,
+              redPlayerId,
+              bluePlayerId,
+              redScore,
+              blueScore,
+              winnerSide,
+              isScoreVisible: true,
+            });
+          }
         }
         setCourtColorStateMap(nextMap);
       } catch {
@@ -152,9 +215,13 @@ const Schedule = () => {
     return slotMap;
   }, [schedule.matches, timeSlots]);
 
+  const schedulePageStyle = eventId
+    ? { '--scheduleBgImage': `url(/data/${encodeURIComponent(eventId)}/assets/bg.jpg)` }
+    : undefined;
+
   if (loading) {
     return (
-      <main className="schedulePage">
+      <main className="schedulePage" style={schedulePageStyle}>
         <section className="scheduleSection">
           <p>スケジュールを読み込み中...</p>
         </section>
@@ -164,7 +231,7 @@ const Schedule = () => {
 
   if (error) {
     return (
-      <main className="schedulePage">
+      <main className="schedulePage" style={schedulePageStyle}>
         <section className="scheduleSection">
           <p>{error}</p>
         </section>
@@ -173,7 +240,7 @@ const Schedule = () => {
   }
 
   return (
-    <main className="schedulePage">
+    <main className="schedulePage" style={schedulePageStyle}>
       <section className="scheduleSection">
         <h1 className="scheduleTitle">スケジュール表</h1>
         {schedule.eventDate && (
@@ -218,6 +285,11 @@ const Schedule = () => {
                       const displayBlueName = isColorConfirmed
                         ? playerNameMap.get(String(colorState?.bluePlayerId ?? '')) || blueName
                         : blueName;
+                      const scoreLabel = colorState?.isScoreVisible
+                        ? `${colorState?.redScore ?? 0} - ${colorState?.blueScore ?? 0}`
+                        : '-';
+                      const isRedWinner = colorState?.winnerSide === 'red';
+                      const isBlueWinner = colorState?.winnerSide === 'blue';
                       return (
                         <td key={`${slot}-${court}`} className="scheduleCell">
                           <div className="scheduleMatchMain">
@@ -233,7 +305,24 @@ const Schedule = () => {
                               {renderNameWithLineBreaks(displayBlueName)}
                             </p>
                           </div>
-                          <p className="scheduleMatchSub">{`ID: ${toShortMatchId(match.matchId)}`}</p>
+                          <p className="scheduleLiveScore">
+                            {colorState?.isScoreVisible ? (
+                              <>
+                                <span className={`scheduleLiveScoreValue ${isRedWinner ? 'isWinner' : ''}`}>
+                                  {colorState?.redScore ?? 0}
+                                </span>
+                                <span className="scheduleLiveScoreDash"> - </span>
+                                <span className={`scheduleLiveScoreValue ${isBlueWinner ? 'isWinner' : ''}`}>
+                                  {colorState?.blueScore ?? 0}
+                                </span>
+                              </>
+                            ) : (
+                              scoreLabel
+                            )}
+                          </p>
+                          {SHOW_MATCH_ID && (
+                            <p className="scheduleMatchSub">{`ID: ${toShortMatchId(match.matchId)}`}</p>
+                          )}
                         </td>
                       );
                     })}

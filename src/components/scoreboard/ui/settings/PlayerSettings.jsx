@@ -37,6 +37,7 @@ const PlayerSettings = ({
   selectedBluePlayerId = ''
 }) => {
   const currentLang = getCurrentLanguage();
+  const isProfilePicEnabled = (pendingChanges.profilePic ?? gameData?.profilePic ?? 'enabled') !== 'none';
   const [showRedSelect, setShowRedSelect] = useState(false);
   const [showBlueSelect, setShowBlueSelect] = useState(false);
   const [showRedSuggestions, setShowRedSuggestions] = useState(false);
@@ -63,7 +64,9 @@ const PlayerSettings = ({
     if (!country) return;
 
     const flagName = country.en === 'None' ? '' : country.en;
-    const flagPath = `/img/flags/${country.code}.svg`;
+    const flagPath = country.id === 'none' || country.code === 'xx'
+      ? ''
+      : `/img/flags/${country.code}.svg`;
 
     setPendingChanges(prev => ({
       ...prev,
@@ -187,6 +190,7 @@ const PlayerSettings = ({
           )}
           </div>
         </div>
+        {isProfilePicEnabled && (
         <div className="profilePic">
           <label 
             htmlFor="redCountrySelect"
@@ -232,6 +236,7 @@ const PlayerSettings = ({
             ))}
           </select>
         </div>
+        )}
         <div className="timerSetting">
           <select
             id="redLimitInput"
@@ -297,6 +302,7 @@ const PlayerSettings = ({
           )}
           </div>
         </div>
+        {isProfilePicEnabled && (
         <div className="profilePic">
           <label 
             htmlFor="blueCountrySelect"
@@ -342,6 +348,7 @@ const PlayerSettings = ({
             ))}
           </select>
         </div>
+        )}
         <div className="timerSetting">
           <select
             id="blueLimitInput"

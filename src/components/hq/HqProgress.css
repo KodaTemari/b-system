@@ -77,6 +77,10 @@
   color: rgb(var(--color-green-light));
 }
 
+.hqProgressStatus.isMatchFinished {
+  color: rgb(var(--color-yellow));
+}
+
 .hqProgressStatus.isCourtApproved {
   color: rgb(var(--color-yellow));
 }

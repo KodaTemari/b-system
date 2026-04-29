@@ -3,7 +3,9 @@ const cors = require('cors');
 const fs = require('fs-extra');
 const path = require('path');
 const os = require('os');
+const http = require('http');
 const sqlite3 = require('sqlite3').verbose();
+const { WebSocketServer } = require('ws');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,12 +14,23 @@ const PORT = process.env.PORT || 3001;
 // 開発時に本番相当データを使う場合は、環境変数 B_SYSTEM_DATA_ROOT にディレクトリを指定する
 // 例: B_SYSTEM_DATA_ROOT=C:\path\to\private\data
 const PUBLIC_DATA_ROOT = path.join(__dirname, '../public/data');
-const DATA_ROOT = process.env.B_SYSTEM_DATA_ROOT
-  ? path.resolve(process.env.B_SYSTEM_DATA_ROOT)
-  : PUBLIC_DATA_ROOT;
+const PRIVATE_DATA_ROOT = path.join(__dirname, '../private/data');
+
+function resolveDataRoot() {
+  if (process.env.B_SYSTEM_DATA_ROOT) {
+    return path.resolve(process.env.B_SYSTEM_DATA_ROOT);
+  }
+  if (fs.existsSync(PRIVATE_DATA_ROOT)) {
+    return PRIVATE_DATA_ROOT;
+  }
+  return PUBLIC_DATA_ROOT;
+}
+
+const DATA_ROOT = resolveDataRoot();
 const DB_SCHEMA_PATH = path.join(__dirname, 'sql', 'progression-schema.sql');
 const ACTIVE_STATUSES = ['announced', 'in_progress', 'court_approved'];
 const DB_CACHE = new Map();
+const realtimeClients = new Set();
 /** 進行DBスキーマ（複文は db.run では先頭1文しか実行されないため db.exec で一括実行する） */
 let cachedProgressionSchemaText = null;
 
@@ -127,6 +140,9 @@ async function ensureProgressionSchema(db) {
   if (!columnNames.has('warmup_finished_at')) {
     await runSql(db, `ALTER TABLE matches ADD COLUMN warmup_finished_at TEXT`);
   }
+  if (!columnNames.has('finished_at')) {
+    await runSql(db, `ALTER TABLE matches ADD COLUMN finished_at TEXT`);
+  }
 }
 
 async function getEventDb(eventId) {
@@ -172,6 +188,7 @@ function normalizeMatchRow(row) {
     warmupStartedAt: row.warmup_started_at,
     warmupFinishedAt: row.warmup_finished_at,
     startedAt: row.started_at,
+    finishedAt: row.finished_at,
     courtApprovedAt: row.court_approved_at,
     courtRefereeName: row.court_referee_name,
     hqApprovedAt: row.hq_approved_at,
@@ -186,6 +203,40 @@ function createHttpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
+}
+
+function registerRealtimeClient(ws, filters = {}) {
+  realtimeClients.add({ ws, filters });
+}
+
+function unregisterRealtimeClient(ws) {
+  for (const client of realtimeClients) {
+    if (client.ws === ws) {
+      realtimeClients.delete(client);
+      break;
+    }
+  }
+}
+
+function broadcastRealtimeUpdate(payload) {
+  const message = JSON.stringify({
+    type: 'scoreboard-updated',
+    updatedAt: toIsoNow(),
+    ...payload,
+  });
+  for (const client of realtimeClients) {
+    const { ws, filters } = client;
+    if (ws.readyState !== ws.OPEN) {
+      continue;
+    }
+    if (filters.eventId && filters.eventId !== payload.eventId) {
+      continue;
+    }
+    if (filters.courtId && filters.courtId !== payload.courtId) {
+      continue;
+    }
+    ws.send(message);
+  }
 }
 
 /** 読み取り: DATA_ROOT を優先し、無ければ public/data（共有 JSON・別 eventId のデモ用） */
@@ -208,6 +259,30 @@ async function resolveCourtDir(eventId) {
   const d2 = path.join(PUBLIC_DATA_ROOT, eventId, 'court');
   if (await fs.pathExists(d2)) return d2;
   return null;
+}
+
+async function loadEventInitMatchDefaults(eventId) {
+  const initJson = await readJsonUnderEvent(eventId, 'init.json');
+  const initMatch = initJson?.match || {};
+  const profilePicMode = String(initJson?.profilePic ?? 'enabled');
+  const redLimit = Number(initJson?.red?.limit);
+  const blueLimit = Number(initJson?.blue?.limit);
+  const warmupLimit = Number(initJson?.warmup?.limit);
+  const intervalLimit = Number(initJson?.interval?.limit);
+  return {
+    totalEnds: Number(initMatch.totalEnds) || 6,
+    warmup: String(initMatch.warmup || 'simultaneous'),
+    interval: String(initMatch.interval || 'enabled'),
+    rules: String(initMatch.rules || 'worldBoccia'),
+    resultApproval: String(initMatch.resultApproval || 'enabled'),
+    tieBreak: String(initMatch.tieBreak || 'finalShot'),
+    sections: Array.isArray(initMatch.sections) ? initMatch.sections : undefined,
+    profilePicMode,
+    redLimit: Number.isFinite(redLimit) ? redLimit : 300000,
+    blueLimit: Number.isFinite(blueLimit) ? blueLimit : 300000,
+    warmupLimit: Number.isFinite(warmupLimit) ? warmupLimit : 120000,
+    intervalLimit: Number.isFinite(intervalLimit) ? intervalLimit : 60000,
+  };
 }
 
 async function registerMatchIfNeeded(db, eventId, payload) {
@@ -409,6 +484,7 @@ async function syncAnnounceToCourtFiles(eventId, match) {
   const blueName = idToName.get(blueId) || blueId;
   const matchIdStr = String(match.matchId ?? '').trim();
   const matchDisplayName = await resolveAnnounceMatchDisplayName(eventId, matchIdStr);
+  const initDefaults = await loadEventInitMatchDefaults(eventId);
 
   const courtDir = path.join(DATA_ROOT, eventId, 'court', courtId);
   await fs.ensureDir(courtDir);
@@ -446,10 +522,27 @@ async function syncAnnounceToCourtFiles(eventId, match) {
       interval: { ...defaultSettings.interval, ...(existing.interval || {}) },
     };
   }
-  settings.red = { ...settings.red, name: redName };
-  settings.blue = { ...settings.blue, name: blueName };
+  settings.match = {
+    ...settings.match,
+    totalEnds: initDefaults.totalEnds,
+    warmup: initDefaults.warmup,
+    interval: initDefaults.interval,
+    rules: initDefaults.rules,
+    resultApproval: initDefaults.resultApproval,
+    tieBreak: initDefaults.tieBreak,
+    ...(initDefaults.sections ? { sections: initDefaults.sections } : {}),
+  };
+  settings.red = { ...settings.red, name: redName, limit: initDefaults.redLimit };
+  settings.blue = { ...settings.blue, name: blueName, limit: initDefaults.blueLimit };
+  if (initDefaults.profilePicMode === 'none') {
+    settings.red.profilePic = '';
+    settings.blue.profilePic = '';
+  }
+  settings.warmup = { ...settings.warmup, limit: initDefaults.warmupLimit };
+  settings.interval = { ...settings.interval, limit: initDefaults.intervalLimit };
   settings.matchName = matchDisplayName;
   await fs.writeJson(settingsPath, settings, { spaces: 2 });
+  broadcastRealtimeUpdate({ eventId, courtId, filename: 'settings' });
 
   let game = {};
   if (await fs.pathExists(gamePath)) {
@@ -459,20 +552,84 @@ async function syncAnnounceToCourtFiles(eventId, match) {
     ...game,
     matchID: matchIdStr || game.matchID || '',
     matchName: matchDisplayName,
+    match: {
+      ...(game.match || {}),
+      totalEnds: initDefaults.totalEnds,
+      warmup: initDefaults.warmup,
+      interval: initDefaults.interval,
+      rules: initDefaults.rules,
+      resultApproval: initDefaults.resultApproval,
+      tieBreak: initDefaults.tieBreak,
+      ...(initDefaults.sections ? { sections: initDefaults.sections } : {}),
+      end: 0,
+      ends: [],
+      sectionID: 0,
+      section: 'standby',
+      approvals: {
+        red: false,
+        referee: false,
+        blue: false,
+      },
+    },
+    screen: {
+      ...(game.screen || {}),
+      active: '',
+      isColorSet: false,
+      isScoreAdjusting: false,
+      isPenaltyThrow: false,
+      isMatchStarted: false,
+    },
+    warmup: {
+      ...(game.warmup || {}),
+      limit: initDefaults.warmupLimit,
+      isRunning: false,
+      time: initDefaults.warmupLimit,
+    },
+    interval: {
+      ...(game.interval || {}),
+      limit: initDefaults.intervalLimit,
+      isRunning: false,
+      time: initDefaults.intervalLimit,
+    },
     red: {
       ...(game.red || {}),
       name: redName,
       playerID: redId,
+      limit: initDefaults.redLimit,
+      ...(initDefaults.profilePicMode === 'none' ? { profilePic: '' } : {}),
+      score: 0,
+      scores: [],
+      ball: 6,
+      isRunning: false,
+      time: initDefaults.redLimit,
+      isTieBreak: false,
+      result: '',
+      yellowCard: 0,
+      penaltyBall: 0,
+      redCard: 0,
     },
     blue: {
       ...(game.blue || {}),
       name: blueName,
       playerID: blueId,
+      limit: initDefaults.blueLimit,
+      ...(initDefaults.profilePicMode === 'none' ? { profilePic: '' } : {}),
+      score: 0,
+      scores: [],
+      ball: 6,
+      isRunning: false,
+      time: initDefaults.blueLimit,
+      isTieBreak: false,
+      result: '',
+      yellowCard: 0,
+      penaltyBall: 0,
+      redCard: 0,
     },
     courtId: courtId || game.courtId || '',
     lastUpdated: toIsoNow(),
   };
   await fs.writeJson(gamePath, nextGame, { spaces: 2 });
+  broadcastRealtimeUpdate({ eventId, courtId, filename: 'game' });
 }
 
 /** 配信取り消し時: コートの表示名をスコアボード初期表示に近づける（DEFAULT_GAME_DATA と揃える） */
@@ -494,6 +651,7 @@ async function syncUnannounceToCourtFiles(eventId, match) {
     settings.blue = { ...(settings.blue || {}), name: SCOREBOARD_DEFAULT_BLUE_NAME };
     settings.matchName = '';
     await fs.writeJson(settingsPath, settings, { spaces: 2 });
+    broadcastRealtimeUpdate({ eventId, courtId, filename: 'settings' });
   }
 
   if (await fs.pathExists(gamePath)) {
@@ -514,6 +672,7 @@ async function syncUnannounceToCourtFiles(eventId, match) {
       lastUpdated: toIsoNow(),
     };
     await fs.writeJson(gamePath, nextGame, { spaces: 2 });
+    broadcastRealtimeUpdate({ eventId, courtId, filename: 'game' });
   }
 }
 
@@ -539,6 +698,7 @@ async function resetAllCourtFilesForRetest(eventId) {
       settings.blue = { ...(settings.blue || {}), name: SCOREBOARD_DEFAULT_BLUE_NAME };
       settings.matchName = '';
       await fs.writeJson(settingsPath, settings, { spaces: 2 });
+      broadcastRealtimeUpdate({ eventId, courtId, filename: 'settings' });
       updatedSettings += 1;
     }
 
@@ -570,6 +730,7 @@ async function resetAllCourtFilesForRetest(eventId) {
           isColorSet: false,
           isScoreAdjusting: false,
           isPenaltyThrow: false,
+          isMatchStarted: false,
         },
         warmup: {
           ...(game.warmup || {}),
@@ -614,6 +775,7 @@ async function resetAllCourtFilesForRetest(eventId) {
         lastUpdated: toIsoNow(),
       };
       await fs.writeJson(gamePath, resetGame, { spaces: 2 });
+      broadcastRealtimeUpdate({ eventId, courtId, filename: 'game' });
       updatedGames += 1;
     }
   }
@@ -679,6 +841,7 @@ app.post('/api/progress/:eventId/reset-all', async (req, res) => {
              warmup_started_at = NULL,
              warmup_finished_at = NULL,
              started_at = NULL,
+             finished_at = NULL,
              court_approved_at = NULL,
              court_referee_name = NULL,
              hq_approved_at = NULL,
@@ -723,6 +886,7 @@ app.post('/api/progress/:eventId/matches/:matchId/announce', async (req, res) =>
              warmup_started_at = NULL,
              warmup_finished_at = NULL,
              started_at = NULL,
+             finished_at = NULL,
              version = version + 1,
              updated_at = ?
          WHERE event_id = ? AND match_id = ?`,
@@ -766,6 +930,7 @@ app.post('/api/progress/:eventId/matches/:matchId/unannounce', async (req, res) 
              warmup_started_at = NULL,
              warmup_finished_at = NULL,
              started_at = NULL,
+             finished_at = NULL,
              version = version + 1,
              updated_at = ?
          WHERE event_id = ? AND match_id = ?`,
@@ -794,6 +959,7 @@ app.post('/api/progress/:eventId/matches/:matchId/sync-section', async (req, res
   try {
     const { eventId, matchId } = req.params;
     const section = String(req.body?.section ?? '').trim();
+    const matchStarted = req.body?.matchStarted === true;
     if (!section) {
       throw createHttpError(400, 'section は必須です');
     }
@@ -814,15 +980,22 @@ app.post('/api/progress/:eventId/matches/:matchId/sync-section', async (req, res
       }
 
       const now = toIsoNow();
-      const nextStatus = isInProgressSection ? 'in_progress' : 'announced';
+      const shouldBeInProgress = isInProgressSection && (matchStarted || Boolean(row.started_at));
+      const nextStatus = shouldBeInProgress ? 'in_progress' : 'announced';
       const nextWarmupStartedAt = isStandby ? null : (isWarmup ? (row.warmup_started_at || now) : (row.warmup_started_at || now));
       const nextWarmupFinishedAt = isInProgressSection ? (row.warmup_finished_at || now) : null;
-      const nextStartedAt = isInProgressSection ? (row.started_at || now) : null;
+      const nextStartedAt = isStandby || isWarmup
+        ? null
+        : (matchStarted ? (row.started_at || now) : (row.started_at || null));
+      const nextFinishedAt = isStandby || isWarmup
+        ? null
+        : (section === 'matchFinished' ? (row.finished_at || now) : (row.finished_at || null));
       const isNoop =
         row.status === nextStatus &&
         (row.warmup_started_at || null) === nextWarmupStartedAt &&
         (row.warmup_finished_at || null) === nextWarmupFinishedAt &&
-        (row.started_at || null) === nextStartedAt;
+        (row.started_at || null) === nextStartedAt &&
+        (row.finished_at || null) === nextFinishedAt;
       if (isNoop) {
         return row;
       }
@@ -834,6 +1007,7 @@ app.post('/api/progress/:eventId/matches/:matchId/sync-section', async (req, res
              warmup_started_at = ?,
              warmup_finished_at = ?,
              started_at = ?,
+             finished_at = ?,
              version = version + 1,
              updated_at = ?
          WHERE event_id = ? AND match_id = ?`,
@@ -842,6 +1016,7 @@ app.post('/api/progress/:eventId/matches/:matchId/sync-section', async (req, res
           nextWarmupStartedAt,
           nextWarmupFinishedAt,
           nextStartedAt,
+          nextFinishedAt,
           now,
           eventId,
           matchId,
@@ -997,7 +1172,7 @@ app.post('/api/progress/:eventId/matches/:matchId/court-approve', async (req, re
   }
 });
 
-// 進行システム: hq_approved へ遷移（本部承認）
+// 進行システム: 本部承認時に hq_approved へ遷移
 app.post('/api/progress/:eventId/matches/:matchId/hq-approve', async (req, res) => {
   try {
     const { eventId, matchId } = req.params;
@@ -1022,40 +1197,17 @@ app.post('/api/progress/:eventId/matches/:matchId/hq-approve', async (req, res) 
       await runSql(
         db,
         `UPDATE matches
-         SET status = 'hq_approved', hq_approved_at = ?, hq_approver_name = ?, version = version + 1, updated_at = ?
+         SET status = 'hq_approved',
+             hq_approved_at = ?,
+             hq_approver_name = ?,
+             version = version + 1,
+             updated_at = ?
          WHERE event_id = ? AND match_id = ?`,
         [now, approverName, now, eventId, matchId],
       );
       return getMatchOrFail(db, eventId, matchId);
     });
 
-    res.json({ success: true, match: normalizeMatchRow(result) });
-  } catch (error) {
-    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
-  }
-});
-
-// 進行システム: reflected へ遷移（順位表示向け公開）
-app.post('/api/progress/:eventId/matches/:matchId/reflect', async (req, res) => {
-  try {
-    const { eventId, matchId } = req.params;
-    const db = await getEventDb(eventId);
-    const result = await withTransaction(db, async () => {
-      const row = await getMatchOrFail(db, eventId, matchId);
-      if (row.status !== 'hq_approved') {
-        throw createHttpError(409, `hq_approved のみ reflect 可能です（現在: ${row.status}）`);
-      }
-      const now = toIsoNow();
-      await runSql(
-        db,
-        `UPDATE matches
-         SET status = 'reflected', reflected_at = ?, version = version + 1, updated_at = ?
-         WHERE event_id = ? AND match_id = ?`,
-        [now, now, eventId, matchId],
-      );
-      await releaseLocksByMatch(db, eventId, matchId);
-      return getMatchOrFail(db, eventId, matchId);
-    });
     res.json({ success: true, match: normalizeMatchRow(result) });
   } catch (error) {
     res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
@@ -1136,11 +1288,8 @@ app.patch('/api/progress/:eventId/matches/:matchId/result', async (req, res) => 
 app.get('/api/progress/:eventId/pool/standings', async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { includeHqApproved = 'true' } = req.query;
     const db = await getEventDb(eventId);
-    const statuses = includeHqApproved === 'true'
-      ? ['hq_approved', 'reflected']
-      : ['reflected'];
+    const statuses = ['hq_approved', 'reflected'];
     const placeholders = statuses.map(() => '?').join(', ');
     const rows = await allSql(
       db,
@@ -1200,6 +1349,7 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
     }
     
     await fs.writeFile(filePath, jsonString, 'utf8');
+    broadcastRealtimeUpdate({ eventId, courtId, filename });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -1277,9 +1427,40 @@ app.put('/api/game/:eventId/court/:courtId', async (req, res) => {
   // ...
 });
 
+const server = http.createServer(app);
+const wss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (request, socket, head) => {
+  try {
+    const url = new URL(request.url, `http://${request.headers.host}`);
+    if (url.pathname !== '/api/realtime') {
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } catch {
+    socket.destroy();
+  }
+});
+
+wss.on('connection', (ws, request) => {
+  const url = new URL(request.url, `http://${request.headers.host}`);
+  const eventId = String(url.searchParams.get('eventId') || '').trim();
+  const courtId = String(url.searchParams.get('courtId') || '').trim();
+  registerRealtimeClient(ws, { eventId, courtId });
+  ws.send(JSON.stringify({ type: 'connected', eventId, courtId, updatedAt: toIsoNow() }));
+  ws.on('close', () => {
+    unregisterRealtimeClient(ws);
+  });
+  ws.on('error', () => {
+    unregisterRealtimeClient(ws);
+  });
+});
 
 // サーバー起動
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   const localIP = getLocalIPAddress();
   console.log(`Data root (primary): ${DATA_ROOT}`);
   if (path.resolve(DATA_ROOT) !== path.resolve(PUBLIC_DATA_ROOT)) {
@@ -1287,5 +1468,6 @@ app.listen(PORT, '0.0.0.0', () => {
   }
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Server running on http://${localIP}:${PORT}`);
+  console.log(`Realtime WS: ws://localhost:${PORT}/api/realtime`);
   console.log(`IP: ${localIP}:${PORT}`);
 });

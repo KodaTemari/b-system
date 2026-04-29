@@ -6,7 +6,7 @@ import {
 } from '../../utils/results/poolStandings';
 import './PoolResults.css';
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS = 2000;
 
 /** チームアイコン用の色パレット（順番に割り当て） */
 const TEAM_COLORS = [
@@ -28,10 +28,118 @@ const PoolResults = () => {
   const fetchAllGames = useCallback(async () => {
     if (!eventId) return;
     try {
-      const res = await fetch(`/api/data/${eventId}/results/all-games`);
-      if (!res.ok) throw new Error('データの取得に失敗しました');
-      const data = await res.json();
-      setGamesList(data.games || []);
+      const [gamesRes, progressRes, standingsRes] = await Promise.all([
+        fetch(`/api/data/${eventId}/results/all-games`),
+        fetch(`/api/progress/${eventId}/matches`),
+        fetch(`/api/progress/${eventId}/pool/standings?includeHqApproved=true`),
+      ]);
+      if (!gamesRes.ok || !progressRes.ok || !standingsRes.ok) {
+        throw new Error('データの取得に失敗しました');
+      }
+      const gamesData = await gamesRes.json();
+      const progressData = await progressRes.json();
+      const standingsData = await standingsRes.json();
+      const progressList = Array.isArray(progressData?.matches) ? progressData.matches : [];
+      const reflectedMatchIds = new Set(
+        progressList
+          .filter((m) => String(m?.status ?? '') === 'reflected')
+          .map((m) => String(m?.matchId ?? '').trim())
+          .filter(Boolean),
+      );
+      const allGames = Array.isArray(gamesData?.games) ? gamesData.games : [];
+      const approvedGames = allGames.filter((entry) => {
+        const matchId = String(entry?.game?.matchID ?? '').trim();
+        return matchId && reflectedMatchIds.has(matchId);
+      });
+      let sourceGames = approvedGames;
+      if (sourceGames.length === 0 && reflectedMatchIds.size > 0) {
+        // フォールバック: reflected はあるのに all-games 側で拾えない場合は進行APIの結果を直接利用
+        const rows = Array.isArray(standingsData?.matches) ? standingsData.matches : [];
+        sourceGames = rows
+          .filter((m) => String(m?.status ?? '') === 'reflected' || String(m?.status ?? '') === 'hq_approved')
+          .map((m) => {
+            const redScore = Number(m?.red_score ?? 0);
+            const blueScore = Number(m?.blue_score ?? 0);
+            const winnerPlayerId = String(m?.winner_player_id ?? '').trim();
+            const redPlayerId = String(m?.red_player_id ?? '').trim();
+            const bluePlayerId = String(m?.blue_player_id ?? '').trim();
+            let redResult = 'draw';
+            let blueResult = 'draw';
+            if (winnerPlayerId && winnerPlayerId === redPlayerId) {
+              redResult = 'win';
+              blueResult = 'lose';
+            } else if (winnerPlayerId && winnerPlayerId === bluePlayerId) {
+              redResult = 'lose';
+              blueResult = 'win';
+            } else if (redScore > blueScore) {
+              redResult = 'win';
+              blueResult = 'lose';
+            } else if (blueScore > redScore) {
+              redResult = 'lose';
+              blueResult = 'win';
+            }
+            return {
+              courtId: String(m?.court_id ?? ''),
+              game: {
+                classification: '',
+                match: { section: 'resultApproval' },
+                red: { name: redPlayerId || '—', score: redScore, result: redResult },
+                blue: { name: bluePlayerId || '—', score: blueScore, result: blueResult },
+              },
+            };
+          });
+      }
+      const normalizedGames = sourceGames.map((entry) => {
+        const game = entry?.game ?? {};
+        const red = game?.red ?? {};
+        const blue = game?.blue ?? {};
+        const redScore = Number(red?.score ?? 0);
+        const blueScore = Number(blue?.score ?? 0);
+        let redResult = String(red?.result ?? '').trim();
+        let blueResult = String(blue?.result ?? '').trim();
+
+        if (!redResult || !blueResult) {
+          if (redScore > blueScore) {
+            redResult = 'win';
+            blueResult = 'lose';
+          } else if (blueScore > redScore) {
+            redResult = 'lose';
+            blueResult = 'win';
+          } else if (red?.isTieBreak === true) {
+            redResult = 'win';
+            blueResult = 'lose';
+          } else if (blue?.isTieBreak === true) {
+            redResult = 'lose';
+            blueResult = 'win';
+          } else {
+            redResult = redResult || 'draw';
+            blueResult = blueResult || 'draw';
+          }
+        }
+
+        return {
+          ...entry,
+          game: {
+            ...game,
+            match: {
+              ...(game?.match ?? {}),
+              // reflected 済みは順位計算上「完了試合」として扱う
+              section: 'resultApproval',
+            },
+            red: {
+              ...red,
+              score: redScore,
+              result: redResult,
+            },
+            blue: {
+              ...blue,
+              score: blueScore,
+              result: blueResult,
+            },
+          },
+        };
+      });
+      setGamesList(normalizedGames);
       setError(null);
     } catch (err) {
       setError(err.message);

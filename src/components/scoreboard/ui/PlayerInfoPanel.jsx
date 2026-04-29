@@ -143,11 +143,11 @@ const PlayerInfoPanel = ({
   return (
     <section id={color}>
       <h2 ref={h2ElementRef}>
-        <span className="profilePic">
-          {profilePic && (
+        {profilePic && (
+          <span className="profilePic">
             <img src={profilePic} alt="" />
-          )}
-        </span>
+          </span>
+        )}
         <span 
           className="name" 
           ref={nameElementRef} 

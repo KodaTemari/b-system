@@ -83,13 +83,7 @@
 }
 ```
 
-### 7. 反映確定
-
-- `POST /api/progress/:eventId/matches/:matchId/reflect`
-- `hq_approved -> reflected`
-- 反映時に `active_locks` を解放
-
-### 8. 結果修正（本部のみ想定）
+### 7. 結果修正（本部のみ想定）
 
 - `PATCH /api/progress/:eventId/matches/:matchId/result`
 - body:
@@ -103,11 +97,10 @@
 }
 ```
 
-### 9. standings向けデータ
+### 8. standings向けデータ
 
 - `GET /api/progress/:eventId/pool/standings`
-- 既定で `hq_approved + reflected` を返却
-- `GET /api/progress/:eventId/pool/standings?includeHqApproved=false` で `reflected` のみ
+- `hq_approved`（互換のため `reflected` も含む）を返却
 
 ## 備考
 

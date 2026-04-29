@@ -5,6 +5,12 @@
   padding: 20px;
   min-height: 100vh;
   box-sizing: border-box;
+  background-image:
+    linear-gradient(to top, rgba(var(--color-black), 0.8) 0%, rgba(var(--color-black), 0.9) 100%),
+    var(--tournamentBgImage, none);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 }
 
 .tournamentTitle {

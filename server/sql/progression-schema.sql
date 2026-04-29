@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS matches (
   warmup_started_at TEXT,
   warmup_finished_at TEXT,
   started_at TEXT,
+  finished_at TEXT,
   court_approved_at TEXT,
   court_referee_name TEXT,
   hq_approved_at TEXT,
