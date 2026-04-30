@@ -13,8 +13,12 @@ function buildHqBroadcastSignature(data) {
     data.category ?? '',
     data.red?.name ?? '',
     data.red?.playerID ?? '',
+    data.red?.limit ?? '',
+    data.red?.time ?? '',
     data.blue?.name ?? '',
     data.blue?.playerID ?? '',
+    data.blue?.limit ?? '',
+    data.blue?.time ?? '',
   ].join('\u0001');
 }
 
@@ -22,7 +26,7 @@ function buildHqBroadcastSignature(data) {
  * データ同期のカスタムフック
  * Local Storage同期を管理
  */
-export const useDataSync = (id, cls, court, isCtrl) => {
+export const useDataSync = (id, court, isCtrl) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [localData, setLocalData] = useState(null);
@@ -277,11 +281,15 @@ export const useDataSync = (id, cls, court, isCtrl) => {
               ...prev.red,
               name: incomingForMerge.red?.name,
               playerID: incomingForMerge.red?.playerID,
+              limit: incomingForMerge.red?.limit ?? prev.red?.limit,
+              time: prev.red?.isRunning ? prev.red?.time : (incomingForMerge.red?.time ?? prev.red?.time),
             },
             blue: {
               ...prev.blue,
               name: incomingForMerge.blue?.name,
               playerID: incomingForMerge.blue?.playerID,
+              limit: incomingForMerge.blue?.limit ?? prev.blue?.limit,
+              time: prev.blue?.isRunning ? prev.blue?.time : (incomingForMerge.blue?.time ?? prev.blue?.time),
             },
           };
           localStorage.setItem(storageKey, JSON.stringify(next));
@@ -537,10 +545,6 @@ export const useDataSync = (id, cls, court, isCtrl) => {
       setRealtimeStatus('disconnected');
       return undefined;
     }
-    if (isCtrl) {
-      setRealtimeStatus('disabled');
-      return undefined;
-    }
     if (typeof window === 'undefined' || typeof window.WebSocket === 'undefined') {
       setRealtimeStatus('unsupported');
       return undefined;
@@ -572,6 +576,11 @@ export const useDataSync = (id, cls, court, isCtrl) => {
         try {
           const payload = JSON.parse(event.data);
           if (payload?.type === 'scoreboard-updated') {
+            // ctrl画面は本部配信由来の settings 更新のみを取り込む。
+            // game更新まで追従すると、進行中のローカル状態を不意に上書きしやすい。
+            if (isCtrl && payload?.filename !== 'settings') {
+              return;
+            }
             loadGameData({ silent: true });
           }
         } catch {
@@ -632,7 +641,6 @@ export const useDataSync = (id, cls, court, isCtrl) => {
     error,
     eventName,
     classificationCount,
-    realtimeStatus,
     saveToLocalStorage,
     saveData
   };

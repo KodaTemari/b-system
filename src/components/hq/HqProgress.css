@@ -37,6 +37,11 @@
   gap: 4px;
 }
 
+.hqProgressApproverInline {
+  margin-top: 4px;
+  align-items: flex-end;
+}
+
 .hqProgressApproverInput {
   border: 1px solid rgb(var(--color-gray-light));
   border-radius: 6px;
@@ -86,7 +91,7 @@
 }
 
 .hqProgressStatus.isHqApproved {
-  color: rgb(var(--color-blue));
+  color: rgb(var(--color-gray-mid-light));
 }
 
 .hqProgressStatus.isReflected {
@@ -130,4 +135,43 @@
 .hqProgressActionButton:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.hqProgressActionButton.isFullyTransparent {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+.hqProgressApproverModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(var(--color-black), 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.hqProgressApproverModal {
+  width: min(460px, 100%);
+  background: rgba(34, 34, 34, 0.96);
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.hqProgressApproverModalTitle {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.hqProgressApproverModalNote {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: rgb(var(--color-gray-lighter));
+}
+
+.hqProgressApproverModalActions {
+  margin-top: 10px;
 }

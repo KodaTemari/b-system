@@ -3,6 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import '../schedule/Schedule.css';
 import './HqProgress.css';
 import {
+  getScheduleRowPhase,
+  isTieBreakScoreSingleDigit,
   isWinnerPlaceholder,
   normalizePlayers,
   renderNameWithLineBreaks,
@@ -40,7 +42,6 @@ const toClockLabel = (isoText) => {
   return new Intl.DateTimeFormat('ja-JP', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
   }).format(date);
 };
 
@@ -67,6 +68,8 @@ const HqProgress = () => {
   const [operationError, setOperationError] = useState('');
   const [operationMessage, setOperationMessage] = useState('');
   const [hqApproverName, setHqApproverName] = useState('');
+  const [showApproverModal, setShowApproverModal] = useState(false);
+  const [approverNameDraft, setApproverNameDraft] = useState('');
   const [actionBusyKey, setActionBusyKey] = useState('');
   const [importing, setImporting] = useState(false);
   const mode = useMemo(() => {
@@ -86,6 +89,17 @@ const HqProgress = () => {
       navigate(`/event/${eventId}/hq/progress?${nextParams.toString()}`, { replace: true });
     }
   }, [eventId, navigate, searchParams]);
+
+  useEffect(() => {
+    if (!isTdMode) {
+      setShowApproverModal(false);
+      return;
+    }
+    if (!hqApproverName.trim()) {
+      setApproverNameDraft('');
+      setShowApproverModal(true);
+    }
+  }, [isTdMode, hqApproverName]);
 
   const fetchProgress = useCallback(async () => {
     if (!eventId) {
@@ -168,7 +182,7 @@ const HqProgress = () => {
       try {
         const [gamesResponse, standingsResponse] = await Promise.all([
           fetch(`/api/data/${eventId}/results/all-games`),
-          fetch(`/api/progress/${eventId}/pool/standings?includeHqApproved=true`),
+          fetch(`/api/progress/${eventId}/pool/standings`),
         ]);
         if (!gamesResponse.ok) {
           return;
@@ -300,6 +314,11 @@ const HqProgress = () => {
     return slotMap;
   }, [schedule.matches, timeSlots]);
 
+  const logoSrc =
+    eventId != null && eventId !== ''
+      ? `/data/${encodeURIComponent(eventId)}/assets/logo.png`
+      : null;
+
   const callProgressAction = async (match, action, body = null) => {
     if (!eventId || !match?.matchId) {
       return;
@@ -359,9 +378,21 @@ const HqProgress = () => {
     const approverName = hqApproverName.trim();
     if (!approverName) {
       setOperationError('本部承認者名を入力してください。');
+      setShowApproverModal(true);
       return;
     }
     await callProgressAction(match, 'hq-approve', { approverName });
+  };
+
+  const handleApproverModalSubmit = () => {
+    const nextName = approverNameDraft.trim();
+    if (!nextName) {
+      setOperationError('本部承認者名を入力してください。');
+      return;
+    }
+    setHqApproverName(nextName);
+    setOperationError('');
+    setShowApproverModal(false);
   };
 
   const handleBulkRegister = async () => {
@@ -465,14 +496,13 @@ const HqProgress = () => {
   return (
     <main className="hqProgressPage">
       <section className="hqProgressSection">
-        <h1 className="hqProgressTitle">本部・試合進行</h1>
-        <p className="hqProgressSubtitle">
-          イベントID: {eventId} / 操作モード: {isTdMode ? 'TD' : 'オペレーター'}
-        </p>
-        {schedule.eventDate && (
-          <p className="scheduleMeta">{`開催日：${toEventDateLabel(schedule.eventDate, schedule.eventDayLabel)}`}</p>
-        )}
-        {schedule.startTime && <p className="scheduleMeta">{`開始時刻：${schedule.startTime}`}</p>}
+        <header className="scheduleTitleBar">
+          {logoSrc ? <img className="scheduleTitleLogo" src={logoSrc} alt="" /> : null}
+          <div className="scheduleTitleText">
+            <h1 className="scheduleTitle">{isTdMode ? '本部承認 [TD]' : '本部進行 [オペレーター]'}</h1>
+            <p className="scheduleMeta">{`承認者：${hqApproverName.trim() || '〇〇'}`}</p>
+          </div>
+        </header>
 
         <div className="hqProgressActionsBar">
           {isOperatorMode && (
@@ -495,18 +525,6 @@ const HqProgress = () => {
               </button>
             </>
           )}
-          {isTdMode && (
-            <label className="hqProgressApproverLabel">
-              本部承認者名
-              <input
-                type="text"
-                className="hqProgressApproverInput"
-                value={hqApproverName}
-                onChange={(event) => setHqApproverName(event.target.value)}
-                placeholder="例: TD"
-              />
-            </label>
-          )}
         </div>
         {operationMessage ? <p className="hqProgressOperationMessage">{operationMessage}</p> : null}
         {operationError ? <p className="hqProgressOperationError">{operationError}</p> : null}
@@ -516,17 +534,54 @@ const HqProgress = () => {
         ) : (
           <div className="scheduleTableWrap">
             <table className="scheduleTable">
-              <thead>
-                <tr>
-                  <th className="scheduleHeaderCell">時間</th>
-                  {schedule.courts.map((court) => (
-                    <th key={court} className="scheduleHeaderCell">{`コート${court}`}</th>
-                  ))}
-                </tr>
-              </thead>
               <tbody>
-                {timeSlots.map((slot) => (
-                  <tr key={slot}>
+                {timeSlots.flatMap((slot, index) => {
+                  const matchesInRow = schedule.courts
+                    .map((court) => matrix.get(slot)?.get(court))
+                    .filter(Boolean);
+                  const progressStatusById = new Map(
+                    matchesInRow.map((m) => [
+                      String(m?.matchId ?? ''),
+                      String(progressMap.get(String(m?.matchId ?? ''))?.status ?? 'scheduled'),
+                    ]),
+                  );
+                  const rowPhase = getScheduleRowPhase(slot, timeSlots, matchesInRow, progressStatusById);
+                  const rowPhaseClass =
+                    rowPhase === 'past'
+                      ? 'isRowPast'
+                      : rowPhase === 'upcoming'
+                        ? 'isRowUpcoming'
+                        : 'isRowCurrent';
+                  const prevSlot = index > 0 ? timeSlots[index - 1] : null;
+                  const prevMatches = prevSlot
+                    ? schedule.courts.map((court) => matrix.get(prevSlot)?.get(court)).filter(Boolean)
+                    : [];
+                  const prevProgressStatusById = new Map(
+                    prevMatches.map((m) => [
+                      String(m?.matchId ?? ''),
+                      String(progressMap.get(String(m?.matchId ?? ''))?.status ?? 'scheduled'),
+                    ]),
+                  );
+                  const prevRowPhase = prevSlot
+                    ? getScheduleRowPhase(prevSlot, timeSlots, prevMatches, prevProgressStatusById)
+                    : '';
+                  const shouldInsertHeaderAtTop = index === 0 && rowPhase !== 'past';
+                  const shouldInsertHeaderAboveCurrent =
+                    rowPhase === 'current' && prevRowPhase !== 'current' && index !== 0;
+
+                  const rows = [];
+                  if (shouldInsertHeaderAtTop || shouldInsertHeaderAboveCurrent) {
+                    rows.push(
+                      <tr key={`header-${slot}`} className="scheduleInlineHeaderRow">
+                        <th className="scheduleHeaderCell">時間</th>
+                        {schedule.courts.map((court) => (
+                          <th key={`header-${slot}-${court}`} className="scheduleHeaderCell">{`コート${court}`}</th>
+                        ))}
+                      </tr>,
+                    );
+                  }
+                  rows.push(
+                  <tr key={slot} className={`scheduleRow ${rowPhaseClass}`}>
                     <th className="scheduleTimeCell">{toDateTimeLabel(slot)}</th>
                     {schedule.courts.map((court) => {
                       const match = matrix.get(slot)?.get(court);
@@ -540,25 +595,53 @@ const HqProgress = () => {
                         playerNameMap.get(String(match.bluePlayerId ?? '')) ??
                         String(match.bluePlayerName ?? match.bluePlayerId ?? 'TBD');
                       const colorState = courtColorStateMap.get(String(match.matchId ?? ''));
-                      const isColorConfirmed = colorState?.isColorSet === true;
+                      const progress = progressMap.get(String(match.matchId));
+                      const rawStatus = progress?.status || 'scheduled';
+                      // コート game.json の isColorSet が無くても、アナウンス以降は赤青が確定しているのでボーダーを表示する
+                      const sidesLockedByProgress = [
+                        'announced',
+                        'in_progress',
+                        'court_approved',
+                        'hq_approved',
+                        'reflected',
+                      ].includes(rawStatus);
+                      const isColorConfirmed =
+                        colorState?.isColorSet === true || sidesLockedByProgress;
                       const displayRedName = isColorConfirmed
-                        ? playerNameMap.get(String(colorState?.redPlayerId ?? '')) || redName
+                        ? playerNameMap.get(
+                            String(colorState?.redPlayerId ?? match.redPlayerId ?? ''),
+                          ) || redName
                         : redName;
                       const displayBlueName = isColorConfirmed
-                        ? playerNameMap.get(String(colorState?.bluePlayerId ?? '')) || blueName
+                        ? playerNameMap.get(
+                            String(colorState?.bluePlayerId ?? match.bluePlayerId ?? ''),
+                          ) || blueName
                         : blueName;
                       const scoreLabel = colorState?.isScoreVisible
                         ? `${colorState?.redScore ?? 0} - ${colorState?.blueScore ?? 0}`
                         : '-';
                       const isRedWinner = colorState?.winnerSide === 'red';
                       const isBlueWinner = colorState?.winnerSide === 'blue';
-                      const progress = progressMap.get(String(match.matchId));
-                      const rawStatus = progress?.status || 'scheduled';
                       const displayStatus =
                         progress?.finishedAt &&
                         (rawStatus === 'announced' || rawStatus === 'in_progress')
                           ? 'match_finished'
                           : rawStatus;
+                      const isFinishedDisplayStatus = ['match_finished', 'court_approved', 'hq_approved'].includes(
+                        displayStatus,
+                      );
+                      const shouldHighlightWinnerBorder = isFinishedDisplayStatus && colorState?.isScoreVisible === true;
+                      const isRedWinnerBorder = shouldHighlightWinnerBorder && isRedWinner;
+                      const isBlueWinnerBorder = shouldHighlightWinnerBorder && isBlueWinner;
+                      const showTbTag =
+                        shouldHighlightWinnerBorder &&
+                        Number(colorState?.redScore ?? NaN) === Number(colorState?.blueScore ?? NaN);
+                      const redNameClass = shouldHighlightWinnerBorder
+                        ? (isRedWinnerBorder ? 'isWinner' : '')
+                        : (isColorConfirmed ? 'isRedConfirmed' : '');
+                      const blueNameClass = shouldHighlightWinnerBorder
+                        ? (isBlueWinnerBorder ? 'isWinner' : '')
+                        : (isColorConfirmed ? 'isBlueConfirmed' : '');
                       const statusLabel = statusLabelMap[displayStatus] || displayStatus;
                       const statusClassName = statusClassMap[displayStatus] || 'isScheduled';
                       const effectiveStatus = rawStatus;
@@ -569,33 +652,68 @@ const HqProgress = () => {
                       const warmupFinishedLabel = toClockLabel(progress?.warmupFinishedAt);
                       const startedLabel = toClockLabel(progress?.startedAt);
                       const finishedLabel = toClockLabel(progress?.finishedAt);
+                      const timelineLabels = [
+                        warmupStartedLabel,
+                        warmupFinishedLabel,
+                        startedLabel,
+                        finishedLabel,
+                      ];
+                      const shouldHighlightTimelineLatest = !finishedLabel;
+                      const lastDoneIndex = timelineLabels.reduce(
+                        (lastIndex, label, i) => (label ? i : lastIndex),
+                        -1,
+                      );
 
                       return (
                         <td key={`${slot}-${court}`} className="scheduleCell">
                           <div className="scheduleMatchMain">
                             <p
-                              className={`schedulePlayerName ${isColorConfirmed ? 'isRedConfirmed' : ''} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${redNameClass} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}
                             >
                               {renderNameWithLineBreaks(displayRedName)}
                             </p>
                             <p className="scheduleVersus">VS</p>
                             <p
-                              className={`schedulePlayerName ${isColorConfirmed ? 'isBlueConfirmed' : ''} ${isWinnerPlaceholder(displayBlueName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${blueNameClass} ${isWinnerPlaceholder(displayBlueName) ? 'isPlaceholderName' : ''}`}
                             >
                               {renderNameWithLineBreaks(displayBlueName)}
                             </p>
                           </div>
                           <p className="scheduleLiveScore">
                             {colorState?.isScoreVisible ? (
-                              <>
-                                <span className={`scheduleLiveScoreValue ${isRedWinner ? 'isWinner' : ''}`}>
-                                  {colorState?.redScore ?? 0}
+                              <span className="scheduleLiveScoreCluster">
+                                <span className="scheduleLiveScoreValue">
+                                  {showTbTag && isRedWinner ? (
+                                    <span
+                                      className={`scheduleScoreCircled${
+                                        isTieBreakScoreSingleDigit(colorState?.redScore)
+                                          ? ' scheduleScoreCircledIsRound'
+                                          : ''
+                                      }`}
+                                    >
+                                      {colorState?.redScore ?? 0}
+                                    </span>
+                                  ) : (
+                                    (colorState?.redScore ?? 0)
+                                  )}
                                 </span>
                                 <span className="scheduleLiveScoreDash"> - </span>
-                                <span className={`scheduleLiveScoreValue ${isBlueWinner ? 'isWinner' : ''}`}>
-                                  {colorState?.blueScore ?? 0}
+                                <span className="scheduleLiveScoreValue">
+                                  {showTbTag && isBlueWinner ? (
+                                    <span
+                                      className={`scheduleScoreCircled${
+                                        isTieBreakScoreSingleDigit(colorState?.blueScore)
+                                          ? ' scheduleScoreCircledIsRound'
+                                          : ''
+                                      }`}
+                                    >
+                                      {colorState?.blueScore ?? 0}
+                                    </span>
+                                  ) : (
+                                    (colorState?.blueScore ?? 0)
+                                  )}
                                 </span>
-                              </>
+                              </span>
                             ) : (
                               scoreLabel
                             )}
@@ -604,42 +722,44 @@ const HqProgress = () => {
                             <p className="scheduleMatchSub">{`ID: ${toShortMatchId(match.matchId)}`}</p>
                           )}
                           <p className={`hqProgressStatus ${statusClassName}`}>{statusLabel}</p>
-                          <div className="hqProgressTimeline">
-                            <p className={`hqProgressTimelineItem ${warmupStartedLabel ? 'isDone' : ''}`}>
-                              {warmupStartedLabel ? `WU開始 ${warmupStartedLabel}` : 'WU開始 -'}
-                            </p>
-                            <p className={`hqProgressTimelineItem ${warmupFinishedLabel ? 'isDone' : ''}`}>
-                              {warmupFinishedLabel ? `WU終了 ${warmupFinishedLabel}` : 'WU終了 -'}
-                            </p>
-                            <p className={`hqProgressTimelineItem ${startedLabel ? 'isDone' : ''}`}>
-                              {startedLabel ? `試合開始 ${startedLabel}` : '試合開始 -'}
-                            </p>
-                            <p className={`hqProgressTimelineItem ${finishedLabel ? 'isDone' : ''}`}>
-                              {finishedLabel ? `試合終了 ${finishedLabel}` : '試合終了 -'}
-                            </p>
-                          </div>
                           {isOperatorMode && (
+                            <div className="hqProgressTimeline">
+                              <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 0 ? 'isDone' : ''}`}>
+                                {warmupStartedLabel ? `ウォームアップ開始 ${warmupStartedLabel}` : 'ウォームアップ開始 -'}
+                              </p>
+                              <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 1 ? 'isDone' : ''}`}>
+                                {warmupFinishedLabel ? `ウォームアップ終了 ${warmupFinishedLabel}` : 'ウォームアップ終了 -'}
+                              </p>
+                              <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 2 ? 'isDone' : ''}`}>
+                                {startedLabel ? `試合開始 ${startedLabel}` : '試合開始 -'}
+                              </p>
+                              <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 3 ? 'isDone' : ''}`}>
+                                {finishedLabel ? `試合終了 ${finishedLabel}` : '試合終了 -'}
+                              </p>
+                            </div>
+                          )}
+                          {isOperatorMode && (canAnnounce || canUnannounce) && (
                             <>
                               <div className="hqProgressButtonRow">
-                                <button
-                                  type="button"
-                                  className="hqProgressActionButton"
-                                  onClick={() => handleAnnounce(match)}
-                                  disabled={!canAnnounce || actionBusyKey !== '' || importing}
-                                >
-                                  配信(announce)
-                                </button>
-                                <button
-                                  type="button"
-                                  className="hqProgressActionButton"
-                                  onClick={() => handleUnannounce(match)}
-                                  disabled={!canUnannounce || actionBusyKey !== '' || importing}
-                                >
-                                  配信取り消し
-                                </button>
-                              </div>
-                              <div className="hqProgressButtonRow">
-                                <p className="scheduleMatchSub">TD承認待ち/承認済みはTD画面で操作します。</p>
+                                {canUnannounce ? (
+                                  <button
+                                    type="button"
+                                    className="hqProgressActionButton"
+                                    onClick={() => handleUnannounce(match)}
+                                    disabled={actionBusyKey !== '' || importing}
+                                  >
+                                    配信取り消し
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="hqProgressActionButton"
+                                    onClick={() => handleAnnounce(match)}
+                                    disabled={!canAnnounce || actionBusyKey !== '' || importing}
+                                  >
+                                    スコアボードへ配信
+                                  </button>
+                                )}
                               </div>
                             </>
                           )}
@@ -647,11 +767,15 @@ const HqProgress = () => {
                             <div className="hqProgressButtonRow">
                               <button
                                 type="button"
-                                className="hqProgressActionButton"
+                                className={`hqProgressActionButton ${
+                                  ['hq_approved', 'reflected'].includes(effectiveStatus)
+                                    ? 'isFullyTransparent'
+                                    : ''
+                                }`}
                                 onClick={() => handleHqApprove(match)}
                                 disabled={!canHqApprove || actionBusyKey !== '' || importing}
                               >
-                                本部承認(hq)
+                                本部承認
                               </button>
                             </div>
                           )}
@@ -659,12 +783,44 @@ const HqProgress = () => {
                       );
                     })}
                   </tr>
-                ))}
+                  );
+                  return rows;
+                })}
               </tbody>
             </table>
           </div>
         )}
       </section>
+      {isTdMode && showApproverModal ? (
+        <div
+          className="hqProgressApproverModalOverlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hq-approver-modal-title"
+        >
+          <div className="hqProgressApproverModal">
+            <h2 id="hq-approver-modal-title" className="hqProgressApproverModalTitle">本部承認者名を入力</h2>
+            <p className="hqProgressApproverModalNote">この名前で本部承認を実行します。</p>
+            <input
+              type="text"
+              className="hqProgressApproverInput"
+              value={approverNameDraft}
+              onChange={(event) => setApproverNameDraft(event.target.value)}
+              placeholder="例: TD"
+              autoFocus
+            />
+            <div className="hqProgressApproverModalActions">
+              <button
+                type="button"
+                className="hqProgressActionButton"
+                onClick={handleApproverModalSubmit}
+              >
+                設定
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 };

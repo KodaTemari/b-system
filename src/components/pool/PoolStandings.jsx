@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { getCurrentLanguage } from '../../locales';
 import './PoolStandings.css';
 
 const RESULTS_POLL_INTERVAL_MS = 2000;
+const ROTATION_SWITCH_INTERVAL_MS = 10000;
+const ROTATION_FADE_MS = 350;
 
 const normalizePlayers = (players) => {
   if (!Array.isArray(players)) {
@@ -276,9 +278,15 @@ const buildPoolViewData = (poolId, players, schedule, playerNameMap, playerPoolG
 
 const PoolStandings = () => {
   const { id: eventId, poolId } = useParams();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [language, setLanguage] = useState(getCurrentLanguage());
+  const [rotationPhase, setRotationPhase] = useState(0);
+  const [lastRotationAt, setLastRotationAt] = useState(() => Date.now());
+  const [rotationRemainingMs, setRotationRemainingMs] = useState(ROTATION_SWITCH_INTERVAL_MS);
+  const [displayPoolIds, setDisplayPoolIds] = useState([]);
+  const [isPoolListFading, setIsPoolListFading] = useState(false);
   const [players, setPlayers] = useState([]);
   const [schedule, setSchedule] = useState({
     pools: [],
@@ -419,25 +427,105 @@ const PoolStandings = () => {
   }, [allPoolIds]);
 
   const targetPoolId = String(poolId ?? '').trim().toUpperCase();
+  const isRotationMode = !targetPoolId && String(searchParams.get('mode') ?? '').toLowerCase() === 'rotation';
+
+  useEffect(() => {
+    if (!isRotationMode || allPoolIds.length <= 4) {
+      setRotationPhase(0);
+      setLastRotationAt(Date.now());
+      setRotationRemainingMs(ROTATION_SWITCH_INTERVAL_MS);
+      return undefined;
+    }
+    setLastRotationAt(Date.now());
+    setRotationRemainingMs(ROTATION_SWITCH_INTERVAL_MS);
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setRotationPhase((prev) => (prev === 0 ? 1 : 0));
+      setLastRotationAt(now);
+      setRotationRemainingMs(ROTATION_SWITCH_INTERVAL_MS);
+    }, ROTATION_SWITCH_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [allPoolIds.length, isRotationMode]);
+
+  useEffect(() => {
+    if (!isRotationMode || allPoolIds.length <= 4) {
+      return undefined;
+    }
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - lastRotationAt;
+      const remaining = Math.max(0, ROTATION_SWITCH_INTERVAL_MS - elapsed);
+      setRotationRemainingMs(remaining);
+    }, 100);
+    return () => clearInterval(timer);
+  }, [allPoolIds.length, isRotationMode, lastRotationAt]);
+
   const visiblePoolIds = useMemo(() => {
     if (targetPoolId) {
       return [targetPoolId];
     }
+    if (isRotationMode) {
+      const firstGroup = allPoolIds.slice(0, 4);
+      const secondGroup = allPoolIds.slice(4);
+      if (secondGroup.length === 0) {
+        return firstGroup;
+      }
+      return rotationPhase === 0 ? firstGroup : secondGroup;
+    }
     return allPoolIds;
-  }, [allPoolIds, targetPoolId]);
+  }, [allPoolIds, isRotationMode, rotationPhase, targetPoolId]);
 
-  const poolViews = useMemo(() => {
-    return visiblePoolIds.map((id) => ({
+  const allPoolViews = useMemo(() => {
+    return allPoolIds.map((id) => ({
       ...buildPoolViewData(id, players, schedule, playerNameMap, playerPoolGroupMap),
       hue: poolHueMap.get(id) ?? 110,
     }));
-  }, [playerNameMap, playerPoolGroupMap, players, poolHueMap, schedule, visiblePoolIds]);
+  }, [allPoolIds, playerNameMap, playerPoolGroupMap, players, poolHueMap, schedule]);
 
-  const hasAnyPool = poolViews.some((view) => view.hasTargetPool);
+  useEffect(() => {
+    const sameIds =
+      displayPoolIds.length === visiblePoolIds.length &&
+      displayPoolIds.every((id, index) => id === visiblePoolIds[index]);
+    if (sameIds) {
+      return undefined;
+    }
+    if (!isRotationMode || displayPoolIds.length === 0) {
+      setDisplayPoolIds(visiblePoolIds);
+      setIsPoolListFading(false);
+      return undefined;
+    }
+    setIsPoolListFading(true);
+    const timer = setTimeout(() => {
+      setDisplayPoolIds(visiblePoolIds);
+      setIsPoolListFading(false);
+    }, ROTATION_FADE_MS);
+    return () => clearTimeout(timer);
+  }, [displayPoolIds, isRotationMode, visiblePoolIds]);
+
+  const displayPoolViews = useMemo(() => {
+    const poolViewMap = new Map(allPoolViews.map((view) => [view.poolId, view]));
+    if (displayPoolIds.length === 0) {
+      return visiblePoolIds
+        .map((id) => poolViewMap.get(id))
+        .filter(Boolean);
+    }
+    return displayPoolIds
+      .map((id) => poolViewMap.get(id))
+      .filter(Boolean);
+  }, [allPoolViews, displayPoolIds, visiblePoolIds]);
+  const shouldShowRotationIndicator = isRotationMode && allPoolIds.length > 4;
+  const rotationProgress = shouldShowRotationIndicator
+    ? Math.min(1, Math.max(0, 1 - rotationRemainingMs / ROTATION_SWITCH_INTERVAL_MS))
+    : 0;
+
+  const hasAnyPool = displayPoolViews.some((view) => view.hasTargetPool);
   const notationMode = useMemo(() => getNotationMode(language), [language]);
   const poolViewStyle = eventId
     ? { '--poolBgImage': `url(/data/${encodeURIComponent(eventId)}/assets/bg.jpg)` }
     : undefined;
+  const logoSrc =
+    eventId != null && eventId !== ''
+      ? `/data/${encodeURIComponent(eventId)}/assets/logo.png`
+      : null;
 
   if (loading) {
     return (
@@ -460,15 +548,42 @@ const PoolStandings = () => {
   }
 
   return (
-    <main className="poolViewPage" style={poolViewStyle}>
-      <section className="poolViewSection">
-        <h1 className="poolViewTitle">{targetPoolId ? `プール ${targetPoolId}` : 'プール順位表一覧'}</h1>
+    <main className={`poolViewPage${isRotationMode ? ' isRotationMode' : ''}`} style={poolViewStyle}>
+      <section className={`poolViewSection${isRotationMode ? ' isRotationMode' : ''}`}>
+        <header className="poolViewHeader">
+          {logoSrc ? <img className="poolViewLogo" src={logoSrc} alt="" /> : null}
+          {shouldShowRotationIndicator ? (
+            <div className="poolRotationIndicator">
+              {[0, 1].map((pageIndex) => {
+                const fillProgress =
+                  pageIndex === rotationPhase
+                    ? rotationProgress
+                    : rotationPhase === 1 && pageIndex === 0
+                      ? 1
+                      : 0;
+                return (
+                  <div
+                    key={`rotation-page-${pageIndex}`}
+                    className={`poolRotationBarTrack ${
+                      pageIndex === rotationPhase ? 'isActive' : ''
+                    }`}
+                  >
+                    <div
+                      className="poolRotationBarFill"
+                      style={{ transform: `scaleX(${fillProgress})` }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </header>
 
         {!hasAnyPool ? (
           <p className="poolViewEmpty">{targetPoolId ? '指定されたプールが見つかりません。' : '表示できるプールがありません。'}</p>
         ) : (
-          <div className="poolList">
-            {poolViews.map((view) => {
+          <div className={`poolList${isRotationMode ? ' isRotationMode' : ''}${isPoolListFading ? ' isFading' : ''}`}>
+            {displayPoolViews.map((view) => {
               if (!view.hasTargetPool) {
                 return null;
               }
@@ -493,6 +608,7 @@ const PoolStandings = () => {
                           <th className="poolMatrixSummaryHeader">得点</th>
                           <th className="poolMatrixSummaryHeader">失点</th>
                           <th className="poolMatrixSummaryHeader">得失点</th>
+                          <th className="poolMatrixSummaryHeader">順位</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -520,6 +636,7 @@ const PoolStandings = () => {
                               <td className="poolMatrixSummaryCell">{rowStats.pointsFor}</td>
                               <td className="poolMatrixSummaryCell">{rowStats.pointsAgainst}</td>
                               <td className="poolMatrixSummaryCell">{diff}</td>
+                              <td className="poolMatrixSummaryCell">{view.rankMap.get(rowTeam.id) ?? '-'}</td>
                             </tr>
                           );
                         })}

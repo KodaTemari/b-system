@@ -411,6 +411,30 @@ async function releaseLocksByMatch(db, eventId, matchId) {
   );
 }
 
+function parsePlayerThinkingTimeToMs(rawValue) {
+  if (rawValue == null) {
+    return null;
+  }
+  if (typeof rawValue === 'number' && Number.isFinite(rawValue) && rawValue > 0) {
+    return Math.floor(rawValue);
+  }
+  const text = String(rawValue).trim();
+  if (!text) {
+    return null;
+  }
+  if (/^\d+$/.test(text)) {
+    const numeric = Number(text);
+    return Number.isFinite(numeric) && numeric > 0 ? Math.floor(numeric) : null;
+  }
+  const matched = text.match(/^(\d{1,2}):([0-5]\d)$/);
+  if (!matched) {
+    return null;
+  }
+  const minutes = Number(matched[1]);
+  const seconds = Number(matched[2]);
+  return (minutes * 60 + seconds) * 1000;
+}
+
 /** player.json から id → 表示名 */
 async function buildPlayerIdToNameMap(eventId) {
   const scheduleJson = await readJsonUnderEvent(eventId, 'schedule.json');
@@ -423,6 +447,28 @@ async function buildPlayerIdToNameMap(eventId) {
       const id = String(p.id);
       const name = String(p.name ?? '').trim();
       map.set(id, name || id);
+    }
+  }
+  return map;
+}
+
+/** player.json から id → 持ち時間(ms)。値は thinkingTime / thinkingTimeMs を優先 */
+async function buildPlayerIdToThinkingTimeMsMap(eventId) {
+  const scheduleJson = await readJsonUnderEvent(eventId, 'schedule.json');
+  const classCode = scheduleJson?.classCode != null ? String(scheduleJson.classCode) : 'FRD';
+  const playersJson = await readJsonUnderEvent(eventId, 'classes', classCode, 'player.json');
+  const map = new Map();
+  if (Array.isArray(playersJson)) {
+    for (const player of playersJson) {
+      if (player == null || player.id == null) continue;
+      const id = String(player.id).trim();
+      if (!id) continue;
+      const timeMs =
+        parsePlayerThinkingTimeToMs(player.thinkingTime) ??
+        parsePlayerThinkingTimeToMs(player.thinkingTimeMs);
+      if (timeMs != null) {
+        map.set(id, timeMs);
+      }
     }
   }
   return map;
@@ -478,6 +524,7 @@ async function syncAnnounceToCourtFiles(eventId, match) {
     throw new Error('courtId が空です');
   }
   const idToName = await buildPlayerIdToNameMap(eventId);
+  const idToThinkingTimeMs = await buildPlayerIdToThinkingTimeMsMap(eventId);
   const redId = String(match.redPlayerId ?? '').trim();
   const blueId = String(match.bluePlayerId ?? '').trim();
   const redName = idToName.get(redId) || redId;
@@ -485,6 +532,8 @@ async function syncAnnounceToCourtFiles(eventId, match) {
   const matchIdStr = String(match.matchId ?? '').trim();
   const matchDisplayName = await resolveAnnounceMatchDisplayName(eventId, matchIdStr);
   const initDefaults = await loadEventInitMatchDefaults(eventId);
+  const redLimitMs = idToThinkingTimeMs.get(redId) ?? initDefaults.redLimit;
+  const blueLimitMs = idToThinkingTimeMs.get(blueId) ?? initDefaults.blueLimit;
 
   const courtDir = path.join(DATA_ROOT, eventId, 'court', courtId);
   await fs.ensureDir(courtDir);
@@ -532,8 +581,8 @@ async function syncAnnounceToCourtFiles(eventId, match) {
     tieBreak: initDefaults.tieBreak,
     ...(initDefaults.sections ? { sections: initDefaults.sections } : {}),
   };
-  settings.red = { ...settings.red, name: redName, limit: initDefaults.redLimit };
-  settings.blue = { ...settings.blue, name: blueName, limit: initDefaults.blueLimit };
+  settings.red = { ...settings.red, name: redName, limit: redLimitMs };
+  settings.blue = { ...settings.blue, name: blueName, limit: blueLimitMs };
   if (initDefaults.profilePicMode === 'none') {
     settings.red.profilePic = '';
     settings.blue.profilePic = '';
@@ -595,13 +644,13 @@ async function syncAnnounceToCourtFiles(eventId, match) {
       ...(game.red || {}),
       name: redName,
       playerID: redId,
-      limit: initDefaults.redLimit,
+      limit: redLimitMs,
       ...(initDefaults.profilePicMode === 'none' ? { profilePic: '' } : {}),
       score: 0,
       scores: [],
       ball: 6,
       isRunning: false,
-      time: initDefaults.redLimit,
+      time: redLimitMs,
       isTieBreak: false,
       result: '',
       yellowCard: 0,
@@ -612,13 +661,13 @@ async function syncAnnounceToCourtFiles(eventId, match) {
       ...(game.blue || {}),
       name: blueName,
       playerID: blueId,
-      limit: initDefaults.blueLimit,
+      limit: blueLimitMs,
       ...(initDefaults.profilePicMode === 'none' ? { profilePic: '' } : {}),
       score: 0,
       scores: [],
       ball: 6,
       isRunning: false,
-      time: initDefaults.blueLimit,
+      time: blueLimitMs,
       isTieBreak: false,
       result: '',
       yellowCard: 0,
@@ -1284,6 +1333,37 @@ app.patch('/api/progress/:eventId/matches/:matchId/result', async (req, res) => 
   }
 });
 
+// 掲示スケジュール用: 本部承認前だが results にスコアがある試合（試合中・コート承認済みなど）
+// ※ all-games は game.json 依存のため、DBのみ更新したプレビューや配信前の暫定結果を表示するために使う
+app.get('/api/progress/:eventId/schedule-overlay-scores', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const db = await getEventDb(eventId);
+    const rows = await allSql(
+      db,
+      `SELECT
+         m.match_id,
+         m.red_player_id,
+         m.blue_player_id,
+         m.status,
+         r.red_score,
+         r.blue_score,
+         r.winner_player_id
+       FROM matches m
+       INNER JOIN results r
+         ON r.event_id = m.event_id AND r.match_id = m.match_id
+       WHERE m.event_id = ?
+         AND m.status IN ('announced', 'in_progress', 'court_approved')
+         AND r.red_score IS NOT NULL
+         AND r.blue_score IS NOT NULL`,
+      [eventId],
+    );
+    res.json({ matches: rows });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
 // 進行システム: /pool/standings 用の最小データ取得
 app.get('/api/progress/:eventId/pool/standings', async (req, res) => {
   try {
@@ -1326,7 +1406,7 @@ app.get('/api/progress/:eventId/pool/standings', async (req, res) => {
 app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
   try {
     const { eventId, courtId, filename } = req.params;
-    const data = req.body;
+    let data = req.body;
 
     // ファイルパスを構築
     const filePath = path.join(DATA_ROOT, eventId, 'court', courtId, `${filename}.json`);
@@ -1334,6 +1414,40 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
     // ディレクトリが存在しない場合は作成
     await fs.ensureDir(path.dirname(filePath));
     
+    if (filename === 'settings' && data && typeof data === 'object') {
+      const existing = await readJsonUnderEvent(eventId, 'court', courtId, 'settings.json');
+      if (existing && typeof existing === 'object') {
+        const next = {
+          ...existing,
+          ...data,
+          match: { ...(existing.match || {}), ...(data.match || {}) },
+          red: { ...(existing.red || {}), ...(data.red || {}) },
+          blue: { ...(existing.blue || {}), ...(data.blue || {}) },
+          warmup: { ...(existing.warmup || {}), ...(data.warmup || {}) },
+          interval: { ...(existing.interval || {}), ...(data.interval || {}) },
+        };
+        const incomingRedName = String(data?.red?.name ?? '').trim();
+        const incomingBlueName = String(data?.blue?.name ?? '').trim();
+        const existingRedName = String(existing?.red?.name ?? '').trim();
+        const existingBlueName = String(existing?.blue?.name ?? '').trim();
+        const shouldKeepRedName =
+          ['Red', ''].includes(incomingRedName) &&
+          existingRedName !== '' &&
+          existingRedName !== 'Red';
+        const shouldKeepBlueName =
+          ['Blue', ''].includes(incomingBlueName) &&
+          existingBlueName !== '' &&
+          existingBlueName !== 'Blue';
+        if (shouldKeepRedName) {
+          next.red = { ...(next.red || {}), name: existingRedName };
+        }
+        if (shouldKeepBlueName) {
+          next.blue = { ...(next.blue || {}), name: existingBlueName };
+        }
+        data = next;
+      }
+    }
+
     // インデント設定
     let jsonString = JSON.stringify(data, null, 2);
 

@@ -391,15 +391,42 @@ export const useScoreboardHandlers = ({
 
   // ボール変更ハンドラー
   const handleBallChange = useCallback((color, newBallValue) => {
-    updateBall(color, newBallValue);
+    const targetColor = color === 'red' ? 'red' : 'blue';
+    const otherColor = targetColor === 'red' ? 'blue' : 'red';
+    const safeTargetBall = Math.max(0, Math.min(7, Number(newBallValue) || 0));
+    const currentOtherBall = Math.max(0, Math.min(7, Number(gameData?.[otherColor]?.ball) || 0));
+    let nextTargetBall = safeTargetBall;
+    let nextOtherBall = currentOtherBall;
+
+    // ジャック（7球目）は常に片側のみ
+    if (nextTargetBall === 7) {
+      nextOtherBall = Math.min(nextOtherBall, 6);
+    }
+    // 逆側がジャック保持中にこちらを7未満へ変更した場合は、逆側を維持（13球制約のみチェック）
+    if (nextOtherBall === 7 && nextTargetBall > 6) {
+      nextTargetBall = 6;
+    }
+    // 常に赤青合計は13球以内
+    if (nextTargetBall + nextOtherBall > 13) {
+      nextOtherBall = Math.max(0, 13 - nextTargetBall);
+    }
+
+    updateBall(targetColor, nextTargetBall);
+    if (nextOtherBall !== currentOtherBall) {
+      updateBall(otherColor, nextOtherBall);
+    }
     
     // ボール更新を保存（ctrlモードの場合のみ）
     if (isCtrl && saveData) {
       const updatedGameData = {
         ...gameData,
-        [color]: {
-          ...gameData[color],
-          ball: newBallValue
+        [targetColor]: {
+          ...gameData[targetColor],
+          ball: nextTargetBall
+        },
+        [otherColor]: {
+          ...gameData[otherColor],
+          ball: nextOtherBall
         }
       };
       saveData(updatedGameData);

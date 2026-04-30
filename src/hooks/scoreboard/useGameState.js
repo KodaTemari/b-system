@@ -14,8 +14,15 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }
 
     const sections = incomingData.match?.sections || prevData.match?.sections || GAME_SECTIONS;
-    const sectionID = incomingData.match?.sectionID !== undefined ? incomingData.match.sectionID : prevData.match.sectionID;
-    const section = sections[sectionID] || 'standby';
+    const rawSectionID =
+      incomingData.match?.sectionID !== undefined ? incomingData.match.sectionID : prevData.match.sectionID;
+    const sectionID = Number.isInteger(Number(rawSectionID)) ? Number(rawSectionID) : 0;
+    // 一時的に sectionID と sections がずれても、直前セクションを優先して standby への誤復帰を防ぐ
+    const section =
+      sections[sectionID] ||
+      incomingData.match?.section ||
+      prevData.match?.section ||
+      'standby';
     
     const extractEndNumber = (sectionName) => {
       if (sectionName && sectionName.startsWith('end')) {
@@ -179,8 +186,14 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       
       // We use a simplified version of merge logic here for initial state
       const sections = dataWithConsolidatedEnds.match?.sections || GAME_SECTIONS;
-      const sectionID = dataWithConsolidatedEnds.match?.sectionID || defaultData.match.sectionID;
-      const section = sections[sectionID] || 'standby';
+      const rawSectionID =
+        dataWithConsolidatedEnds.match?.sectionID ?? defaultData.match.sectionID;
+      const sectionID = Number.isInteger(Number(rawSectionID)) ? Number(rawSectionID) : 0;
+      // 初期反映時も section 名を優先し、index不整合で standby へ戻る挙動を抑制する
+      const section =
+        sections[sectionID] ||
+        dataWithConsolidatedEnds.match?.section ||
+        defaultData.match.section;
       
       const extractEndNumber = (sectionName) => {
         if (sectionName && sectionName.startsWith('end')) {

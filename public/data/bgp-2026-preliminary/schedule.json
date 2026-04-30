@@ -3,7 +3,7 @@
   "classCode": "FRD",
   "timezone": "Asia/Tokyo",
   "courts": ["1", "2"],
-  "notes": "Pool A standings mock data for UI preview.",
+  "notes": "Pool A standings mock data for UI preview. 第1試合 9:30、40分間隔。11:30はデザイン確認用スロット。",
   "pools": [
     {
       "poolId": "A",
@@ -17,8 +17,8 @@
       "poolMatchIndex": 1,
       "roundRobinRound": 1,
       "courtId": "1",
-      "scheduledStart": "2026-04-25T09:00:00+09:00",
-      "durationMinutes": 35,
+      "scheduledStart": "2026-04-25T09:30:00+09:00",
+      "durationMinutes": 40,
       "redPlayerId": "A01",
       "bluePlayerId": "A02",
       "status": "scheduled"
@@ -29,8 +29,8 @@
       "poolMatchIndex": 2,
       "roundRobinRound": 1,
       "courtId": "2",
-      "scheduledStart": "2026-04-25T09:00:00+09:00",
-      "durationMinutes": 35,
+      "scheduledStart": "2026-04-25T09:30:00+09:00",
+      "durationMinutes": 40,
       "redPlayerId": "A03",
       "bluePlayerId": "A04",
       "status": "scheduled"
@@ -41,8 +41,8 @@
       "poolMatchIndex": 3,
       "roundRobinRound": 2,
       "courtId": "1",
-      "scheduledStart": "2026-04-25T09:40:00+09:00",
-      "durationMinutes": 35,
+      "scheduledStart": "2026-04-25T10:10:00+09:00",
+      "durationMinutes": 40,
       "redPlayerId": "A05",
       "bluePlayerId": "A01",
       "status": "scheduled"
@@ -53,8 +53,8 @@
       "poolMatchIndex": 4,
       "roundRobinRound": 2,
       "courtId": "2",
-      "scheduledStart": "2026-04-25T09:40:00+09:00",
-      "durationMinutes": 35,
+      "scheduledStart": "2026-04-25T10:10:00+09:00",
+      "durationMinutes": 40,
       "redPlayerId": "A02",
       "bluePlayerId": "A03",
       "status": "scheduled"
@@ -65,9 +65,33 @@
       "poolMatchIndex": 5,
       "roundRobinRound": 3,
       "courtId": "1",
-      "scheduledStart": "2026-04-25T10:20:00+09:00",
-      "durationMinutes": 35,
+      "scheduledStart": "2026-04-25T10:50:00+09:00",
+      "durationMinutes": 40,
       "redPlayerId": "A04",
+      "bluePlayerId": "A05",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "BGP2026P-RR-A-006",
+      "poolId": "A",
+      "poolMatchIndex": 6,
+      "roundRobinRound": 4,
+      "courtId": "1",
+      "scheduledStart": "2026-04-25T11:30:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "A01",
+      "bluePlayerId": "A03",
+      "status": "scheduled"
+    },
+    {
+      "matchId": "BGP2026P-RR-A-007",
+      "poolId": "A",
+      "poolMatchIndex": 7,
+      "roundRobinRound": 4,
+      "courtId": "2",
+      "scheduledStart": "2026-04-25T11:30:00+09:00",
+      "durationMinutes": 40,
+      "redPlayerId": "A02",
       "bluePlayerId": "A05",
       "status": "scheduled"
     }

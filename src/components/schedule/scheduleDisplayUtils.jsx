@@ -82,6 +82,12 @@ export const isWinnerPlaceholder = (name) => {
   return /^R\d+-\d+\s*勝者$/.test(String(name ?? '').trim());
 };
 
+/** 同点TB表示用：0〜9 なら正円、2 桁以上はカプセル枠 */
+export const isTieBreakScoreSingleDigit = (score) => {
+  const n = Math.floor(Number(score));
+  return Number.isFinite(n) && n >= 0 && n <= 9;
+};
+
 export const normalizePlayers = (players) => {
   if (!Array.isArray(players)) {
     return [];
@@ -92,4 +98,83 @@ export const normalizePlayers = (players) => {
       name: String(player.name ?? '').trim(),
     }))
     .filter((player) => player.id && player.name);
+};
+
+/** 進行DB上で「その行はもう完了」とみなすステータス（本部承認・反映済み） */
+const TERMINAL_PROGRESS_STATUSES = new Set(['hq_approved', 'reflected']);
+
+function rawProgressStatusFromMap(matchProgressById, id) {
+  const v = matchProgressById?.get(id);
+  if (v == null) {
+    return 'scheduled';
+  }
+  if (typeof v === 'string') {
+    return v;
+  }
+  return String(v.status ?? 'scheduled');
+}
+
+/**
+ * 本部進行（HqProgress）と同じ表示用ステータス。
+ * finishedAt があり announced / in_progress のときは画面上「試合終了」扱い（match_finished）。
+ */
+export const getScheduleDisplayProgressStatus = (progressInfo) => {
+  if (!progressInfo || typeof progressInfo !== 'object') {
+    return 'scheduled';
+  }
+  const rawStatus = String(progressInfo.status ?? 'scheduled');
+  const finishedAt = progressInfo.finishedAt;
+  if (finishedAt && (rawStatus === 'announced' || rawStatus === 'in_progress')) {
+    return 'match_finished';
+  }
+  return rawStatus;
+};
+
+/**
+ * スケジュール表の1行の区分（背景色用）。
+ * 進行APIの試合ステータスとスロット時刻を組み合わせる。進行未登録の試合は scheduled 相当。
+ *
+ * @param {string} slot toTimeSlotKey 形式
+ * @param {string[]} timeSlots 昇順のスロット一覧
+ * @param {object[]} matchesInRow 当該行に試合があるセルの match オブジェクト（空可）
+ * @param {Map<string, string|{status?: string}>} matchProgressById matchId → DB生ステータス（または { status }）
+ * @returns {'upcoming' | 'current' | 'past'}
+ */
+export const getScheduleRowPhase = (slot, timeSlots, matchesInRow, matchProgressById) => {
+  const slotStart = new Date(slot).getTime();
+  if (Number.isNaN(slotStart)) {
+    return 'current';
+  }
+  const idx = timeSlots.indexOf(slot);
+  const nextSlot = idx >= 0 && idx < timeSlots.length - 1 ? timeSlots[idx + 1] : null;
+  const slotEnd = nextSlot
+    ? new Date(nextSlot).getTime() - 1
+    : slotStart + 120 * 60 * 1000;
+
+  const now = Date.now();
+
+  if (!Array.isArray(matchesInRow) || matchesInRow.length === 0) {
+    if (now < slotStart) {
+      return 'upcoming';
+    }
+    if (now > slotEnd) {
+      return 'past';
+    }
+    return 'current';
+  }
+
+  const statuses = matchesInRow.map((m) => {
+    const id = String(m?.matchId ?? '').trim();
+    return rawProgressStatusFromMap(matchProgressById, id);
+  });
+
+  if (statuses.every((s) => TERMINAL_PROGRESS_STATUSES.has(s))) {
+    return 'past';
+  }
+
+  if (now < slotStart && statuses.every((s) => s === 'scheduled')) {
+    return 'upcoming';
+  }
+
+  return 'current';
 };

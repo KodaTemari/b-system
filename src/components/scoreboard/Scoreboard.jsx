@@ -1035,6 +1035,9 @@ const Scoreboard = () => {
   const scoreboardStyle = id
     ? { '--scoreboardBgImage': `url(/data/${encodeURIComponent(id)}/assets/bg.jpg)` }
     : undefined;
+  const eventWinIconSrc = id
+    ? `/data/${encodeURIComponent(id)}/assets/icon_win.png`
+    : '';
   const profilePicMode = String(gameData?.profilePic ?? 'enabled');
 
 
@@ -1076,6 +1079,7 @@ const Scoreboard = () => {
           redCard={red?.redCard || 0}
           onPenaltyRemove={handlePenaltyRemove}
           isCtrl={isCtrl}
+          winIconSrc={eventWinIconSrc}
         />
 
         <PlayerInfoPanel
@@ -1099,6 +1103,7 @@ const Scoreboard = () => {
           redCard={blue?.redCard || 0}
           onPenaltyRemove={handlePenaltyRemove}
           isCtrl={isCtrl}
+          winIconSrc={eventWinIconSrc}
         />
       </main>
 

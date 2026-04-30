@@ -15,6 +15,32 @@
   max-width: 100%;
 }
 
+.scheduleTitleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.scheduleTitleLogo {
+  height: 48px;
+  width: auto;
+  max-width: min(55vw, 320px);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.scheduleTitleText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
 .scheduleTitle {
   font-size: 1.25rem;
   margin-bottom: 6px;
@@ -22,7 +48,7 @@
 
 .scheduleMeta {
   font-size: 0.95rem;
-  margin-bottom: 14px;
+  margin: 0;
   color: rgb(var(--color-gray-lighter));
 }
 
@@ -36,15 +62,29 @@
   border-radius: 8px;
 }
 
+/* 表地のグレーは約20%透過（--color-gray-medium 相当を 0.8 で重ねる） */
 .scheduleTable {
   width: 100%;
   border-collapse: collapse;
   min-width: 920px;
-  background: rgb(var(--color-gray-medium));
+  background: rgba(50, 50, 50, 0.8);
+}
+
+/* 時間帯区分。未開始と試合終了（hq 承認済み行）は同じ透け感。進行中相当のみスレート緑 */
+.scheduleRow.isRowUpcoming .scheduleTimeCell,
+.scheduleRow.isRowUpcoming .scheduleCell,
+.scheduleRow.isRowPast .scheduleTimeCell,
+.scheduleRow.isRowPast .scheduleCell {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.scheduleRow.isRowCurrent .scheduleTimeCell,
+.scheduleRow.isRowCurrent .scheduleCell {
+  background: rgba(var(--color-green-light), 0.1);
 }
 
 .scheduleHeaderCell {
-  background: rgb(var(--color-gray));
+  background: rgba(var(--color-green-light), 0.2);
   color: rgb(var(--color-white));
   border: 1px solid rgb(var(--color-gray-light));
   padding: 8px;
@@ -57,7 +97,7 @@
 }
 
 .scheduleTimeCell {
-  background: rgb(var(--color-gray-medium));
+  background: rgba(50, 50, 50, 0.8);
   border: 1px solid rgb(var(--color-gray-light));
   padding: 8px 6px;
   font-size: 0.85rem;
@@ -93,7 +133,7 @@
   border-bottom: rgba(0, 0, 0, 0) solid 3px;
   width: 100%;
   padding-bottom: 3px;
-  line-height: 1.3;
+  line-height: 1.5;
 }
 
 .schedulePlayerName.isRedConfirmed {
@@ -102,6 +142,11 @@
 
 .schedulePlayerName.isBlueConfirmed {
   border-bottom-color: rgb(var(--color-blue));
+}
+
+/* 勝者ライン（従来の #f0c94d を 50% の不透明度に） */
+.schedulePlayerName.isWinner {
+  border-bottom-color: rgba(240, 201, 77, 0.5);
 }
 
 .schedulePlayerName.isPlaceholderName {
@@ -132,23 +177,52 @@
   font-weight: 700;
 }
 
-.scheduleLiveScoreValue {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.35em;
-  line-height: 1.2;
+.scheduleLiveScoreCluster {
+  display: inline-block;
 }
 
-.scheduleLiveScoreValue.isWinner {
-  border: 2px solid rgb(var(--color-white));
-  border-radius: 50%;
-  padding: 0 0.22em;
-  line-height: 1.8;
+.scheduleLiveScoreValue {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.02em;
+  min-width: 1.35em;
+  line-height: 1.2;
 }
 
 .scheduleLiveScoreDash {
   display: inline-block;
   min-width: 1.2em;
   text-align: center;
+}
+
+/* 同点タイブレーク勝者側：得点数字を丸枠で囲む（21 以上も①〜⑳に依存しない） */
+.scheduleScoreCircled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  top: -0.06em;
+  box-sizing: border-box;
+  padding: 0.12em 0.32em;
+  min-height: 1.25em;
+  font-size: 0.8em;
+  font-weight: 700;
+  line-height: 1.15;
+  color: rgb(var(--color-white));
+  white-space: nowrap;
+  vertical-align: baseline;
+  border: 1.5px solid rgba(255, 255, 255, 0.88);
+  border-radius: 9999px;
+}
+
+/* 1 桁（0〜9）のときは正方形＋50% で正円（幅・高さを同じ em で固定） */
+.scheduleScoreCircled.scheduleScoreCircledIsRound {
+  width: 1.45em;
+  height: 1.45em;
+  min-width: 1.45em;
+  min-height: 1.45em;
+  padding: 0;
+  aspect-ratio: 1;
+  border-radius: 50%;
 }

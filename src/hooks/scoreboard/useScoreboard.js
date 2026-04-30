@@ -26,7 +26,7 @@ export const useScoreboard = () => {
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage()); // 言語状態（再レンダリング用）
 
   // データ同期
-  const { localData, isLoading, error, eventName, classificationCount, saveData } = useDataSync(id, 'FRD', court, isCtrl);
+  const { localData, isLoading, error, eventName, classificationCount, saveData } = useDataSync(id, court, isCtrl);
 
   // ゲーム状態管理（localDataを初期データとして使用）
   const {

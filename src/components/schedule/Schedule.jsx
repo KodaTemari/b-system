@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import './Schedule.css';
 import {
+  getScheduleDisplayProgressStatus,
+  getScheduleRowPhase,
+  isTieBreakScoreSingleDigit,
   isWinnerPlaceholder,
   normalizePlayers,
   renderNameWithLineBreaks,
@@ -31,6 +34,7 @@ const Schedule = () => {
   });
   const [players, setPlayers] = useState([]);
   const [courtColorStateMap, setCourtColorStateMap] = useState(new Map());
+  const [matchProgressInfoMap, setMatchProgressInfoMap] = useState(new Map());
 
   useEffect(() => {
     const loadData = async () => {
@@ -75,16 +79,44 @@ const Schedule = () => {
   useEffect(() => {
     if (!eventId) {
       setCourtColorStateMap(new Map());
+      setMatchProgressInfoMap(new Map());
       return undefined;
     }
 
     let cancelled = false;
     const loadCourtColorStates = async () => {
       try {
-        const [gamesResponse, standingsResponse] = await Promise.all([
-          fetch(`/api/data/${eventId}/results/all-games`),
-          fetch(`/api/progress/${eventId}/pool/standings?includeHqApproved=true`),
-        ]);
+        const [gamesResponse, standingsResponse, progressMatchesResponse, scheduleOverlayResponse] =
+          await Promise.all([
+            fetch(`/api/data/${eventId}/results/all-games`),
+            fetch(`/api/progress/${eventId}/pool/standings?includeHqApproved=true`),
+            fetch(`/api/progress/${eventId}/matches`),
+            fetch(`/api/progress/${eventId}/schedule-overlay-scores`),
+          ]);
+
+        if (progressMatchesResponse.ok) {
+          const progressPayload = await progressMatchesResponse.json();
+          const rows = Array.isArray(progressPayload?.matches) ? progressPayload.matches : [];
+          const nextInfoMap = new Map();
+          for (const row of rows) {
+            const id = String(row?.matchId ?? '').trim();
+            if (!id) continue;
+            const finishedAt =
+              row?.finishedAt != null && row?.finishedAt !== ''
+                ? String(row.finishedAt)
+                : row?.finished_at != null && row?.finished_at !== ''
+                  ? String(row.finished_at)
+                  : null;
+            nextInfoMap.set(id, {
+              status: String(row?.status ?? 'scheduled'),
+              finishedAt,
+            });
+          }
+          if (!cancelled) {
+            setMatchProgressInfoMap(nextInfoMap);
+          }
+        }
+
         if (!gamesResponse.ok) {
           return;
         }
@@ -165,13 +197,59 @@ const Schedule = () => {
               blueScore,
               winnerSide,
               isScoreVisible: true,
+              // pool/standings は hq_approved / reflected のみのため、この経路のスコアは確定扱い
+              scheduleResultFinal: true,
             });
           }
         }
+
+        // コート game.json にまだ載っていない・standings にも出ない暫定結果（試合中など）を DB から補完
+        if (scheduleOverlayResponse.ok) {
+          const overlayPayload = await scheduleOverlayResponse.json();
+          const overlayRows = Array.isArray(overlayPayload?.matches)
+            ? overlayPayload.matches
+            : [];
+          for (const row of overlayRows) {
+            const matchID = String(row?.match_id ?? '').trim();
+            if (!matchID) continue;
+            const redScore = Number(row?.red_score);
+            const blueScore = Number(row?.blue_score);
+            if (!Number.isFinite(redScore) || !Number.isFinite(blueScore)) continue;
+            const prev = nextMap.get(matchID);
+            if (prev?.isScoreVisible) {
+              continue;
+            }
+            const redPlayerId = String(row?.red_player_id ?? '').trim();
+            const bluePlayerId = String(row?.blue_player_id ?? '').trim();
+            const winnerPlayerId = String(row?.winner_player_id ?? '').trim();
+            let winnerSide = '';
+            if (winnerPlayerId && winnerPlayerId === redPlayerId) {
+              winnerSide = 'red';
+            } else if (winnerPlayerId && winnerPlayerId === bluePlayerId) {
+              winnerSide = 'blue';
+            } else if (redScore > blueScore) {
+              winnerSide = 'red';
+            } else if (blueScore > redScore) {
+              winnerSide = 'blue';
+            }
+            nextMap.set(matchID, {
+              ...(prev || {}),
+              matchID,
+              redPlayerId,
+              bluePlayerId,
+              redScore,
+              blueScore,
+              winnerSide,
+              isScoreVisible: true,
+            });
+          }
+        }
+
         setCourtColorStateMap(nextMap);
       } catch {
         if (!cancelled) {
           setCourtColorStateMap(new Map());
+          setMatchProgressInfoMap(new Map());
         }
       }
     };
@@ -219,10 +297,23 @@ const Schedule = () => {
     ? { '--scheduleBgImage': `url(/data/${encodeURIComponent(eventId)}/assets/bg.jpg)` }
     : undefined;
 
+  const logoSrc =
+    eventId != null && eventId !== ''
+      ? `/data/${encodeURIComponent(eventId)}/assets/logo.png`
+      : null;
+
   if (loading) {
     return (
       <main className="schedulePage" style={schedulePageStyle}>
         <section className="scheduleSection">
+          <header className="scheduleTitleBar">
+            {logoSrc ? (
+              <img className="scheduleTitleLogo" src={logoSrc} alt="" />
+            ) : null}
+            <div className="scheduleTitleText">
+              <h1 className="scheduleTitle">スケジュール表</h1>
+            </div>
+          </header>
           <p>スケジュールを読み込み中...</p>
         </section>
       </main>
@@ -233,6 +324,14 @@ const Schedule = () => {
     return (
       <main className="schedulePage" style={schedulePageStyle}>
         <section className="scheduleSection">
+          <header className="scheduleTitleBar">
+            {logoSrc ? (
+              <img className="scheduleTitleLogo" src={logoSrc} alt="" />
+            ) : null}
+            <div className="scheduleTitleText">
+              <h1 className="scheduleTitle">スケジュール表</h1>
+            </div>
+          </header>
           <p>{error}</p>
         </section>
       </main>
@@ -242,29 +341,63 @@ const Schedule = () => {
   return (
     <main className="schedulePage" style={schedulePageStyle}>
       <section className="scheduleSection">
-        <h1 className="scheduleTitle">スケジュール表</h1>
-        {schedule.eventDate && (
-          <p className="scheduleMeta">{`開催日：${toEventDateLabel(schedule.eventDate, schedule.eventDayLabel)}`}</p>
-        )}
-        {schedule.startTime && <p className="scheduleMeta">{`開始時刻：${schedule.startTime}`}</p>}
-        <p className="scheduleMeta">イベントID: {eventId}</p>
+        <header className="scheduleTitleBar">
+          {logoSrc ? <img className="scheduleTitleLogo" src={logoSrc} alt="" /> : null}
+          <div className="scheduleTitleText">
+            <h1 className="scheduleTitle">スケジュール表</h1>
+            {schedule.eventDate ? (
+              <p className="scheduleMeta">{`開催日：${toEventDateLabel(schedule.eventDate, schedule.eventDayLabel)}`}</p>
+            ) : null}
+          </div>
+        </header>
 
         {schedule.matches.length === 0 ? (
           <p className="scheduleEmpty">現在、登録されている試合予定はありません。</p>
         ) : (
           <div className="scheduleTableWrap">
             <table className="scheduleTable">
-              <thead>
-                <tr>
-                  <th className="scheduleHeaderCell">時間</th>
-                  {schedule.courts.map((court) => (
-                    <th key={court} className="scheduleHeaderCell">{`コート${court}`}</th>
-                  ))}
-                </tr>
-              </thead>
               <tbody>
-                {timeSlots.map((slot) => (
-                  <tr key={slot}>
+                {timeSlots.flatMap((slot, index) => {
+                  const matchesInRow = schedule.courts
+                    .map((court) => matrix.get(slot)?.get(court))
+                    .filter(Boolean);
+                  const rowPhase = getScheduleRowPhase(
+                    slot,
+                    timeSlots,
+                    matchesInRow,
+                    matchProgressInfoMap,
+                  );
+                  const rowPhaseClass =
+                    rowPhase === 'past'
+                      ? 'isRowPast'
+                      : rowPhase === 'upcoming'
+                        ? 'isRowUpcoming'
+                        : 'isRowCurrent';
+                  const prevSlot = index > 0 ? timeSlots[index - 1] : null;
+                  const prevMatches = prevSlot
+                    ? schedule.courts.map((court) => matrix.get(prevSlot)?.get(court)).filter(Boolean)
+                    : [];
+                  const prevRowPhase = prevSlot
+                    ? getScheduleRowPhase(prevSlot, timeSlots, prevMatches, matchProgressInfoMap)
+                    : '';
+                  // 先頭が終了済みブロックの場合、最上部にヘッダーを出さない
+                  const shouldInsertHeaderAtTop = index === 0 && rowPhase !== 'past';
+                  const shouldInsertHeaderAboveCurrent =
+                    rowPhase === 'current' && prevRowPhase !== 'current' && index !== 0;
+
+                  const rows = [];
+                  if (shouldInsertHeaderAtTop || shouldInsertHeaderAboveCurrent) {
+                    rows.push(
+                      <tr key={`header-${slot}`} className="scheduleInlineHeaderRow">
+                        <th className="scheduleHeaderCell">時間</th>
+                        {schedule.courts.map((court) => (
+                          <th key={`header-${slot}-${court}`} className="scheduleHeaderCell">{`コート${court}`}</th>
+                        ))}
+                      </tr>,
+                    );
+                  }
+                  rows.push(
+                  <tr key={slot} className={`scheduleRow ${rowPhaseClass}`}>
                     <th className="scheduleTimeCell">{toDateTimeLabel(slot)}</th>
                     {schedule.courts.map((court) => {
                       const match = matrix.get(slot)?.get(court);
@@ -278,44 +411,104 @@ const Schedule = () => {
                         playerNameMap.get(String(match.bluePlayerId ?? '')) ??
                         String(match.bluePlayerName ?? match.bluePlayerId ?? 'TBD');
                       const colorState = courtColorStateMap.get(String(match.matchId ?? ''));
-                      const isColorConfirmed = colorState?.isColorSet === true;
+                      const progressInfo = matchProgressInfoMap.get(String(match.matchId ?? ''));
+                      const rawProgressStatus = String(progressInfo?.status ?? 'scheduled');
+                      const sidesLockedByProgress = [
+                        'announced',
+                        'in_progress',
+                        'court_approved',
+                        'hq_approved',
+                        'reflected',
+                      ].includes(rawProgressStatus);
+                      const isColorConfirmed =
+                        colorState?.isColorSet === true || sidesLockedByProgress;
                       const displayRedName = isColorConfirmed
-                        ? playerNameMap.get(String(colorState?.redPlayerId ?? '')) || redName
+                        ? playerNameMap.get(
+                            String(colorState?.redPlayerId ?? match.redPlayerId ?? ''),
+                          ) || redName
                         : redName;
                       const displayBlueName = isColorConfirmed
-                        ? playerNameMap.get(String(colorState?.bluePlayerId ?? '')) || blueName
+                        ? playerNameMap.get(
+                            String(colorState?.bluePlayerId ?? match.bluePlayerId ?? ''),
+                          ) || blueName
                         : blueName;
                       const scoreLabel = colorState?.isScoreVisible
                         ? `${colorState?.redScore ?? 0} - ${colorState?.blueScore ?? 0}`
                         : '-';
                       const isRedWinner = colorState?.winnerSide === 'red';
                       const isBlueWinner = colorState?.winnerSide === 'blue';
+                      const displayProgressStatus = getScheduleDisplayProgressStatus(progressInfo);
+                      // 本部進行と同様: 試合終了表示・コート/本部承認後のみ勝者黄色ボーダー（リード中の試合中は付けない）
+                      const isScheduleResultFinal =
+                        colorState?.scheduleResultFinal === true ||
+                        ['match_finished', 'court_approved', 'hq_approved', 'reflected'].includes(
+                          displayProgressStatus,
+                        );
+                      const showTbTag =
+                        colorState?.isScoreVisible === true &&
+                        isScheduleResultFinal &&
+                        (isRedWinner || isBlueWinner) &&
+                        Number(colorState?.redScore ?? NaN) === Number(colorState?.blueScore ?? NaN);
+                      const shouldHighlightWinnerBorder =
+                        colorState?.isScoreVisible === true &&
+                        (isRedWinner || isBlueWinner) &&
+                        isScheduleResultFinal;
+                      const redNameClass = shouldHighlightWinnerBorder
+                        ? (isRedWinner ? 'isWinner' : '')
+                        : (isColorConfirmed ? 'isRedConfirmed' : '');
+                      const blueNameClass = shouldHighlightWinnerBorder
+                        ? (isBlueWinner ? 'isWinner' : '')
+                        : (isColorConfirmed ? 'isBlueConfirmed' : '');
                       return (
                         <td key={`${slot}-${court}`} className="scheduleCell">
                           <div className="scheduleMatchMain">
                             <p
-                              className={`schedulePlayerName ${isColorConfirmed ? 'isRedConfirmed' : ''} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${redNameClass} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}
                             >
                               {renderNameWithLineBreaks(displayRedName)}
                             </p>
                             <p className="scheduleVersus">VS</p>
                             <p
-                              className={`schedulePlayerName ${isColorConfirmed ? 'isBlueConfirmed' : ''} ${isWinnerPlaceholder(displayBlueName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${blueNameClass} ${isWinnerPlaceholder(displayBlueName) ? 'isPlaceholderName' : ''}`}
                             >
                               {renderNameWithLineBreaks(displayBlueName)}
                             </p>
                           </div>
                           <p className="scheduleLiveScore">
                             {colorState?.isScoreVisible ? (
-                              <>
-                                <span className={`scheduleLiveScoreValue ${isRedWinner ? 'isWinner' : ''}`}>
-                                  {colorState?.redScore ?? 0}
+                              <span className="scheduleLiveScoreCluster">
+                                <span className="scheduleLiveScoreValue">
+                                  {showTbTag && isRedWinner ? (
+                                    <span
+                                      className={`scheduleScoreCircled${
+                                        isTieBreakScoreSingleDigit(colorState?.redScore)
+                                          ? ' scheduleScoreCircledIsRound'
+                                          : ''
+                                      }`}
+                                    >
+                                      {colorState?.redScore ?? 0}
+                                    </span>
+                                  ) : (
+                                    (colorState?.redScore ?? 0)
+                                  )}
                                 </span>
                                 <span className="scheduleLiveScoreDash"> - </span>
-                                <span className={`scheduleLiveScoreValue ${isBlueWinner ? 'isWinner' : ''}`}>
-                                  {colorState?.blueScore ?? 0}
+                                <span className="scheduleLiveScoreValue">
+                                  {showTbTag && isBlueWinner ? (
+                                    <span
+                                      className={`scheduleScoreCircled${
+                                        isTieBreakScoreSingleDigit(colorState?.blueScore)
+                                          ? ' scheduleScoreCircledIsRound'
+                                          : ''
+                                      }`}
+                                    >
+                                      {colorState?.blueScore ?? 0}
+                                    </span>
+                                  ) : (
+                                    (colorState?.blueScore ?? 0)
+                                  )}
                                 </span>
-                              </>
+                              </span>
                             ) : (
                               scoreLabel
                             )}
@@ -327,7 +520,9 @@ const Schedule = () => {
                       );
                     })}
                   </tr>
-                ))}
+                  );
+                  return rows;
+                })}
               </tbody>
             </table>
           </div>

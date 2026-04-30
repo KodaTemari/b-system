@@ -10,14 +10,72 @@
   background-repeat: no-repeat, no-repeat;
 }
 
+.poolViewPage.isRotationMode {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .poolViewSection {
   max-width: 100%;
   overflow: auto;
 }
 
+.poolViewSection.isRotationMode {
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  padding: 12px 14px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.poolViewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.poolViewLogo {
+  display: block;
+  width: min(30vw, 360px);
+  max-height: 72px;
+  object-fit: contain;
+}
+
 .poolViewTitle {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 1.4rem;
+  text-align: right;
+}
+
+.poolRotationIndicator {
+  width: min(28vw, 320px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.poolRotationBarTrack {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(var(--color-white), 0.18);
+  overflow: hidden;
+}
+
+.poolRotationBarTrack.isActive {
+  background: rgba(var(--color-white), 0.28);
+}
+
+.poolRotationBarFill {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  transform-origin: left center;
+  background: rgb(var(--color-gray-lighter, 210 210 210));
 }
 
 .poolViewMeta {
@@ -50,9 +108,40 @@
   gap: 22px;
 }
 
+.poolList.isRotationMode {
+  opacity: 1;
+  transition: opacity 350ms ease;
+}
+
+.poolList.isRotationMode.isFading {
+  opacity: 0;
+}
+
+.poolList.isRotationMode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  height: calc(100% - 84px);
+  align-content: stretch;
+}
+
+.poolList.isRotationMode .poolListItem {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.poolList.isRotationMode .poolListItem:last-child:nth-child(odd) {
+  grid-column: 1 / span 2;
+  width: calc((100% - 20px) / 2);
+  justify-self: center;
+}
+
 .poolListItemTitle {
   margin: 0 0 8px;
   font-size: 1.05rem;
+  text-align: right;
 }
 
 .poolListItem {
@@ -125,4 +214,27 @@
 
 .poolMatrixSummaryCell {
   font-weight: 600;
+}
+
+.poolList.isRotationMode .poolListItemTitle {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.poolList.isRotationMode .poolMatrixWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.poolList.isRotationMode .poolMatrixTable {
+  min-width: 0;
+  height: 100%;
+  align-self: stretch;
+}
+
+.poolList.isRotationMode .poolMatrixTable th,
+.poolList.isRotationMode .poolMatrixTable td {
+  padding: 4px 3px;
+  font-size: 0.68rem;
 }

@@ -23,7 +23,8 @@ const PlayerInfoPanel = ({
   yellowCard = 0,
   redCard = 0,
   onPenaltyRemove,
-  isCtrl = false
+  isCtrl = false,
+  winIconSrc = '',
 }) => {
   const [showAdjust, setShowAdjust] = useState(false);
   const remainingMs = propRemainingMs || 0;
@@ -267,7 +268,7 @@ const PlayerInfoPanel = ({
         <li><button type="button" name={ballButtonName} value="6" aria-label='6' onClick={() => handleBallClick(6)}></button></li>
         <li className="jack"><button type="button" name={ballButtonName} value="7" aria-label='7' onClick={() => handleBallClick(7)}></button></li>
       </ul>
-      <div className="win"><img src={winIcon} alt="Win!" /></div>
+      <div className="win"><img src={winIconSrc || winIcon} alt="Win!" /></div>
     </section>
   );
 };
