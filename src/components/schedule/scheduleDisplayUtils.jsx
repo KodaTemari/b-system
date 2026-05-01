@@ -94,10 +94,79 @@ export const normalizePlayers = (players) => {
   }
   return players
     .map((player) => ({
-      id: String(player.id ?? ''),
+      id: String(player.id ?? '').trim(),
       name: String(player.name ?? '').trim(),
+      poolId: String(player.poolId ?? '').trim(),
+      poolOrder: Number(player.poolOrder),
     }))
     .filter((player) => player.id && player.name);
+};
+
+/**
+ * 試合からプール識別子（英字1文字）を取り出す。
+ * `match.poolId`（任意・JSON拡張用）を最優先。無ければ matchId（例: …-L-A-01）や matchName（Pool A …）を解釈する。
+ */
+export const extractPoolLetterFromMatch = (match) => {
+  if (!match || typeof match !== 'object') {
+    return null;
+  }
+  const explicit = String(match.poolId ?? match.pool ?? '').trim();
+  if (explicit) {
+    const one = explicit.toUpperCase();
+    if (/^[A-Z]$/.test(one)) {
+      return one;
+    }
+    const asPool = explicit.match(/^POOL\s*([A-Z])$/i);
+    if (asPool) {
+      return asPool[1].toUpperCase();
+    }
+  }
+  const id = String(match.matchId ?? '').trim();
+  const idM = id.match(/-L-([A-Z])-\d+/i);
+  if (idM) {
+    return idM[1].toUpperCase();
+  }
+  const name = String(match.matchName ?? '');
+  const nameM = name.match(/Pool\s+([A-Z])\b/i);
+  if (nameM) {
+    return nameM[1].toUpperCase();
+  }
+  return null;
+};
+
+/**
+ * 各コート列に割り当てるプール文字。当該コートの時系列で最初の試合から決定する。
+ */
+export const buildPoolLetterByCourtMap = (matches, courtIds) => {
+  const map = new Map();
+  if (!Array.isArray(courtIds)) {
+    return map;
+  }
+  for (const c of courtIds) {
+    map.set(String(c), null);
+  }
+  if (!Array.isArray(matches) || matches.length === 0) {
+    return map;
+  }
+  const ordered = [...matches].sort((a, b) => {
+    const ta = new Date(a?.scheduledStart ?? 0).getTime();
+    const tb = new Date(b?.scheduledStart ?? 0).getTime();
+    if (ta !== tb) {
+      return ta - tb;
+    }
+    return String(a?.matchId ?? '').localeCompare(String(b?.matchId ?? ''));
+  });
+  for (const m of ordered) {
+    const court = String(m?.courtId ?? '');
+    if (!court || map.get(court) != null) {
+      continue;
+    }
+    const letter = extractPoolLetterFromMatch(m);
+    if (letter) {
+      map.set(court, letter);
+    }
+  }
+  return map;
 };
 
 /** 進行DB上で「その行はもう完了」とみなすステータス（本部承認・反映済み） */

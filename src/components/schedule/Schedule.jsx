@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import {
+  buildPoolHueMap,
+  collectPoolIds,
+  poolStandingsHeaderHsl,
+  SCHEDULE_POOL_IN_PROGRESS_CELL_ALPHA,
+  SCHEDULE_POOL_SURFACE_ALPHA,
+} from '../../utils/schedulePoolIds';
 import './Schedule.css';
 import {
+  buildPoolLetterByCourtMap,
+  extractPoolLetterFromMatch,
   getScheduleDisplayProgressStatus,
   getScheduleRowPhase,
   isTieBreakScoreSingleDigit,
@@ -28,6 +37,7 @@ const Schedule = () => {
   const [schedule, setSchedule] = useState({
     courts: [],
     matches: [],
+    pools: [],
     eventDate: '',
     eventDayLabel: '',
     startTime: '',
@@ -60,6 +70,7 @@ const Schedule = () => {
         setSchedule({
           courts: Array.isArray(scheduleJson.courts) ? scheduleJson.courts.map((court) => String(court)) : [],
           matches: Array.isArray(scheduleJson.matches) ? scheduleJson.matches : [],
+          pools: Array.isArray(scheduleJson.pools) ? scheduleJson.pools : [],
           eventDate: String(scheduleJson.eventDate ?? ''),
           eventDayLabel: String(scheduleJson.eventDayLabel ?? ''),
           startTime: String(scheduleJson.startTime ?? ''),
@@ -293,6 +304,16 @@ const Schedule = () => {
     return slotMap;
   }, [schedule.matches, timeSlots]);
 
+  const poolLetterByCourt = useMemo(
+    () => buildPoolLetterByCourtMap(schedule.matches, schedule.courts),
+    [schedule.matches, schedule.courts],
+  );
+
+  const poolHueByPoolId = useMemo(() => {
+    const ids = collectPoolIds(players, schedule.pools, schedule.matches);
+    return buildPoolHueMap(ids);
+  }, [players, schedule.pools, schedule.matches]);
+
   const schedulePageStyle = eventId
     ? { '--scheduleBgImage': `url(/data/${encodeURIComponent(eventId)}/assets/bg.jpg)` }
     : undefined;
@@ -390,9 +411,21 @@ const Schedule = () => {
                     rows.push(
                       <tr key={`header-${slot}`} className="scheduleInlineHeaderRow">
                         <th className="scheduleHeaderCell">時間</th>
-                        {schedule.courts.map((court) => (
-                          <th key={`header-${slot}-${court}`} className="scheduleHeaderCell">{`コート${court}`}</th>
-                        ))}
+                        {schedule.courts.map((court) => {
+                          const poolId = poolLetterByCourt.get(String(court));
+                          const hue = poolId ? poolHueByPoolId.get(poolId) : undefined;
+                          const headerBgStyle =
+                            hue != null
+                              ? { background: poolStandingsHeaderHsl(hue, SCHEDULE_POOL_SURFACE_ALPHA) }
+                              : undefined;
+                          return (
+                            <th
+                              key={`header-${slot}-${court}`}
+                              className="scheduleHeaderCell"
+                              style={headerBgStyle}
+                            >{`コート${court}`}</th>
+                          );
+                        })}
                       </tr>,
                     );
                   }
@@ -459,8 +492,26 @@ const Schedule = () => {
                       const blueNameClass = shouldHighlightWinnerBorder
                         ? (isBlueWinner ? 'isWinner' : '')
                         : (isColorConfirmed ? 'isBlueConfirmed' : '');
+                      const letterForPoolHue =
+                        extractPoolLetterFromMatch(match) ?? poolLetterByCourt.get(String(court));
+                      const hueForPoolTint = letterForPoolHue
+                        ? poolHueByPoolId.get(letterForPoolHue)
+                        : undefined;
+                      const isMatchInProgress = rawProgressStatus === 'in_progress';
+                      const showInProgressPoolTint =
+                        isMatchInProgress &&
+                        hueForPoolTint != null &&
+                        Number.isFinite(hueForPoolTint);
+                      const inProgressPoolBgStyle = showInProgressPoolTint
+                        ? {
+                            background: poolStandingsHeaderHsl(
+                              hueForPoolTint,
+                              SCHEDULE_POOL_IN_PROGRESS_CELL_ALPHA,
+                            ),
+                          }
+                        : undefined;
                       return (
-                        <td key={`${slot}-${court}`} className="scheduleCell">
+                        <td key={`${slot}-${court}`} className="scheduleCell" style={inProgressPoolBgStyle}>
                           <div className="scheduleMatchMain">
                             <p
                               className={`schedulePlayerName ${redNameClass} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}

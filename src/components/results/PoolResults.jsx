@@ -223,6 +223,7 @@ const PoolResults = () => {
                       <th className="poolResultsMatrixSummaryHeader">勝ち数</th>
                       <th className="poolResultsMatrixSummaryHeader">得失点</th>
                       <th className="poolResultsMatrixSummaryHeader">得点</th>
+                      <th className="poolResultsMatrixSummaryHeader poolResultsMatrixSummaryHeaderEndsWon">勝エンド</th>
                       <th className="poolResultsMatrixSummaryHeader">順位</th>
                     </tr>
                   </thead>
@@ -253,6 +254,7 @@ const PoolResults = () => {
                           {row.pointDiff >= 0 ? '+' : ''}{row.pointDiff}
                         </td>
                         <td className="poolResultsMatrixSummaryCell">{row.pointsFor}</td>
+                        <td className="poolResultsMatrixSummaryCell">{row.endsWon ?? 0}</td>
                         <td className="poolResultsMatrixSummaryCell">{row.rank}</td>
                       </tr>
                     ))}

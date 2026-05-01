@@ -1,4 +1,6 @@
 .poolViewPage {
+  /* 縦向きで 1.4（下記 @media portrait） */
+  --pool-text-scale: 1;
   padding: 20px;
   min-height: 100vh;
   box-sizing: border-box;
@@ -8,6 +10,51 @@
   background-size: cover, cover;
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
+}
+
+/* 本部 TD 内埋め込み: 余白を抑え（外側の本部レイアウトに合わせる） */
+.poolViewPage--embedInHq {
+  padding: 0;
+  min-height: 0;
+}
+
+.poolStandingsHqRankFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.poolStandingsHqRankButton {
+  margin: 0;
+  padding: 10px 22px;
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+/* 未掲載: 会場に掲載する（緑・メイン操作） */
+.poolStandingsHqRankButton--publish {
+  background: rgb(26, 72, 38);
+  border-color: rgb(26, 72, 38);
+  color: rgb(var(--color-white));
+}
+
+.poolStandingsHqRankButton--publish:hover {
+  filter: brightness(1.08);
+}
+
+/* 掲載中: 取り下げ（ニュートラル） */
+.poolStandingsHqRankButton--withdraw {
+  background: rgb(var(--color-gray-medium));
+  color: rgb(var(--color-gray-lighter));
+}
+
+.poolStandingsHqRankButton--withdraw:hover {
+  color: rgb(var(--color-white));
 }
 
 .poolViewPage.isRotationMode {
@@ -41,13 +88,13 @@
 .poolViewLogo {
   display: block;
   width: min(30vw, 360px);
-  max-height: 72px;
+  max-height: calc(72px * var(--pool-text-scale));
   object-fit: contain;
 }
 
 .poolViewTitle {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: calc(1.4rem * var(--pool-text-scale));
   text-align: right;
 }
 
@@ -81,11 +128,11 @@
 .poolViewMeta {
   margin: 0 0 8px;
   color: rgb(var(--color-gray-lighter));
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--pool-text-scale));
 }
 
 .poolViewBlock {
-  margin-top: 18px;
+  margin-top: 2vh;
   padding: 12px;
   border: 1px solid rgb(var(--color-gray-light));
   border-radius: 8px;
@@ -94,12 +141,13 @@
 
 .poolViewBlockTitle {
   margin: 0 0 10px;
-  font-size: 1rem;
+  font-size: calc(1rem * var(--pool-text-scale));
 }
 
 .poolViewEmpty {
   margin: 0;
   color: rgb(var(--color-gray-lighter));
+  font-size: calc(1rem * var(--pool-text-scale));
 }
 
 .poolList {
@@ -138,20 +186,16 @@
   justify-self: center;
 }
 
-.poolListItemTitle {
-  margin: 0 0 8px;
-  font-size: 1.05rem;
-  text-align: right;
-}
-
 .poolListItem {
   --poolHeaderBg: rgb(var(--color-primary, 135 184 111));
+  --poolTopLeftHeaderBg: rgb(var(--color-primary, 135 184 111));
+  --poolTeamHeaderBg: rgb(var(--color-gray));
 }
 
 .poolMatrixWrap {
   overflow: auto;
-  border: 1px solid rgb(var(--color-gray-light));
   border-radius: 6px;
+  /* 外周はセル border の 1px のみ（ラッパーと重ねると 2px に見えるため付けない） */
 }
 
 .poolMatrixTable {
@@ -167,31 +211,34 @@
   border: 1px solid rgb(var(--color-gray-light));
   text-align: center;
   padding: 8px 6px;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem * var(--pool-text-scale));
 }
 
 .poolMatrixPoolHeader {
   width: 132px;
-  background: var(--poolHeaderBg);
-  color: rgb(var(--color-black));
+  background: var(--poolTopLeftHeaderBg);
+  color: rgb(var(--color-white));
 }
 
 .poolMatrixTeamHeader {
-  font-weight: 600;
-  background: rgb(var(--color-gray));
+  background: var(--poolTeamHeaderBg);
   color: rgb(var(--color-white));
+  font-weight: normal;
 }
 
 .poolMatrixRowHeader {
   text-align: left;
-  padding-left: 10px;
   background: var(--poolHeaderBg);
-  color: rgb(var(--color-black));
+  color: rgb(var(--color-white));
   width: 132px;
 }
 
-.poolMatrixScoreCell {
-  white-space: nowrap;
+.poolMatrixResultMarker {
+  display: block;
+}
+
+.poolMatrixResultScore {
+  display: block;
 }
 
 .poolMatrixDiagonalCell {
@@ -208,20 +255,24 @@
 
 .poolMatrixSummaryHeader {
   width: 44px;
-  background: rgb(var(--color-gray));
+  background: var(--poolTeamHeaderBg);
   color: rgb(var(--color-white));
+  font-size: calc(0.9rem * var(--pool-text-scale));
 }
 
-.poolMatrixSummaryCell {
-  font-weight: 600;
+/* 「勝エンド」見出しのみ他サマリー列の 0.75 倍 */
+.poolMatrixSummaryHeader.poolMatrixSummaryHeaderEndsWon {
+  font-size: calc(0.9rem * var(--pool-text-scale) * 0.75);
 }
 
-.poolList.isRotationMode .poolListItemTitle {
-  margin-bottom: 4px;
-  font-size: 0.95rem;
+/* ?showRanks=1 等が無いときは順位の数字セルのみ透明（「順位」th は表示） */
+.poolViewPage.isPoolRankHidden .poolMatrixRankCell {
+  color: transparent;
+  user-select: none;
 }
 
 .poolList.isRotationMode .poolMatrixWrap {
+  margin-top: 1.5vh;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -235,6 +286,179 @@
 
 .poolList.isRotationMode .poolMatrixTable th,
 .poolList.isRotationMode .poolMatrixTable td {
-  padding: 4px 3px;
-  font-size: 0.68rem;
+  padding: 0.5vh 0.1vw;
+}
+
+.poolList.isRotationMode .poolMatrixScoreCell {
+  line-height: 1.2;
+  font-size: calc(1vw * var(--pool-text-scale));
+  height: 4vh;
+}
+
+.poolList.isRotationMode .poolMatrixSummaryCell,
+.poolList.isRotationMode .poolMatrixRowHeader {
+  font-size: calc(1vw * var(--pool-text-scale));
+}
+
+.poolList.isRotationMode .poolMatrixPoolHeader,
+.poolList.isRotationMode .poolMatrixSummaryHeader,
+.poolList.isRotationMode .poolMatrixTeamHeader {
+  font-size: calc(0.85vw * var(--pool-text-scale));
+}
+
+.poolList.isRotationMode .poolMatrixSummaryHeader.poolMatrixSummaryHeaderEndsWon {
+  font-size: calc(0.85vw * var(--pool-text-scale) * 0.75);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 通常モード: 表の下にページ背景が見えないよう、下端まで表エリアを伸ばす */
+/* （単一プール URL・全プール一覧の両方。向きに依存しない） */
+/* -------------------------------------------------------------------------- */
+.poolViewPage:not(.isRotationMode) {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.poolViewPage:not(.isRotationMode) .poolViewSection {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.poolViewPage:not(.isRotationMode) .poolViewHeader {
+  flex-shrink: 0;
+}
+
+.poolViewPage:not(.isRotationMode) .poolList {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.poolViewPage:not(.isRotationMode) .poolListItem {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.poolViewPage:not(.isRotationMode) .poolMatrixWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  /* 表より下の余白も同じトーンで埋める（flex で伸びた領域） */
+  background: rgb(var(--color-gray-medium));
+}
+
+.poolViewPage:not(.isRotationMode) .poolMatrixTable {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  align-self: stretch;
+  box-sizing: border-box;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 縦画面: 下端の余白を出さず、表エリアを縦に伸ばしてバランスよく配置する */
+/* -------------------------------------------------------------------------- */
+@media (orientation: portrait) {
+  .poolViewPage {
+    --pool-text-scale: 1.4;
+  }
+
+  .poolViewPage.isRotationMode {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .poolViewSection.isRotationMode {
+    width: 100%;
+    max-width: none;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px;
+  }
+
+  .poolViewPage.isRotationMode .poolViewHeader {
+    flex-shrink: 0;
+    margin-bottom: 8px;
+  }
+
+  .poolList.isRotationMode {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .poolList.isRotationMode .poolListItem:last-child:nth-child(odd) {
+    width: 100%;
+    max-width: min(100%, 520px);
+    justify-self: center;
+  }
+
+  .poolList.isRotationMode .poolMatrixTable th,
+  .poolList.isRotationMode .poolMatrixTable td {
+    padding: clamp(3px, 1.4vmin, 10px) clamp(2px, 1vmin, 6px);
+    vertical-align: middle;
+    font-size: clamp(
+      calc(0.68rem * var(--pool-text-scale)),
+      calc(2.5vmin * var(--pool-text-scale)),
+      calc(0.9rem * var(--pool-text-scale))
+    );
+  }
+
+  .poolList.isRotationMode .poolMatrixScoreCell {
+    height: auto;
+    min-height: clamp(
+      calc(1.75rem * var(--pool-text-scale)),
+      calc(6vmin * var(--pool-text-scale)),
+      calc(3.25rem * var(--pool-text-scale))
+    );
+    font-size: clamp(
+      calc(0.64rem * var(--pool-text-scale)),
+      calc(2.3vmin * var(--pool-text-scale)),
+      calc(0.88rem * var(--pool-text-scale))
+    );
+    line-height: 1.25;
+  }
+
+  .poolList.isRotationMode .poolMatrixSummaryCell,
+  .poolList.isRotationMode .poolMatrixRowHeader {
+    font-size: clamp(
+      calc(0.64rem * var(--pool-text-scale)),
+      calc(2.3vmin * var(--pool-text-scale)),
+      calc(0.88rem * var(--pool-text-scale))
+    );
+  }
+
+  .poolList.isRotationMode .poolMatrixPoolHeader,
+  .poolList.isRotationMode .poolMatrixSummaryHeader,
+  .poolList.isRotationMode .poolMatrixTeamHeader {
+    font-size: clamp(
+      calc(0.6rem * var(--pool-text-scale)),
+      calc(2.1vmin * var(--pool-text-scale)),
+      calc(0.82rem * var(--pool-text-scale))
+    );
+  }
+
+  .poolList.isRotationMode .poolMatrixSummaryHeader.poolMatrixSummaryHeaderEndsWon {
+    font-size: clamp(
+      calc(0.45rem * var(--pool-text-scale)),
+      calc(1.575vmin * var(--pool-text-scale)),
+      calc(0.615rem * var(--pool-text-scale))
+    );
+  }
 }

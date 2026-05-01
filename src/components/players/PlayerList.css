@@ -1,0 +1,173 @@
+@charset "utf-8";
+
+.playerListPage {
+  min-height: 100vh;
+  padding: 20px;
+  background: rgb(var(--color-gray-dark));
+  color: rgb(var(--color-white));
+}
+
+.playerListSection {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.playerListHeader {
+  margin-bottom: 14px;
+}
+
+.playerListTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 1.4rem;
+}
+
+.playerListTitleMeta {
+  font-size: 0.95rem;
+  color: rgb(var(--color-gray-lighter));
+  font-weight: 400;
+}
+
+.playerListMeta {
+  margin-top: 6px;
+  color: rgb(var(--color-gray-lighter));
+}
+
+.playerListMessage {
+  margin-top: 8px;
+  margin-bottom: 0;
+  color: rgb(var(--color-green-light));
+  text-align: center;
+}
+
+.playerListError {
+  margin-bottom: 10px;
+  color: rgb(var(--color-yellow));
+}
+
+.playerListTableWrap {
+  overflow: auto;
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 8px;
+  background: rgb(var(--color-gray-darker));
+}
+
+.playerListTable {
+  width: 100%;
+  min-width: 1000px;
+  table-layout: fixed;
+}
+
+.playerListTable th,
+.playerListTable td {
+  border-bottom: 1px solid rgb(var(--color-gray-light));
+  padding: 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.playerListTable th {
+  background: rgb(var(--color-gray));
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.playerListTable tr:hover td {
+  background: rgba(var(--color-white), 0.04);
+}
+
+.playerListTable tr.isPoolTintedRow td {
+  background: var(--playerListPoolRowBg, transparent);
+}
+
+.playerListTable tr.isPoolTintedRow:hover td {
+  background: var(--playerListPoolRowBg, rgba(var(--color-white), 0.04));
+  filter: brightness(1.08);
+}
+
+.playerListTable td.isNarrow {
+  width: 60px;
+  white-space: nowrap;
+}
+
+.playerListTable .isColPool,
+.playerListTable .isColOrder,
+.playerListTable .isColThinkingTime {
+  white-space: nowrap;
+}
+
+.playerListTable col.isColId {
+  width: 64px;
+}
+
+.playerListTable col.isColName {
+  width: 170px;
+}
+
+.playerListTable col.isColPool {
+  width: 82px;
+}
+
+.playerListTable col.isColOrder {
+  width: 82px;
+}
+
+.playerListTable col.isColThinkingTime {
+  width: 110px;
+}
+
+.playerListTable col.isColCategory {
+  width: 28%;
+}
+
+.playerListTable col.isColNote {
+  width: 38%;
+}
+
+.playerListInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 6px;
+  background: rgb(var(--color-gray-darker));
+  color: rgb(var(--color-white));
+  padding: 6px 8px;
+}
+
+.playerListInput:focus {
+  outline: none;
+  border-color: rgb(var(--color-green-light));
+}
+
+.playerListActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.playerListSaveButton {
+  margin: 0;
+  min-width: 168px;
+  padding: 10px 22px;
+  border: 1px solid rgb(26, 72, 38);
+  border-radius: 8px;
+  background: rgb(26, 72, 38);
+  color: rgb(var(--color-white));
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.playerListSaveButton:hover {
+  filter: brightness(1.08);
+}
+
+.playerListSaveButton:disabled {
+  opacity: 0.78;
+  cursor: default;
+}

@@ -1,5 +1,8 @@
 {
   "gameName": "?????",
+  "display": {
+    "scoreboardPlayerNameFontSize": 7
+  },
   "classifications": [
     { "id": "BC1", "gender": "M" },
     { "id": "BC1", "gender": "F" },

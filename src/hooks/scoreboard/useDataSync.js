@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { DEFAULT_GAME_DATA, TIMER_LIMITS } from '../../utils/scoreboard/constants';
 
+/** init.json の display.scoreboardPlayerNameFontSize（数値は vmin 相当） */
+function parseScoreboardPlayerNameFontSizeFromInit(initData) {
+  const raw = initData?.display?.scoreboardPlayerNameFontSize;
+  if (raw === undefined || raw === null) {
+    return null;
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    return null;
+  }
+  return n;
+}
+
 /** 本部配信などサーバー側で更新され得る項目の比較用（スコア・タイマーは含めない） */
 function buildHqBroadcastSignature(data) {
   if (!data) {
@@ -32,6 +45,7 @@ export const useDataSync = (id, court, isCtrl) => {
   const [localData, setLocalData] = useState(null);
   const [eventName, setEventName] = useState('');
   const [classificationCount, setClassificationCount] = useState(null);
+  const [scoreboardPlayerNameFontSize, setScoreboardPlayerNameFontSize] = useState(null);
   const [realtimeStatus, setRealtimeStatus] = useState('disconnected');
   const wsRef = useRef(null);
   const reconnectTimerRef = useRef(null);
@@ -143,7 +157,7 @@ export const useDataSync = (id, court, isCtrl) => {
           setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
         }
       } catch {
-        // 補完に失敗しても致命的ではないので握りつぶす
+        // init 補完失敗は致命的ではない（フォントは下記 useEffect で別途同期）
       }
 
       if (gameRes.ok) {
@@ -520,6 +534,41 @@ export const useDataSync = (id, court, isCtrl) => {
     };
   }, [id, court, isStandaloneMode]);
 
+  /**
+   * view かつ LocalStorage 命中時は loadGameData を呼ばないため、ここで init の表示設定だけ必ず同期する。
+   */
+  useEffect(() => {
+    if (isStandaloneMode || !id) {
+      setScoreboardPlayerNameFontSize(null);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const initRes = await fetch(`/data/${encodeURIComponent(id)}/init.json`);
+        if (cancelled) {
+          return;
+        }
+        if (!initRes.ok) {
+          setScoreboardPlayerNameFontSize(null);
+          return;
+        }
+        const initData = await initRes.json();
+        if (cancelled) {
+          return;
+        }
+        setScoreboardPlayerNameFontSize(parseScoreboardPlayerNameFontSizeFromInit(initData));
+      } catch {
+        if (!cancelled) {
+          setScoreboardPlayerNameFontSize(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isStandaloneMode]);
+
   // 初期データ読み込み
   useEffect(() => {
     if (isStandaloneMode) {
@@ -641,6 +690,7 @@ export const useDataSync = (id, court, isCtrl) => {
     error,
     eventName,
     classificationCount,
+    scoreboardPlayerNameFontSize,
     saveToLocalStorage,
     saveData
   };

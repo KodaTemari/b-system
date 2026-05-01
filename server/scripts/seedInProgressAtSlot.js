@@ -2,7 +2,7 @@
  * デザイン・検証用: schedule.json を読み、指定時刻スロットを「いまここ」として大会進行っぽいデータを SQLite に書き込む。
  *
  * - 指定時刻より前に開始する試合: すべて勝敗確定（hq_approved + results に勝者あり）
- * - 指定時刻の試合: 試合中・勝者未確定（in_progress）。スコアは 1-0/0-1、0-2/2-0、0-3/3-0 などからランダム（winner なし）
+ * - 指定時刻の試合: 試合中・勝者未確定（in_progress）。2エンド想定で合計点が常に 2 以上になるスコアのみ（1-0/0-1 は出さない）
  *
  * 使い方:
  *   cd server && node scripts/seedInProgressAtSlot.js <eventId> [HH:MM]
@@ -114,14 +114,14 @@ function randomIntInclusive(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
-/** 同点以外のスコアと勝者 playerId */
+/** 同点以外のスコアと勝者 playerId。2エンド相当で合計が常に 2 以上（1-0 / 0-1 は除外） */
 function randomDecisiveScores(redPlayerId, bluePlayerId) {
   let redScore;
   let blueScore;
   do {
     redScore = randomIntInclusive(0, 5);
     blueScore = randomIntInclusive(0, 5);
-  } while (redScore === blueScore);
+  } while (redScore === blueScore || redScore + blueScore < 2);
   const winnerPlayerId = redScore > blueScore ? redPlayerId : bluePlayerId;
   return { redScore, blueScore, winnerPlayerId };
 }
@@ -292,7 +292,7 @@ async function upsertFinishedMatch(db, eventId, match, now) {
 
 /**
  * 指定スロットの試合: 対戦カードは schedule どおり・試合中・勝者なし（winner_player_id NULL）。
- * スコアは 1-0/0-1、0-2/2-0、0-3/3-0 からランダム（進行中の差が開いているパターンを含む）。
+ * 2エンド想定で合計点が常に 2 以上（1-0/0-1 は含めない）。
  */
 async function upsertCurrentSlotInProgressMidMatch(db, eventId, match, now) {
   const matchId = String(match.matchId ?? '').trim();
@@ -302,12 +302,17 @@ async function upsertCurrentSlotInProgressMidMatch(db, eventId, match, now) {
   const scheduledAt = String(match.scheduledStart ?? '').trim();
 
   const inProgressPatterns = [
-    [1, 0],
-    [0, 1],
-    [0, 2],
     [2, 0],
+    [0, 2],
     [0, 3],
     [3, 0],
+    [2, 1],
+    [1, 2],
+    [3, 1],
+    [1, 3],
+    [2, 2],
+    [4, 2],
+    [2, 4],
   ];
   const pick = inProgressPatterns[randomIntInclusive(0, inProgressPatterns.length - 1)];
   const redScore = pick[0];

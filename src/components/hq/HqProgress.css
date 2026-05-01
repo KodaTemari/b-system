@@ -6,6 +6,75 @@
   box-sizing: border-box;
 }
 
+/* ロゴ | 中央タブ（試合進行｜プール表） | 右上タイトル */
+.hqProgressTitleBar.scheduleTitleBar {
+  justify-content: flex-start;
+}
+
+.hqProgressTitleBarLead {
+  flex-shrink: 0;
+}
+
+.hqProgressTitleBarTabs {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hqProgressTitleBarTabs .hqProgressViewTab {
+  margin: 0;
+  background: transparent;
+  border: none;
+  color: rgb(var(--color-gray-lighter));
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  line-height: 1.3;
+}
+
+.hqProgressTitleBarTabs .hqProgressViewTab:hover {
+  color: rgb(var(--color-white));
+}
+
+.hqProgressTitleBarTabs .hqProgressViewTab.isActive {
+  color: rgb(var(--color-white));
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hqProgressTitleBarTabs .hqProgressViewTab:focus-visible {
+  outline: 2px solid rgb(var(--color-blue));
+  outline-offset: 2px;
+}
+
+.hqProgressTitleTabSep {
+  color: rgb(var(--color-gray-mid-light));
+  user-select: none;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.hqProgressTitleBar .hqProgressTitleBarTrail.scheduleTitleText {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  min-width: min-content;
+}
+
+.hqProgressPoolStandingsHost {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.hqProgressPoolStandingsFallback {
+  margin: 0;
+  color: rgb(var(--color-gray-lighter));
+  font-size: 0.95rem;
+}
+
 .hqProgressSection {
   overflow: auto;
   max-width: 100%;
@@ -68,6 +137,14 @@
   font-size: 0.75rem;
   text-align: center;
   font-weight: 700;
+}
+
+.hqProgressPoolRoundLabel {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+  font-weight: 600;
 }
 
 .hqProgressStatus.isScheduled {
@@ -174,4 +251,42 @@
 
 .hqProgressApproverModalActions {
   margin-top: 10px;
+}
+
+/* 時間列: table-cell のまま幅78pxを維持。時刻は中央、一斉配信は「スコアボードへ配信」と同型ボタンでセル下端 */
+.scheduleTimeCell.hqProgressTimeCellWithBulk {
+  position: relative;
+  vertical-align: top;
+  width: 78px;
+  min-width: 78px;
+  max-width: 78px;
+  box-sizing: border-box;
+  white-space: normal;
+  text-align: center;
+  padding: 8px 6px 46px;
+}
+
+.hqProgressTimeLabel {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 8px;
+  bottom: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* 見た目は .hqProgressActionButton に完全準拠。ここでは時間セル下端への配置のみ */
+.hqProgressBulkAnnounceButton {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 8px;
+  width: auto;
+  box-sizing: border-box;
+  flex: none;
 }

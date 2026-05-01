@@ -3,6 +3,8 @@
  * game.json の配列を渡し、classification ごとにプールとして集計する
  */
 
+import { countRegulationEndsWonFromMatchEnds, sortPoolRowsByBgpRules } from './bgpPoolRank';
+
 /**
  * 試合が完了しているか
  */
@@ -69,7 +71,7 @@ export function computeStandingsByClassification(gamesList) {
     const classification = game.classification || game.category || '';
     const key = classification || '（未設定）';
     if (!byClassification.has(key)) {
-      byClassification.set(key, { matches: [], players: new Map() });
+      byClassification.set(key, { matches: [], tieMatches: [], players: new Map() });
     }
     const poolData = byClassification.get(key);
     poolData.matches.push(toMatchSummary({ courtId, game }));
@@ -80,6 +82,13 @@ export function computeStandingsByClassification(gamesList) {
     const blueName = blue.name?.trim() || '—';
     const redScore = red.score ?? 0;
     const blueScore = blue.score ?? 0;
+    const regulationEnds = countRegulationEndsWonFromMatchEnds(game.match?.ends);
+    let winnerId = null;
+    if (red.result === 'win') {
+      winnerId = redName;
+    } else if (blue.result === 'win') {
+      winnerId = blueName;
+    }
 
     const ensurePlayer = (name) => {
       if (!poolData.players.has(name)) {
@@ -89,7 +98,8 @@ export function computeStandingsByClassification(gamesList) {
           losses: 0,
           draws: 0,
           pointsFor: 0,
-          pointsAgainst: 0
+          pointsAgainst: 0,
+          endsWon: 0
         });
       }
       return poolData.players.get(name);
@@ -101,6 +111,8 @@ export function computeStandingsByClassification(gamesList) {
     redP.pointsAgainst += blueScore;
     blueP.pointsFor += blueScore;
     blueP.pointsAgainst += redScore;
+    redP.endsWon += regulationEnds.red;
+    blueP.endsWon += regulationEnds.blue;
 
     if (red.result === 'win') {
       redP.wins += 1;
@@ -112,22 +124,31 @@ export function computeStandingsByClassification(gamesList) {
       redP.draws += 1;
       blueP.draws += 1;
     }
+
+    poolData.tieMatches.push({
+      redId: redName,
+      blueId: blueName,
+      redScore,
+      blueScore,
+      winnerId,
+      redEndsWon: regulationEnds.red,
+      blueEndsWon: regulationEnds.blue
+    });
   }
 
   const result = [];
-  for (const [classification, { players, matches }] of byClassification.entries()) {
-    const standings = Array.from(players.values())
-      .map((p) => ({
-        ...p,
-        played: p.wins + p.losses + p.draws,
-        pointDiff: p.pointsFor - p.pointsAgainst
-      }))
-      .sort((a, b) => {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        if (b.pointDiff !== a.pointDiff) return b.pointDiff - a.pointDiff;
-        return b.pointsFor - a.pointsFor;
-      })
-      .map((row, index) => ({ rank: index + 1, ...row }));
+  for (const [classification, { players, matches, tieMatches }] of byClassification.entries()) {
+    const baseRows = Array.from(players.values()).map((p) => ({
+      ...p,
+      played: p.wins + p.losses + p.draws,
+      pointDiff: p.pointsFor - p.pointsAgainst,
+      id: p.name
+    }));
+    const sorted = sortPoolRowsByBgpRules(baseRows, tieMatches);
+    const standings = sorted.map((row, index) => {
+      const { id: _id, ...rest } = row;
+      return { rank: index + 1, ...rest };
+    });
 
     const teamOrder = standings.map((s) => s.name);
     const shortNames = teamOrder.map((name) => getShortName(name));

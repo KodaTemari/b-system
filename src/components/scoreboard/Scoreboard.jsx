@@ -59,6 +59,7 @@ const Scoreboard = () => {
     blueName,
     category,
     eventName,
+    scoreboardPlayerNameFontSize,
     matchName,
     classification,
     classificationCount,
@@ -1032,9 +1033,19 @@ const Scoreboard = () => {
     );
   }
 
-  const scoreboardStyle = id
-    ? { '--scoreboardBgImage': `url(/data/${encodeURIComponent(id)}/assets/bg.jpg)` }
-    : undefined;
+  const scoreboardStyle = (() => {
+    const s = {};
+    if (id) {
+      s['--scoreboardBgImage'] = `url(/data/${encodeURIComponent(id)}/assets/bg.jpg)`;
+    }
+    if (
+      scoreboardPlayerNameFontSize != null &&
+      Number.isFinite(Number(scoreboardPlayerNameFontSize))
+    ) {
+      s['--scoreboard-player-name-font-size'] = `${Number(scoreboardPlayerNameFontSize)}vmin`;
+    }
+    return Object.keys(s).length ? s : undefined;
+  })();
   const eventWinIconSrc = id
     ? `/data/${encodeURIComponent(id)}/assets/icon_win.png`
     : '';

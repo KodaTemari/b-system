@@ -58,8 +58,8 @@
 
 .scheduleTableWrap {
   overflow: auto;
-  border: 1px solid rgb(var(--color-gray));
   border-radius: 8px;
+  /* 外周は表セルの 1px のみ（ラッパーに border を付けると二重に見えるため付けない） */
 }
 
 /* 表地のグレーは約20%透過（--color-gray-medium 相当を 0.8 で重ねる） */
@@ -70,7 +70,7 @@
   background: rgba(50, 50, 50, 0.8);
 }
 
-/* 時間帯区分。未開始と試合終了（hq 承認済み行）は同じ透け感。進行中相当のみスレート緑 */
+/* 時間帯区分。プール色つき試合セルは進行DBが in_progress のときのみ JS で上書き */
 .scheduleRow.isRowUpcoming .scheduleTimeCell,
 .scheduleRow.isRowUpcoming .scheduleCell,
 .scheduleRow.isRowPast .scheduleTimeCell,
@@ -78,19 +78,24 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
-.scheduleRow.isRowCurrent .scheduleTimeCell,
+.scheduleRow.isRowCurrent .scheduleTimeCell {
+  background: rgba(var(--color-gray-light), 0.5);
+}
+
 .scheduleRow.isRowCurrent .scheduleCell {
-  background: rgba(var(--color-green-light), 0.1);
+  background: rgba(var(--color-green-light), 0.2);
 }
 
 .scheduleHeaderCell {
-  background: rgba(var(--color-green-light), 0.2);
+  background: rgba(var(--color-gray-light), 0.7);
   color: rgb(var(--color-white));
   border: 1px solid rgb(var(--color-gray-light));
   padding: 8px;
   font-size: 0.9rem;
   text-align: center;
 }
+
+/* コート列ヘッダー: poolStandingsHeaderHsl（SCHEDULE_POOL_SURFACE_ALPHA）。試合中セルは SCHEDULE_POOL_IN_PROGRESS_CELL_ALPHA */
 
 .scheduleTable thead .scheduleHeaderCell:first-child {
   width: 78px;
@@ -136,17 +141,45 @@
   line-height: 1.5;
 }
 
-.schedulePlayerName.isRedConfirmed {
-  border-bottom-color: rgb(var(--color-red));
-}
-
-.schedulePlayerName.isBlueConfirmed {
-  border-bottom-color: rgb(var(--color-blue));
-}
-
-/* 勝者ライン（従来の #f0c94d を 50% の不透明度に） */
+/* 赤青確定・勝者とも同形状（幅50%・カプセル）。赤青は白縁で視認性向上 */
+.schedulePlayerName.isRedConfirmed,
+.schedulePlayerName.isBlueConfirmed,
 .schedulePlayerName.isWinner {
-  border-bottom-color: rgba(240, 201, 77, 0.5);
+  position: relative;
+  border-bottom-color: transparent;
+}
+
+.schedulePlayerName.isRedConfirmed::after,
+.schedulePlayerName.isBlueConfirmed::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 70%;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.schedulePlayerName.isRedConfirmed::after {
+  background-color: rgb(var(--color-red));
+}
+
+.schedulePlayerName.isBlueConfirmed::after {
+  background-color: rgb(var(--color-blue));
+}
+
+.schedulePlayerName.isWinner::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 50%;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background-color: rgb(var(--color-yellow));
 }
 
 .schedulePlayerName.isPlaceholderName {

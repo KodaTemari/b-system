@@ -1,8 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import {
+  buildPoolHueMap,
+  collectPoolIds,
+  poolStandingsHeaderHsl,
+  SCHEDULE_POOL_IN_PROGRESS_CELL_ALPHA,
+  SCHEDULE_POOL_SURFACE_ALPHA,
+} from '../../utils/schedulePoolIds';
 import '../schedule/Schedule.css';
 import './HqProgress.css';
 import {
+  buildPoolLetterByCourtMap,
+  extractPoolLetterFromMatch,
   getScheduleRowPhase,
   isTieBreakScoreSingleDigit,
   isWinnerPlaceholder,
@@ -13,6 +22,9 @@ import {
   toShortMatchId,
   toTimeSlotKey,
 } from '../schedule/scheduleDisplayUtils';
+
+const PoolStandings = lazy(() => import('../pool/PoolStandings'));
+const PlayerList = lazy(() => import('../players/PlayerList'));
 
 // 将来復活できるよう、試合ID表示はトグルで制御する
 const SHOW_MATCH_ID = false;
@@ -45,6 +57,46 @@ const toClockLabel = (isoText) => {
   }).format(date);
 };
 
+const toCurrentTimeLabel = () =>
+  new Intl.DateTimeFormat('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date());
+
+const toPoolRoundLabel = (match) => {
+  if (!match || typeof match !== 'object') {
+    return '';
+  }
+  const poolLetter = extractPoolLetterFromMatch(match);
+  if (!poolLetter) {
+    return '';
+  }
+  const explicitRound = Number(match.round);
+  if (Number.isFinite(explicitRound) && explicitRound > 0) {
+    return `${poolLetter}${explicitRound}`;
+  }
+  const id = String(match.matchId ?? '').trim();
+  const tailRound = id.match(/-(\d{1,2})$/);
+  if (tailRound) {
+    const n = Number(tailRound[1]);
+    if (Number.isFinite(n) && n > 0) {
+      return `${poolLetter}${n}`;
+    }
+  }
+  return poolLetter;
+};
+
+/** 同一スロットの全コートのうち、進行が待機（scheduled）の試合 */
+const getAnnounceableMatchesForSlot = (slot, courts, slotMatrix, progMap) =>
+  courts
+    .map((court) => slotMatrix.get(slot)?.get(court))
+    .filter(Boolean)
+    .filter((match) => {
+      const raw = String(progMap.get(String(match.matchId))?.status ?? 'scheduled');
+      return raw === 'scheduled';
+    });
+
 /**
  * 本部：試合進行（announce / unannounce / start / hq-approve）
  * URL: /event/:eventId/hq/progress（のちほど認証をかける想定）
@@ -72,6 +124,8 @@ const HqProgress = () => {
   const [approverNameDraft, setApproverNameDraft] = useState('');
   const [actionBusyKey, setActionBusyKey] = useState('');
   const [importing, setImporting] = useState(false);
+  /** 本部ヘッダー中央タブ: 選手一覧 / 試合進行 / プール表 */
+  const [hqMainView, setHqMainView] = useState('schedule');
   const mode = useMemo(() => {
     const rawMode = String(searchParams.get('mode') ?? '').trim().toLowerCase();
     return rawMode === 'td' ? 'td' : 'operator';
@@ -142,6 +196,7 @@ const HqProgress = () => {
         setSchedule({
           courts: Array.isArray(scheduleJson.courts) ? scheduleJson.courts.map((court) => String(court)) : [],
           matches: Array.isArray(scheduleJson.matches) ? scheduleJson.matches : [],
+          pools: Array.isArray(scheduleJson.pools) ? scheduleJson.pools : [],
           eventDate: String(scheduleJson.eventDate ?? ''),
           eventDayLabel: String(scheduleJson.eventDayLabel ?? ''),
           startTime: String(scheduleJson.startTime ?? ''),
@@ -314,6 +369,16 @@ const HqProgress = () => {
     return slotMap;
   }, [schedule.matches, timeSlots]);
 
+  const poolLetterByCourt = useMemo(
+    () => buildPoolLetterByCourtMap(schedule.matches, schedule.courts),
+    [schedule.matches, schedule.courts],
+  );
+
+  const poolHueByPoolId = useMemo(() => {
+    const ids = collectPoolIds(players, schedule.pools, schedule.matches);
+    return buildPoolHueMap(ids);
+  }, [players, schedule.pools, schedule.matches]);
+
   const logoSrc =
     eventId != null && eventId !== ''
       ? `/data/${encodeURIComponent(eventId)}/assets/logo.png`
@@ -360,6 +425,18 @@ const HqProgress = () => {
       bluePlayerId: String(match.bluePlayerId ?? ''),
       scheduledAt: String(match.scheduledStart ?? ''),
     });
+  };
+
+  const handleBulkAnnounceForSlot = async (slot) => {
+    const targets = getAnnounceableMatchesForSlot(slot, schedule.courts, matrix, progressMap);
+    for (const m of targets) {
+      await callProgressAction(m, 'announce', {
+        courtId: String(m.courtId ?? ''),
+        redPlayerId: String(m.redPlayerId ?? ''),
+        bluePlayerId: String(m.bluePlayerId ?? ''),
+        scheduledAt: String(m.scheduledStart ?? ''),
+      });
+    }
   };
 
   const handleUnannounce = async (match) => {
@@ -496,40 +573,95 @@ const HqProgress = () => {
   return (
     <main className="hqProgressPage">
       <section className="hqProgressSection">
-        <header className="scheduleTitleBar">
-          {logoSrc ? <img className="scheduleTitleLogo" src={logoSrc} alt="" /> : null}
-          <div className="scheduleTitleText">
+        <header className="scheduleTitleBar hqProgressTitleBar">
+          <div className="hqProgressTitleBarLead">
+            {logoSrc ? <img className="scheduleTitleLogo" src={logoSrc} alt="" /> : null}
+          </div>
+          <div className="hqProgressTitleBarTabs" role="tablist" aria-label="表示の切替">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={hqMainView === 'players'}
+              className={`hqProgressViewTab${hqMainView === 'players' ? ' isActive' : ''}`}
+              onClick={() => setHqMainView('players')}
+            >
+              選手一覧
+            </button>
+            <span className="hqProgressTitleTabSep" aria-hidden>
+              ｜
+            </span>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={hqMainView === 'schedule'}
+              className={`hqProgressViewTab${hqMainView === 'schedule' ? ' isActive' : ''}`}
+              onClick={() => setHqMainView('schedule')}
+            >
+              試合進行
+            </button>
+            <span className="hqProgressTitleTabSep" aria-hidden>
+              ｜
+            </span>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={hqMainView === 'standings'}
+              className={`hqProgressViewTab${hqMainView === 'standings' ? ' isActive' : ''}`}
+              onClick={() => setHqMainView('standings')}
+            >
+              プール表
+            </button>
+          </div>
+          <div className="scheduleTitleText hqProgressTitleBarTrail">
             <h1 className="scheduleTitle">{isTdMode ? '本部承認 [TD]' : '本部進行 [オペレーター]'}</h1>
-            <p className="scheduleMeta">{`承認者：${hqApproverName.trim() || '〇〇'}`}</p>
+            <p className="scheduleMeta">
+              {isOperatorMode
+                ? `現在時刻：${toCurrentTimeLabel()}`
+                : `承認者：${hqApproverName.trim() || '〇〇'}`}
+            </p>
           </div>
         </header>
 
-        <div className="hqProgressActionsBar">
-          {isOperatorMode && (
-            <>
-              <button
-                type="button"
-                className="hqProgressActionButton"
-                onClick={handleBulkRegister}
-                disabled={importing || schedule.matches.length === 0}
-              >
-                {importing ? '登録中...' : 'SQLiteへ一括登録'}
-              </button>
-              <button
-                type="button"
-                className="hqProgressActionButton"
-                onClick={handleResetAll}
-                disabled={actionBusyKey !== '' || importing}
-              >
-                全コート初期化（再テスト）
-              </button>
-            </>
-          )}
-        </div>
+        {hqMainView === 'schedule' ? (
+          <div className="hqProgressActionsBar">
+            {isOperatorMode && (
+              <>
+                <button
+                  type="button"
+                  className="hqProgressActionButton"
+                  onClick={handleBulkRegister}
+                  disabled={importing || schedule.matches.length === 0}
+                >
+                  {importing ? '登録中...' : 'SQLiteへ一括登録'}
+                </button>
+                <button
+                  type="button"
+                  className="hqProgressActionButton"
+                  onClick={handleResetAll}
+                  disabled={actionBusyKey !== '' || importing}
+                >
+                  全コート初期化（再テスト）
+                </button>
+              </>
+            )}
+          </div>
+        ) : null}
         {operationMessage ? <p className="hqProgressOperationMessage">{operationMessage}</p> : null}
         {operationError ? <p className="hqProgressOperationError">{operationError}</p> : null}
 
-        {schedule.matches.length === 0 ? (
+        {hqMainView === 'players' ? (
+          <div className="hqProgressPlayersHost">
+            <Suspense fallback={<p className="hqProgressPoolStandingsFallback">選手一覧を読み込み中...</p>}>
+              <PlayerList embedInHq />
+            </Suspense>
+          </div>
+        ) : hqMainView === 'standings' ? (
+          <div className="hqProgressPoolStandingsHost">
+            <Suspense fallback={<p className="hqProgressPoolStandingsFallback">プール表を読み込み中...</p>}>
+              <PoolStandings embedInHq showEndsWonColumn />
+            </Suspense>
+          </div>
+        ) : schedule.matches.length === 0 ? (
           <p className="scheduleEmpty">現在、登録されている試合予定はありません。</p>
         ) : (
           <div className="scheduleTableWrap">
@@ -569,20 +701,64 @@ const HqProgress = () => {
                   const shouldInsertHeaderAboveCurrent =
                     rowPhase === 'current' && prevRowPhase !== 'current' && index !== 0;
 
+                  const slotBulkTargets = getAnnounceableMatchesForSlot(
+                    slot,
+                    schedule.courts,
+                    matrix,
+                    progressMap,
+                  );
+
                   const rows = [];
                   if (shouldInsertHeaderAtTop || shouldInsertHeaderAboveCurrent) {
                     rows.push(
                       <tr key={`header-${slot}`} className="scheduleInlineHeaderRow">
                         <th className="scheduleHeaderCell">時間</th>
-                        {schedule.courts.map((court) => (
-                          <th key={`header-${slot}-${court}`} className="scheduleHeaderCell">{`コート${court}`}</th>
-                        ))}
+                        {schedule.courts.map((court) => {
+                          const poolId = poolLetterByCourt.get(String(court));
+                          const hue = poolId ? poolHueByPoolId.get(poolId) : undefined;
+                          const headerBgStyle =
+                            hue != null
+                              ? { background: poolStandingsHeaderHsl(hue, SCHEDULE_POOL_SURFACE_ALPHA) }
+                              : undefined;
+                          return (
+                            <th
+                              key={`header-${slot}-${court}`}
+                              className="scheduleHeaderCell"
+                              style={headerBgStyle}
+                            >{`コート${court}`}</th>
+                          );
+                        })}
                       </tr>,
                     );
                   }
                   rows.push(
                   <tr key={slot} className={`scheduleRow ${rowPhaseClass}`}>
-                    <th className="scheduleTimeCell">{toDateTimeLabel(slot)}</th>
+                    <th
+                      className={`scheduleTimeCell${isOperatorMode ? ' hqProgressTimeCellWithBulk' : ''}`}
+                    >
+                      {isOperatorMode ? (
+                        <>
+                          <span className="hqProgressTimeLabel">{toDateTimeLabel(slot)}</span>
+                          <button
+                            type="button"
+                            className="hqProgressActionButton hqProgressBulkAnnounceButton"
+                            onClick={() => handleBulkAnnounceForSlot(slot)}
+                            disabled={
+                              slotBulkTargets.length === 0 || actionBusyKey !== '' || importing
+                            }
+                            title={
+                              slotBulkTargets.length === 0
+                                ? 'この時間帯に待機中の試合がありません'
+                                : `この時間帯の待機中試合を一斉配信（${slotBulkTargets.length}件）`
+                            }
+                          >
+                            一斉配信
+                          </button>
+                        </>
+                      ) : (
+                        toDateTimeLabel(slot)
+                      )}
+                    </th>
                     {schedule.courts.map((court) => {
                       const match = matrix.get(slot)?.get(court);
                       if (!match) {
@@ -597,6 +773,24 @@ const HqProgress = () => {
                       const colorState = courtColorStateMap.get(String(match.matchId ?? ''));
                       const progress = progressMap.get(String(match.matchId));
                       const rawStatus = progress?.status || 'scheduled';
+                      const letterForPoolHue =
+                        extractPoolLetterFromMatch(match) ?? poolLetterByCourt.get(String(court));
+                      const hueForPoolTint = letterForPoolHue
+                        ? poolHueByPoolId.get(letterForPoolHue)
+                        : undefined;
+                      const isMatchInProgress = rawStatus === 'in_progress';
+                      const showInProgressPoolTint =
+                        isMatchInProgress &&
+                        hueForPoolTint != null &&
+                        Number.isFinite(hueForPoolTint);
+                      const inProgressPoolBgStyle = showInProgressPoolTint
+                        ? {
+                            background: poolStandingsHeaderHsl(
+                              hueForPoolTint,
+                              SCHEDULE_POOL_IN_PROGRESS_CELL_ALPHA,
+                            ),
+                          }
+                        : undefined;
                       // コート game.json の isColorSet が無くても、アナウンス以降は赤青が確定しているのでボーダーを表示する
                       const sidesLockedByProgress = [
                         'announced',
@@ -642,6 +836,7 @@ const HqProgress = () => {
                       const blueNameClass = shouldHighlightWinnerBorder
                         ? (isBlueWinnerBorder ? 'isWinner' : '')
                         : (isColorConfirmed ? 'isBlueConfirmed' : '');
+                      const poolRoundLabel = toPoolRoundLabel(match);
                       const statusLabel = statusLabelMap[displayStatus] || displayStatus;
                       const statusClassName = statusClassMap[displayStatus] || 'isScheduled';
                       const effectiveStatus = rawStatus;
@@ -665,7 +860,10 @@ const HqProgress = () => {
                       );
 
                       return (
-                        <td key={`${slot}-${court}`} className="scheduleCell">
+                        <td key={`${slot}-${court}`} className="scheduleCell" style={inProgressPoolBgStyle}>
+                          {poolRoundLabel ? (
+                            <p className="hqProgressPoolRoundLabel">{poolRoundLabel}</p>
+                          ) : null}
                           <div className="scheduleMatchMain">
                             <p
                               className={`schedulePlayerName ${redNameClass} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}

@@ -9,6 +9,7 @@ const PoolStandings = lazy(() => import('./components/pool/PoolStandings'));
 const Tournament = lazy(() => import('./components/tournament/Tournament'));
 const Schedule = lazy(() => import('./components/schedule/Schedule'));
 const HqProgress = lazy(() => import('./components/hq/HqProgress'));
+const PlayerList = lazy(() => import('./components/players/PlayerList'));
 
 const App = () => {
     return (
@@ -63,6 +64,18 @@ const App = () => {
                 <Route path="/event/:id/schedule" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <Schedule />
+                    </Suspense>
+                } />
+
+                <Route path="/event/:eventId/players" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <PlayerList />
+                    </Suspense>
+                } />
+
+                <Route path="/event/:eventId/hq/players" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <PlayerList />
                     </Suspense>
                 } />
 

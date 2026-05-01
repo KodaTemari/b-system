@@ -578,7 +578,8 @@ main h2 {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 7vmin;
+  /* init.json display.scoreboardPlayerNameFontSize（vmin）で上書き可 */
+  font-size: var(--scoreboard-player-name-font-size, 7vmin);
   font-weight: normal;
   gap: 2vmin;
 }
@@ -1303,7 +1304,7 @@ h2 .profilePic img {
 }
 
 [data-mode="view"] [data-section="standby"][data-setcolor="false"] main h2::after {
-  opacity: 0.3;
+  opacity: 0;
   filter: grayscale(1);
 }
 

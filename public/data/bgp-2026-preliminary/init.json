@@ -1,0 +1,67 @@
+{
+  "gameName": "BOCCIA GRAND PRIX 2026 予選ラウンド",
+  "display": {
+    "scoreboardPlayerNameFontSize": 11
+  },
+  "classifications": [
+    { "id": "Friendly" }
+  ],
+  "courts": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+  ],
+  "profilePic": "none",
+  "match": {
+    "totalEnds": 2,
+    "warmup": "simultaneous",
+    "interval": "enabled",
+    "rules": "friendlyMatch",
+    "resultApproval": "enabled",
+    "sections": [
+      "standby",
+      "warmup",
+      "end1",
+      "interval",
+      "end2",
+      "matchFinished",
+      "resultApproval"
+    ],
+    "tieBreak": "finalShot"
+  },
+  "red": {
+    "limit": 240000
+  },
+  "blue": {
+    "limit": 240000
+  },
+  "warmup": {
+    "limit": 120000
+  },
+  "interval": {
+    "limit": 60000
+  },
+  "eventMeta": {
+    "seriesYear": 2026,
+    "stage": "preliminary",
+    "stageLabelJa": "予選ラウンド（PRELIMINARY）",
+    "organizerJa": "一般社団法人日本ボッチャ協会",
+    "cooperationPlannedJa": "武蔵野市（協力・予定）",
+    "venueJa": "武蔵野総合体育館",
+    "addressJa": "〒180-0001 東京都武蔵野市吉祥寺北町5丁目11-20",
+    "dateJa": "2026年5月6日（水・祝）※予定",
+    "receptionJa": "9:00～",
+    "competitionStartJa": "10:00～",
+    "competitionEndJa": "16:00",
+    "formatJa": "個人戦・トーナメント戦（2エンドマッチ）。一般社団法人日本ボッチャ協会_競技規則_フレンドリーマッチ版_v.2.0 および大会申し合わせ。上位16名にシリーズ出場権。",
+    "maxPlayers": 64,
+    "announcedQualifiedCount": 35,
+    "qualifiedPlayersPressDateJa": "令和8年（2026年）4月10日発表（出場内定選手）",
+    "notesJa": "後援・協賛は調整中。観戦無料（2Fスタンド）。アリーナ内土足禁止・飲食禁止。詳細は募集要項に準拠。player.json は当該プレスの公開情報に基づく（最大64名のうち内定分）。"
+  }
+}

@@ -1402,6 +1402,43 @@ app.get('/api/progress/:eventId/pool/standings', async (req, res) => {
   }
 });
 
+// 選手一覧: player.json を取得（classCode は schedule.json から解決）
+app.get('/api/data/:eventId/players', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const scheduleJson = await readJsonUnderEvent(eventId, 'schedule.json');
+    const classCode = scheduleJson?.classCode != null ? String(scheduleJson.classCode) : 'FRD';
+    const players = await readJsonUnderEvent(eventId, 'classes', classCode, 'player.json');
+    if (!Array.isArray(players)) {
+      throw createHttpError(404, 'player.json が見つかりません');
+    }
+    res.json({ classCode, players });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
+// 選手一覧: player.json を更新（本部 HQ 用）
+app.put('/api/hq/:eventId/players', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const players = req.body?.players;
+    if (!Array.isArray(players)) {
+      throw createHttpError(400, 'players は配列で指定してください');
+    }
+
+    const scheduleJson = await readJsonUnderEvent(eventId, 'schedule.json');
+    const classCode = scheduleJson?.classCode != null ? String(scheduleJson.classCode) : 'FRD';
+    const filePath = path.join(DATA_ROOT, eventId, 'classes', classCode, 'player.json');
+    await fs.ensureDir(path.dirname(filePath));
+    await fs.writeJson(filePath, players, { spaces: 2 });
+
+    res.json({ success: true, classCode, count: players.length });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
 // データを更新する汎用APIエンドポイント
 app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
   try {
