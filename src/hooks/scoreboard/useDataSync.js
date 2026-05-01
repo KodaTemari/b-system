@@ -64,7 +64,18 @@ function capTimeToLimit(team) {
   return { ...team, time: capped };
 }
 
-/** 本部配信などサーバー側で更新され得る項目の比較用（スコア・タイマーは含めない） */
+function capSectionTimeToLimit(section) {
+  if (!section || section.limit == null || section.time == null) {
+    return section;
+  }
+  const capped = Math.min(section.time, section.limit);
+  if (capped === section.time) {
+    return section;
+  }
+  return { ...section, time: capped };
+}
+
+/** 本部配信などサーバー側で更新され得る項目の比較用 */
 function buildHqBroadcastSignature(data) {
   if (!data) {
     return '';
@@ -237,18 +248,8 @@ export const useDataSync = (id, court, isCtrl) => {
 
       mergedData.red = capTimeToLimit(mergedData.red);
       mergedData.blue = capTimeToLimit(mergedData.blue);
-      if (mergedData.warmup?.limit != null && mergedData.warmup?.time != null) {
-        mergedData.warmup = {
-          ...mergedData.warmup,
-          time: Math.min(mergedData.warmup.time, mergedData.warmup.limit),
-        };
-      }
-      if (mergedData.interval?.limit != null && mergedData.interval?.time != null) {
-        mergedData.interval = {
-          ...mergedData.interval,
-          time: Math.min(mergedData.interval.time, mergedData.interval.limit),
-        };
-      }
+      mergedData.warmup = capSectionTimeToLimit(mergedData.warmup);
+      mergedData.interval = capSectionTimeToLimit(mergedData.interval);
 
       if (initProfilePicMode === 'none') {
         mergedData.red = {
@@ -700,6 +701,14 @@ export const useDataSync = (id, court, isCtrl) => {
       wsRef.current = ws;
 
       ws.onopen = () => {
+        if (disposed) {
+          try {
+            ws.close();
+          } catch {
+            // ignore
+          }
+          return;
+        }
         reconnectAttemptsRef.current = 0;
         setRealtimeStatus('connected');
       };
@@ -741,7 +750,8 @@ export const useDataSync = (id, court, isCtrl) => {
       clearReconnectTimer();
       const ws = wsRef.current;
       wsRef.current = null;
-      if (ws) {
+      // OPEN のみここで閉じる。CONNECTING のまま unmount した場合は onopen 側の disposed 判定で閉じる
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
       setRealtimeStatus('disconnected');

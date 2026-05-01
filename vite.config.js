@@ -40,18 +40,20 @@ export default defineConfig({
     host: '0.0.0.0', // ネットワーク全体からアクセス可能にする
     port: 5173,
     proxy: {
+      // より長いパスを先に（/api が /api/realtime に先にマッチすると WS が upgrade されず切断される）
+      '/api/realtime': {
+        target: 'http://127.0.0.1:3001',
+        ws: true,
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://127.0.0.1:3001',
-        changeOrigin: true
-      },
-      '/api/realtime': {
-        target: 'ws://127.0.0.1:3001',
-        ws: true
+        changeOrigin: true,
       },
       '/data': {
         target: 'http://127.0.0.1:3001',
-        changeOrigin: true
-      }
-    }
+        changeOrigin: true,
+      },
+    },
   }
 })

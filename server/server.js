@@ -239,16 +239,53 @@ function broadcastRealtimeUpdate(payload) {
   }
 }
 
+/** 他プロセス・同一プロセスの書き込み直後に空／途中までのファイルを読むと JSON パースが失敗するためリトライする */
+async function readJsonFileWithRetry(absolutePath, attempts = 5, delayMs = 20) {
+  let lastError;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fs.readJson(absolutePath);
+    } catch (error) {
+      lastError = error;
+      if (i < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw lastError;
+}
+
+/** 書き込み中に GET されないよう、一時ファイルへ書いてから rename（fs-extra move）で置換 */
+async function writeTextFileAtomic(filePath, text) {
+  const dir = path.dirname(filePath);
+  await fs.ensureDir(dir);
+  const base = path.basename(filePath);
+  const tmpPath = path.join(dir, `.${base}.${process.pid}.${Date.now()}.tmp`);
+  try {
+    await fs.writeFile(tmpPath, text, 'utf8');
+    await fs.move(tmpPath, filePath, { overwrite: true });
+  } catch (error) {
+    await fs.remove(tmpPath).catch(() => {});
+    throw error;
+  }
+}
+
+async function writeJsonFileAtomic(filePath, data, options = {}) {
+  const spaces = options.spaces ?? 2;
+  const jsonString = JSON.stringify(data, null, spaces);
+  await writeTextFileAtomic(filePath, jsonString);
+}
+
 /** 読み取り: DATA_ROOT を優先し、無ければ public/data（共有 JSON・別 eventId のデモ用） */
 async function readJsonUnderEvent(eventId, ...pathSegments) {
   const rel = path.join(eventId, ...pathSegments);
   const primary = path.join(DATA_ROOT, rel);
   if (await fs.pathExists(primary)) {
-    return fs.readJson(primary);
+    return readJsonFileWithRetry(primary);
   }
   const fallback = path.join(PUBLIC_DATA_ROOT, rel);
   if (await fs.pathExists(fallback)) {
-    return fs.readJson(fallback);
+    return readJsonFileWithRetry(fallback);
   }
   return null;
 }
@@ -620,7 +657,7 @@ async function syncAnnounceToCourtFiles(eventId, match) {
   settings.warmup = { ...settings.warmup, limit: initDefaults.warmupLimit };
   settings.interval = { ...settings.interval, limit: initDefaults.intervalLimit };
   settings.matchName = matchDisplayName;
-  await fs.writeJson(settingsPath, settings, { spaces: 2 });
+  await writeJsonFileAtomic(settingsPath, settings, { spaces: 2 });
   broadcastRealtimeUpdate({ eventId, courtId, filename: 'settings' });
 
   let game = {};
@@ -707,7 +744,7 @@ async function syncAnnounceToCourtFiles(eventId, match) {
     courtId: courtId || game.courtId || '',
     lastUpdated: toIsoNow(),
   };
-  await fs.writeJson(gamePath, nextGame, { spaces: 2 });
+  await writeJsonFileAtomic(gamePath, nextGame, { spaces: 2 });
   broadcastRealtimeUpdate({ eventId, courtId, filename: 'game' });
 }
 
@@ -729,7 +766,7 @@ async function syncUnannounceToCourtFiles(eventId, match) {
     settings.red = { ...(settings.red || {}), name: SCOREBOARD_DEFAULT_RED_NAME };
     settings.blue = { ...(settings.blue || {}), name: SCOREBOARD_DEFAULT_BLUE_NAME };
     settings.matchName = '';
-    await fs.writeJson(settingsPath, settings, { spaces: 2 });
+    await writeJsonFileAtomic(settingsPath, settings, { spaces: 2 });
     broadcastRealtimeUpdate({ eventId, courtId, filename: 'settings' });
   }
 
@@ -750,7 +787,7 @@ async function syncUnannounceToCourtFiles(eventId, match) {
       },
       lastUpdated: toIsoNow(),
     };
-    await fs.writeJson(gamePath, nextGame, { spaces: 2 });
+    await writeJsonFileAtomic(gamePath, nextGame, { spaces: 2 });
     broadcastRealtimeUpdate({ eventId, courtId, filename: 'game' });
   }
 }
@@ -776,7 +813,7 @@ async function resetAllCourtFilesForRetest(eventId) {
       settings.red = { ...(settings.red || {}), name: SCOREBOARD_DEFAULT_RED_NAME };
       settings.blue = { ...(settings.blue || {}), name: SCOREBOARD_DEFAULT_BLUE_NAME };
       settings.matchName = '';
-      await fs.writeJson(settingsPath, settings, { spaces: 2 });
+      await writeJsonFileAtomic(settingsPath, settings, { spaces: 2 });
       broadcastRealtimeUpdate({ eventId, courtId, filename: 'settings' });
       updatedSettings += 1;
     }
@@ -853,7 +890,7 @@ async function resetAllCourtFilesForRetest(eventId) {
         },
         lastUpdated: toIsoNow(),
       };
-      await fs.writeJson(gamePath, resetGame, { spaces: 2 });
+      await writeJsonFileAtomic(gamePath, resetGame, { spaces: 2 });
       broadcastRealtimeUpdate({ eventId, courtId, filename: 'game' });
       updatedGames += 1;
     }
@@ -1461,7 +1498,7 @@ app.put('/api/hq/:eventId/players', async (req, res) => {
     const classCode = scheduleJson?.classCode != null ? String(scheduleJson.classCode) : 'FRD';
     const filePath = path.join(DATA_ROOT, eventId, 'classes', classCode, 'player.json');
     await fs.ensureDir(path.dirname(filePath));
-    await fs.writeJson(filePath, players, { spaces: 2 });
+    await writeJsonFileAtomic(filePath, players, { spaces: 2 });
 
     res.json({ success: true, classCode, count: players.length });
   } catch (error) {
@@ -1529,7 +1566,7 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
       );
     }
     
-    await fs.writeFile(filePath, jsonString, 'utf8');
+    await writeTextFileAtomic(filePath, jsonString);
     broadcastRealtimeUpdate({ eventId, courtId, filename });
     res.json({ success: true });
   } catch (error) {

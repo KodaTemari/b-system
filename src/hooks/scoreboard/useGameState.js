@@ -31,16 +31,6 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       prevData.match?.section ||
       'standby';
 
-    const getSectionOrder = (sectionName, fallbackSectionID, sectionList) => {
-      const foundIndex = sectionList.findIndex((s) => s === sectionName);
-      if (foundIndex !== -1) {
-        return foundIndex;
-      }
-      return Number.isInteger(Number(fallbackSectionID)) ? Number(fallbackSectionID) : -1;
-    };
-
-    const prevSectionOrder = getSectionOrder(prevSection, prevSectionID, prevSections);
-    const incomingSectionOrder = getSectionOrder(resolvedIncomingSection, sectionID, sections);
     const prevMatchId = String(prevData.matchID ?? '');
     const incomingMatchId = String(incomingData.matchID ?? prevData.matchID ?? '');
     const isSameMatch = prevMatchId !== '' && prevMatchId === incomingMatchId;
@@ -49,18 +39,13 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       Boolean(prevData.blue?.isRunning) ||
       Boolean(prevData.warmup?.isRunning) ||
       Boolean(prevData.interval?.isRunning);
-    // ctrl のみ: ローカルで進行中のタイマーがあるとき、古いスナップショットでのセクション巻き戻しを防ぐ
-    // view は常に incoming（サーバー）を正とし、表示用の time も追従させる
-    const shouldBlockSectionRollback =
-      isCtrl &&
-      isSameMatch &&
-      hasRunningTimer &&
-      prevSectionOrder >= 0 &&
-      incomingSectionOrder >= 0 &&
-      incomingSectionOrder < prevSectionOrder;
+    // ctrl + タイマー動作中: localData がサーバーと一瞬ずれても、進行（セクション）は gameData を絶対優先
+    // （巻き戻しだけでなく「先に進んだ」誤スナップショットでも data-section がチラつくのを防ぐ）
+    const lockMatchSectionOnCtrl = isCtrl && isSameMatch && hasRunningTimer;
 
-    const section = shouldBlockSectionRollback ? prevSection : resolvedIncomingSection;
-    const finalSectionID = shouldBlockSectionRollback ? prevSectionID : sectionID;
+    const section = lockMatchSectionOnCtrl ? prevSection : resolvedIncomingSection;
+    const finalSectionID = lockMatchSectionOnCtrl ? prevSectionID : sectionID;
+    const sectionsForMatch = lockMatchSectionOnCtrl ? prevSections : sections;
     
     const extractEndNumber = (sectionName) => {
       if (sectionName && sectionName.startsWith('end')) {
@@ -71,6 +56,14 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     };
     
     const end = extractEndNumber(section);
+    const preserveRunningTimerState = (timerKey) => (
+      isSameMatch && isCtrl && prevData[timerKey]?.isRunning
+        ? {
+          isRunning: true,
+          time: prevData[timerKey]?.time,
+        }
+        : {}
+    );
 
     return {
       ...prevData,
@@ -82,49 +75,29 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         end,
         sectionID: finalSectionID,
         section,
-        sections,
+        sections: sectionsForMatch,
         totalEnds: incomingData.match?.totalEnds ?? prevData.match?.totalEnds,
         ends: incomingData.match?.ends || prevData.match?.ends || []
       },
       red: {
         ...prevData.red,
         ...(incomingData.red || {}),
-        ...(isSameMatch && isCtrl && prevData.red?.isRunning
-          ? {
-            isRunning: true,
-            time: prevData.red?.time,
-          }
-          : {})
+        ...preserveRunningTimerState('red')
       },
       blue: {
         ...prevData.blue,
         ...(incomingData.blue || {}),
-        ...(isSameMatch && isCtrl && prevData.blue?.isRunning
-          ? {
-            isRunning: true,
-            time: prevData.blue?.time,
-          }
-          : {})
+        ...preserveRunningTimerState('blue')
       },
       warmup: {
         ...prevData.warmup,
         ...(incomingData.warmup || {}),
-        ...(isSameMatch && isCtrl && prevData.warmup?.isRunning
-          ? {
-            isRunning: true,
-            time: prevData.warmup?.time,
-          }
-          : {})
+        ...preserveRunningTimerState('warmup')
       },
       interval: {
         ...prevData.interval,
         ...(incomingData.interval || {}),
-        ...(isSameMatch && isCtrl && prevData.interval?.isRunning
-          ? {
-            isRunning: true,
-            time: prevData.interval?.time,
-          }
-          : {})
+        ...preserveRunningTimerState('interval')
       },
     };
   }, [isCtrl]);

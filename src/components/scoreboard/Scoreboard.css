@@ -2037,14 +2037,14 @@ h2 .profilePic img {
 }
 
 #fullscreenBtn:hover {
-  opacity: 0.8;
+  opacity: 0;
   background-color: rgba(var(--color-black), 0.9);
 }
 
-/* スタンバイセクションでのフルスクリーンボタン - 常に表示 */
+/* スタンバイセクションでのフルスクリーンボタン（資料用: 常に非表示、クリックは可能） */
 [data-section="standby"] #fullscreenBtn {
   z-index: 200;
-  opacity: 0.8;
+  opacity: 0;
 }
 
 /* viewモードでフルスクリーン時の解除ボタンを透明度0にする（ボタンは機能する） */
@@ -2052,7 +2052,7 @@ h2 .profilePic img {
   opacity: 0;
 }
 [data-mode="view"] #scoreboard[data-fullscreen="true"] #fullscreenBtn:hover {
-  opacity: 0.5;
+  opacity: 0;
 }
 
 .settingOpen:not([data-section="standby"]) .setting,
