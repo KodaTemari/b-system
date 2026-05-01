@@ -62,12 +62,10 @@
   /* 外周は表セルの 1px のみ（ラッパーに border を付けると二重に見えるため付けない） */
 }
 
-/* 表地のグレーは約20%透過（--color-gray-medium 相当を 0.8 で重ねる） */
 .scheduleTable {
   width: 100%;
   border-collapse: collapse;
   min-width: 920px;
-  background: rgba(50, 50, 50, 0.8);
 }
 
 /* 時間帯区分。プール色つき試合セルは進行DBが in_progress のときのみ JS で上書き */
@@ -83,7 +81,7 @@
 }
 
 .scheduleRow.isRowCurrent .scheduleCell {
-  background: rgba(var(--color-green-light), 0.2);
+  background: rgba(var(--color-gray-light), 0.3);
 }
 
 .scheduleHeaderCell {
@@ -141,7 +139,7 @@
   line-height: 1.5;
 }
 
-/* 赤青確定・勝者とも同形状（幅50%・カプセル）。赤青は白縁で視認性向上 */
+/* 赤青確定・勝者とも同形状（カプセル下線） */
 .schedulePlayerName.isRedConfirmed,
 .schedulePlayerName.isBlueConfirmed,
 .schedulePlayerName.isWinner {
@@ -159,7 +157,6 @@
   height: 4px;
   transform: translateX(-50%);
   border-radius: 999px;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
 .schedulePlayerName.isRedConfirmed::after {

@@ -14,15 +14,53 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     }
 
     const sections = incomingData.match?.sections || prevData.match?.sections || GAME_SECTIONS;
+    const prevSections = prevData.match?.sections || sections;
+    const prevRawSectionID = prevData.match?.sectionID ?? 0;
+    const prevSectionID = Number.isInteger(Number(prevRawSectionID)) ? Number(prevRawSectionID) : 0;
+    const prevSection =
+      prevSections[prevSectionID] ||
+      prevData.match?.section ||
+      'standby';
     const rawSectionID =
       incomingData.match?.sectionID !== undefined ? incomingData.match.sectionID : prevData.match.sectionID;
     const sectionID = Number.isInteger(Number(rawSectionID)) ? Number(rawSectionID) : 0;
     // 一時的に sectionID と sections がずれても、直前セクションを優先して standby への誤復帰を防ぐ
-    const section =
+    const resolvedIncomingSection =
       sections[sectionID] ||
       incomingData.match?.section ||
       prevData.match?.section ||
       'standby';
+
+    const getSectionOrder = (sectionName, fallbackSectionID, sectionList) => {
+      const foundIndex = sectionList.findIndex((s) => s === sectionName);
+      if (foundIndex !== -1) {
+        return foundIndex;
+      }
+      return Number.isInteger(Number(fallbackSectionID)) ? Number(fallbackSectionID) : -1;
+    };
+
+    const prevSectionOrder = getSectionOrder(prevSection, prevSectionID, prevSections);
+    const incomingSectionOrder = getSectionOrder(resolvedIncomingSection, sectionID, sections);
+    const prevMatchId = String(prevData.matchID ?? '');
+    const incomingMatchId = String(incomingData.matchID ?? prevData.matchID ?? '');
+    const isSameMatch = prevMatchId !== '' && prevMatchId === incomingMatchId;
+    const hasRunningTimer =
+      Boolean(prevData.red?.isRunning) ||
+      Boolean(prevData.blue?.isRunning) ||
+      Boolean(prevData.warmup?.isRunning) ||
+      Boolean(prevData.interval?.isRunning);
+    // ctrl のみ: ローカルで進行中のタイマーがあるとき、古いスナップショットでのセクション巻き戻しを防ぐ
+    // view は常に incoming（サーバー）を正とし、表示用の time も追従させる
+    const shouldBlockSectionRollback =
+      isCtrl &&
+      isSameMatch &&
+      hasRunningTimer &&
+      prevSectionOrder >= 0 &&
+      incomingSectionOrder >= 0 &&
+      incomingSectionOrder < prevSectionOrder;
+
+    const section = shouldBlockSectionRollback ? prevSection : resolvedIncomingSection;
+    const finalSectionID = shouldBlockSectionRollback ? prevSectionID : sectionID;
     
     const extractEndNumber = (sectionName) => {
       if (sectionName && sectionName.startsWith('end')) {
@@ -42,7 +80,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         ...prevData.match,
         ...(incomingData.match || {}),
         end,
-        sectionID,
+        sectionID: finalSectionID,
         section,
         sections,
         totalEnds: incomingData.match?.totalEnds ?? prevData.match?.totalEnds,
@@ -50,14 +88,46 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       },
       red: {
         ...prevData.red,
-        ...(incomingData.red || {})
+        ...(incomingData.red || {}),
+        ...(isSameMatch && isCtrl && prevData.red?.isRunning
+          ? {
+            isRunning: true,
+            time: prevData.red?.time,
+          }
+          : {})
       },
       blue: {
         ...prevData.blue,
-        ...(incomingData.blue || {})
-      }
+        ...(incomingData.blue || {}),
+        ...(isSameMatch && isCtrl && prevData.blue?.isRunning
+          ? {
+            isRunning: true,
+            time: prevData.blue?.time,
+          }
+          : {})
+      },
+      warmup: {
+        ...prevData.warmup,
+        ...(incomingData.warmup || {}),
+        ...(isSameMatch && isCtrl && prevData.warmup?.isRunning
+          ? {
+            isRunning: true,
+            time: prevData.warmup?.time,
+          }
+          : {})
+      },
+      interval: {
+        ...prevData.interval,
+        ...(incomingData.interval || {}),
+        ...(isSameMatch && isCtrl && prevData.interval?.isRunning
+          ? {
+            isRunning: true,
+            time: prevData.interval?.time,
+          }
+          : {})
+      },
     };
-  }, []);
+  }, [isCtrl]);
 
   // Initial state (merged with initialData)
   const [gameData, setGameData] = useState(() => {

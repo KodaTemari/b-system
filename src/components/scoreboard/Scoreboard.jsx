@@ -43,6 +43,7 @@ const Scoreboard = () => {
     // URL Params
     id,
     court,
+    isEmbedWall,
 
     // Game Info
     match,
@@ -60,6 +61,7 @@ const Scoreboard = () => {
     category,
     eventName,
     scoreboardPlayerNameFontSize,
+    showClassification,
     matchName,
     classification,
     classificationCount,
@@ -163,6 +165,23 @@ const Scoreboard = () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [checkFullscreenState]);
+
+  // 同時確認ウォールの iframe 内ではドキュメント全体のスクロールを出さない
+  useEffect(() => {
+    if (!isEmbedWall) {
+      return undefined;
+    }
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, [isEmbedWall]);
 
   const handleFullscreenToggle = useCallback(() => {
     const docEl = document.documentElement;
@@ -1053,7 +1072,7 @@ const Scoreboard = () => {
 
 
   return (
-    <div id="scoreboard" style={scoreboardStyle} data-profilepic={profilePicMode} data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} data-fullscreen={isFullscreen ? 'true' : 'false'} className={`${settingOpen ? 'settingOpen' : ''} ${customModalOpen ? 'customModalOpen' : ''}`}>
+    <div id="scoreboard" style={scoreboardStyle} data-profilepic={profilePicMode} data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} data-fullscreen={isFullscreen ? 'true' : 'false'} className={`${settingOpen ? 'settingOpen' : ''} ${customModalOpen ? 'customModalOpen' : ''}${isEmbedWall ? ' embedWall' : ''}`}>
       <Header
         section={section}
         sectionID={sectionID}
@@ -1176,6 +1195,7 @@ const Scoreboard = () => {
         category={gameData.category}
         eventName={effectiveEventName}
         classificationCount={classificationCount}
+        showClassification={showClassification}
         matchName={settingPendingChanges.matchName !== undefined ? settingPendingChanges.matchName : matchName}
         classification={settingPendingChanges.classification !== undefined ? settingPendingChanges.classification : classification}
         warmup={warmup}

@@ -18,6 +18,7 @@ const SectionNavigation = React.memo(({
   matchName,
   classification,
   classificationCount,
+  showClassification = true,
   warmup,
   warmupEnabled = true,
   warmupMode = 'simultaneous',
@@ -181,7 +182,9 @@ const SectionNavigation = React.memo(({
           {/* Display on both ctrl and view */}
           <div id="matchInfo">
             {eventName && <p id="eventName">{eventName}</p>}
-            <p id="classification">{formattedClassification}</p>
+            {showClassification ? (
+              <p id="classification">{formattedClassification}</p>
+            ) : null}
             <div id="matchNameContainer">
               <h1 id="matchName" className={isFinalOrSemiFinal ? '' : 'isCompact'}>{matchName}</h1>
             </div>

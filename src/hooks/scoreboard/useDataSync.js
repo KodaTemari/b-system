@@ -14,6 +14,56 @@ function parseScoreboardPlayerNameFontSizeFromInit(initData) {
   return n;
 }
 
+/** init.json の display.showClassification（false のときスコアボードに種別行を出さない） */
+function parseShowClassificationFromInit(initData) {
+  return initData?.display?.showClassification !== false;
+}
+
+/** settings に無い timer limit を init.json で補完（game.json 側の古い 5 分と混ざるのを防ぐ） */
+function enrichSettingsTimerLimitsFromInit(settingsData, initData) {
+  if (!initData) {
+    return settingsData;
+  }
+  const next = { ...settingsData };
+  next.red = { ...(settingsData.red || {}) };
+  next.blue = { ...(settingsData.blue || {}) };
+  next.warmup = { ...(settingsData.warmup || {}) };
+  next.interval = { ...(settingsData.interval || {}) };
+  if (next.red.limit == null && initData.red?.limit != null) {
+    next.red.limit = initData.red.limit;
+  }
+  if (next.blue.limit == null && initData.blue?.limit != null) {
+    next.blue.limit = initData.blue.limit;
+  }
+  if (next.warmup.limit == null && initData.warmup?.limit != null) {
+    next.warmup.limit = initData.warmup.limit;
+  }
+  if (next.interval.limit == null && initData.interval?.limit != null) {
+    next.interval.limit = initData.interval.limit;
+  }
+  return next;
+}
+
+/** game.json は進行用。limit は settings 専用のためマージ前に除外（古い 300000 が再混入しないように） */
+function withoutTimerLimit(obj) {
+  if (!obj || typeof obj !== 'object') {
+    return {};
+  }
+  const { limit: _omit, ...rest } = obj;
+  return rest;
+}
+
+function capTimeToLimit(team) {
+  if (!team || team.limit == null || team.time == null) {
+    return team;
+  }
+  const capped = Math.min(team.time, team.limit);
+  if (capped === team.time) {
+    return team;
+  }
+  return { ...team, time: capped };
+}
+
 /** 本部配信などサーバー側で更新され得る項目の比較用（スコア・タイマーは含めない） */
 function buildHqBroadcastSignature(data) {
   if (!data) {
@@ -46,6 +96,7 @@ export const useDataSync = (id, court, isCtrl) => {
   const [eventName, setEventName] = useState('');
   const [classificationCount, setClassificationCount] = useState(null);
   const [scoreboardPlayerNameFontSize, setScoreboardPlayerNameFontSize] = useState(null);
+  const [showClassification, setShowClassification] = useState(true);
   const [realtimeStatus, setRealtimeStatus] = useState('disconnected');
   const wsRef = useRef(null);
   const reconnectTimerRef = useRef(null);
@@ -96,95 +147,108 @@ export const useDataSync = (id, court, isCtrl) => {
     setError(null);
 
     try {
-      // settings.json と game.json を並列で取得
-      const [settingsRes, gameRes] = await Promise.all([
+      const [settingsRes, gameRes, initRes] = await Promise.all([
         fetch(`/api/data/${id}/court/${court}/settings`),
-        fetch(`/api/data/${id}/court/${court}/game`)
+        fetch(`/api/data/${id}/court/${court}/game`),
+        fetch(`/data/${encodeURIComponent(id)}/init.json`),
       ]);
-      
+
       let settingsData = {};
       let gameDataState = {};
+      let initData = null;
+
+      if (initRes.ok) {
+        initData = await initRes.json();
+        initProfilePicMode = String(initData.profilePic ?? 'enabled');
+        setEventName(initData.gameName || initData.eventName || id);
+        setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
+        setShowClassification(parseShowClassificationFromInit(initData));
+      }
 
       if (settingsRes.ok) {
         settingsData = await settingsRes.json();
+      } else if (initData) {
+        settingsData = {
+          classification: '',
+          category: '',
+          matchName: '',
+          match: {
+            totalEnds: initData.match?.totalEnds || 6,
+            warmup: initData.match?.warmup || 'simultaneous',
+            interval: initData.match?.interval || 'enabled',
+            rules: initData.match?.rules || 'worldBoccia',
+            resultApproval: initData.match?.resultApproval || 'enabled',
+            tieBreak: initData.match?.tieBreak || 'finalShot',
+            sections: initData.match?.sections,
+          },
+          red: { name: 'Red', limit: initData.red?.limit ?? TIMER_LIMITS.GAME },
+          blue: { name: 'Blue', limit: initData.blue?.limit ?? TIMER_LIMITS.GAME },
+          warmup: { limit: initData.warmup?.limit ?? TIMER_LIMITS.WARMUP },
+          interval: { limit: initData.interval?.limit ?? TIMER_LIMITS.INTERVAL },
+        };
       } else {
-        // settings.json がない場合は大会設定(init.json)から初期生成を試みる
-        const initUrl = `/data/${id}/init.json`;
-        const initRes = await fetch(initUrl);
-        if (initRes.ok) {
-          const initData = await initRes.json();
-          initProfilePicMode = String(initData.profilePic ?? 'enabled');
-          setEventName(initData.gameName || initData.eventName || id);
-          setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
-          settingsData = {
-            classification: '',
-            category: '',
-            matchName: '',
-            match: {
-              totalEnds: initData.match?.totalEnds || 6,
-              warmup: initData.match?.warmup || 'simultaneous',
-              interval: initData.match?.interval || 'enabled',
-              rules: initData.match?.rules || 'worldBoccia',
-              resultApproval: initData.match?.resultApproval || 'enabled',
-              tieBreak: initData.match?.tieBreak || 'finalShot',
-              sections: initData.match?.sections
-            },
-            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
-            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME },
-            warmup: { limit: TIMER_LIMITS.WARMUP },
-            interval: { limit: TIMER_LIMITS.INTERVAL }
-          };
-        } else {
-          // init.json もない場合の最小限のデフォルト
-          settingsData = {
-            match: { totalEnds: 6, warmup: 'simultaneous', interval: 'enabled', rules: 'worldBoccia', resultApproval: 'enabled', tieBreak: 'finalShot' },
-            red: { name: 'Red', limit: TIMER_LIMITS.GAME },
-            blue: { name: 'Blue', limit: TIMER_LIMITS.GAME }
-          };
-        }
+        settingsData = {
+          match: { totalEnds: 6, warmup: 'simultaneous', interval: 'enabled', rules: 'worldBoccia', resultApproval: 'enabled', tieBreak: 'finalShot' },
+          red: { name: 'Red', limit: TIMER_LIMITS.GAME },
+          blue: { name: 'Blue', limit: TIMER_LIMITS.GAME },
+        };
       }
 
-      // settings.json の有無にかかわらず、init.json があれば classificationCount / eventName を補完
-      try {
-        const initUrl = `/data/${id}/init.json`;
-        const initRes = await fetch(initUrl);
-        if (initRes.ok) {
-          const initData = await initRes.json();
-          initProfilePicMode = String(initData.profilePic ?? 'enabled');
-          if (!eventName) {
-            setEventName(initData.gameName || initData.eventName || id);
-          }
-          setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
-        }
-      } catch {
-        // init 補完失敗は致命的ではない（フォントは下記 useEffect で別途同期）
+      if (initData) {
+        settingsData = enrichSettingsTimerLimitsFromInit(settingsData, initData);
       }
 
       if (gameRes.ok) {
         gameDataState = await gameRes.json();
       } else {
-        // game.json がない場合はデフォルト値を生成
         gameDataState = JSON.parse(JSON.stringify(DEFAULT_GAME_DATA));
       }
-      
-      // 設定と進行状態をマージ（設定を優先して適用）
+
+      const gameRed = withoutTimerLimit(gameDataState.red);
+      const gameBlue = withoutTimerLimit(gameDataState.blue);
+      const gameWarmup = withoutTimerLimit(gameDataState.warmup);
+      const gameInterval = withoutTimerLimit(gameDataState.interval);
+
       const mergedData = {
         ...gameDataState,
         ...settingsData,
         profilePic: initProfilePicMode,
         match: {
           ...gameDataState.match,
-          ...(settingsData.match || {})
+          ...(settingsData.match || {}),
         },
         red: {
-          ...gameDataState.red,
-          ...(settingsData.red || {})
+          ...gameRed,
+          ...(settingsData.red || {}),
         },
         blue: {
-          ...gameDataState.blue,
-          ...(settingsData.blue || {})
-        }
+          ...gameBlue,
+          ...(settingsData.blue || {}),
+        },
+        warmup: {
+          ...gameWarmup,
+          ...(settingsData.warmup || {}),
+        },
+        interval: {
+          ...gameInterval,
+          ...(settingsData.interval || {}),
+        },
       };
+
+      mergedData.red = capTimeToLimit(mergedData.red);
+      mergedData.blue = capTimeToLimit(mergedData.blue);
+      if (mergedData.warmup?.limit != null && mergedData.warmup?.time != null) {
+        mergedData.warmup = {
+          ...mergedData.warmup,
+          time: Math.min(mergedData.warmup.time, mergedData.warmup.limit),
+        };
+      }
+      if (mergedData.interval?.limit != null && mergedData.interval?.time != null) {
+        mergedData.interval = {
+          ...mergedData.interval,
+          time: Math.min(mergedData.interval.time, mergedData.interval.limit),
+        };
+      }
 
       if (initProfilePicMode === 'none') {
         mergedData.red = {
@@ -285,6 +349,21 @@ export const useDataSync = (id, court, isCtrl) => {
           if (buildHqBroadcastSignature(incomingForMerge) === buildHqBroadcastSignature(prev)) {
             return prev;
           }
+          const redLimitMerged = incomingForMerge.red?.limit ?? prev.red?.limit;
+          const blueLimitMerged = incomingForMerge.blue?.limit ?? prev.blue?.limit;
+          const incomingRedTime = incomingForMerge.red?.time ?? prev.red?.time;
+          const incomingBlueTime = incomingForMerge.blue?.time ?? prev.blue?.time;
+          const stoppedRedTime = prev.red?.isRunning
+            ? prev.red?.time
+            : (redLimitMerged != null && incomingRedTime != null
+              ? Math.min(incomingRedTime, redLimitMerged)
+              : incomingRedTime);
+          const stoppedBlueTime = prev.blue?.isRunning
+            ? prev.blue?.time
+            : (blueLimitMerged != null && incomingBlueTime != null
+              ? Math.min(incomingBlueTime, blueLimitMerged)
+              : incomingBlueTime);
+
           const next = {
             ...prev,
             matchID: incomingForMerge.matchID,
@@ -295,15 +374,15 @@ export const useDataSync = (id, court, isCtrl) => {
               ...prev.red,
               name: incomingForMerge.red?.name,
               playerID: incomingForMerge.red?.playerID,
-              limit: incomingForMerge.red?.limit ?? prev.red?.limit,
-              time: prev.red?.isRunning ? prev.red?.time : (incomingForMerge.red?.time ?? prev.red?.time),
+              limit: redLimitMerged,
+              time: stoppedRedTime,
             },
             blue: {
               ...prev.blue,
               name: incomingForMerge.blue?.name,
               playerID: incomingForMerge.blue?.playerID,
-              limit: incomingForMerge.blue?.limit ?? prev.blue?.limit,
-              time: prev.blue?.isRunning ? prev.blue?.time : (incomingForMerge.blue?.time ?? prev.blue?.time),
+              limit: blueLimitMerged,
+              time: stoppedBlueTime,
             },
           };
           localStorage.setItem(storageKey, JSON.stringify(next));
@@ -540,6 +619,7 @@ export const useDataSync = (id, court, isCtrl) => {
   useEffect(() => {
     if (isStandaloneMode || !id) {
       setScoreboardPlayerNameFontSize(null);
+      setShowClassification(true);
       return undefined;
     }
     let cancelled = false;
@@ -551,6 +631,7 @@ export const useDataSync = (id, court, isCtrl) => {
         }
         if (!initRes.ok) {
           setScoreboardPlayerNameFontSize(null);
+          setShowClassification(true);
           return;
         }
         const initData = await initRes.json();
@@ -558,9 +639,11 @@ export const useDataSync = (id, court, isCtrl) => {
           return;
         }
         setScoreboardPlayerNameFontSize(parseScoreboardPlayerNameFontSizeFromInit(initData));
+        setShowClassification(parseShowClassificationFromInit(initData));
       } catch {
         if (!cancelled) {
           setScoreboardPlayerNameFontSize(null);
+          setShowClassification(true);
         }
       }
     })();
@@ -691,6 +774,7 @@ export const useDataSync = (id, court, isCtrl) => {
     eventName,
     classificationCount,
     scoreboardPlayerNameFontSize,
+    showClassification,
     saveToLocalStorage,
     saveData
   };

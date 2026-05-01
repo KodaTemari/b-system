@@ -5,6 +5,7 @@ import { useTimerManagement } from './useTimerManagement';
 import { useDataSync } from './useDataSync';
 import { useScoreboardHandlers } from './useScoreboardHandlers';
 import { getPlayerName, isLastEnd, determineWinner } from '../../utils/scoreboard/gameLogic';
+import { TIMER_LIMITS } from '../../utils/scoreboard/constants';
 import { setLanguage, getCurrentLanguage } from '../../locales';
 
 /**
@@ -19,6 +20,7 @@ export const useScoreboard = () => {
   const langParam = searchParams.get('l'); // 言語パラメータ ('en' または 'ja')
   const classParam = searchParams.get('c'); // クラスパラメータ (例: 'BC1')
   const genderParam = searchParams.get('g'); // 性別パラメータ (例: 'm', 'f', または空)
+  const isEmbedWall = searchParams.get('embedWall') === '1'; // 同時確認ウォール iframe 用
 
   // 状態管理
   const [showTimeModal, setShowTimeModal] = useState(false);
@@ -33,6 +35,7 @@ export const useScoreboard = () => {
     eventName,
     classificationCount,
     scoreboardPlayerNameFontSize,
+    showClassification,
     saveData,
   } = useDataSync(id, court, isCtrl);
 
@@ -490,9 +493,9 @@ export const useScoreboard = () => {
           break;
         case '0':
           event.preventDefault();
-          updateTimer('red', 300000, false);
-          updateTimer('blue', 300000, false);
-          updateField('warmup', 'time', 120000);
+          updateTimer('red', gameData.red?.limit ?? TIMER_LIMITS.GAME, false);
+          updateTimer('blue', gameData.blue?.limit ?? TIMER_LIMITS.GAME, false);
+          updateField('warmup', 'time', gameData.warmup?.limit ?? TIMER_LIMITS.WARMUP);
       }
     };
 
@@ -683,6 +686,7 @@ export const useScoreboard = () => {
     setSearchParams,
     classParam,
     genderParam,
+    isEmbedWall,
     
     // 状態
     active,
@@ -714,6 +718,7 @@ export const useScoreboard = () => {
     category: gameData.category,
     eventName,
     scoreboardPlayerNameFontSize,
+    showClassification,
     matchName: gameData.matchName,
     classification: gameData.classification,
     classificationCount,

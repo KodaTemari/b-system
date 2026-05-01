@@ -10,6 +10,7 @@ const Tournament = lazy(() => import('./components/tournament/Tournament'));
 const Schedule = lazy(() => import('./components/schedule/Schedule'));
 const HqProgress = lazy(() => import('./components/hq/HqProgress'));
 const PlayerList = lazy(() => import('./components/players/PlayerList'));
+const ScoreboardWall = lazy(() => import('./components/scoreboard/ScoreboardWall'));
 
 const App = () => {
     return (
@@ -83,6 +84,13 @@ const App = () => {
                 <Route path="/event/:eventId/hq/progress" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <HqProgress />
+                    </Suspense>
+                } />
+
+                {/* テスト用: 7コートのスコアボードを iframe で同時表示 */}
+                <Route path="/event/:eventId/scoreboards-wall" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <ScoreboardWall />
                     </Suspense>
                 } />
                 

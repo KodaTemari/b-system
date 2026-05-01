@@ -304,6 +304,36 @@ async function registerMatchIfNeeded(db, eventId, payload) {
     [eventId, matchId],
   );
   if (existing) {
+    // schedule.json / player 変更後も announce が古い SQLite 行を参照しないよう、待機中はペイロードで上書きする
+    const canSyncFromSchedule = existing.status === 'scheduled';
+    const courtSame = String(existing.court_id ?? '') === String(courtId);
+    const redSame = String(existing.red_player_id ?? '') === String(redPlayerId);
+    const blueSame = String(existing.blue_player_id ?? '') === String(bluePlayerId);
+    const schedSame =
+      (scheduledAt == null &&
+        (existing.scheduled_at == null || String(existing.scheduled_at).trim() === '')) ||
+      String(existing.scheduled_at ?? '') === String(scheduledAt ?? '');
+    if (canSyncFromSchedule && !(courtSame && redSame && blueSame && schedSame)) {
+      const now = toIsoNow();
+      await runSql(
+        db,
+        `UPDATE matches
+         SET court_id = ?,
+             red_player_id = ?,
+             blue_player_id = ?,
+             scheduled_at = ?,
+             version = version + 1,
+             updated_at = ?
+         WHERE event_id = ? AND match_id = ?`,
+        [courtId, redPlayerId, bluePlayerId, scheduledAt, now, eventId, matchId],
+      );
+      const updated = await getSql(
+        db,
+        `SELECT * FROM matches WHERE event_id = ? AND match_id = ?`,
+        [eventId, matchId],
+      );
+      return normalizeMatchRow(updated);
+    }
     return normalizeMatchRow(existing);
   }
 

@@ -152,7 +152,7 @@
 }
 
 .hqProgressStatus.isAnnounced {
-  color: rgb(var(--color-blue));
+  color: rgb(var(--color-yellow));
 }
 
 .hqProgressStatus.isInProgress {

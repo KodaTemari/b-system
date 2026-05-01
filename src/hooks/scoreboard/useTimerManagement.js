@@ -109,20 +109,30 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
     hasPlayedTime.current = false;
   }, []);
 
-  // initialTimeの変更を監視
+  /**
+   * 親から渡る initialTime を表示に反映する。
+   * - ctrl + 実行中: ローカルの setInterval が残り時間の正とする（保存や merge で initialTime が
+   *   毎秒変わると、旧実装ではここで表示が上書きされ「巻き戻り」やチラつきの原因になっていた）。
+   * - view + 実行中: ポーリングで届くサーバー時刻をそのまま反映。
+   * - 停止中: 常に親の値に合わせる。
+   */
   useEffect(() => {
+    const syncFromParent = !isRunning || isViewMode;
+    if (!syncFromParent) {
+      return;
+    }
     setRemainingMs(initialTime);
     setDisplayTime(formatTime(initialTime));
-    
-    // 音声フラグをリセット（0より大きい値に設定された時のみ）
-    if (initialTime > 0) {
+    lastDisplayTimeRef.current = Math.floor(initialTime / 1000);
+
+    if (!isRunning && initialTime > 0) {
       hasPlayed1Min.current = false;
       hasPlayed30s.current = false;
       hasPlayed15s.current = false;
       hasPlayed10s.current = false;
       hasPlayedTime.current = false;
     }
-  }, [initialTime]);
+  }, [initialTime, isRunning, isViewMode]);
 
   // isRunningの変更を監視
   useEffect(() => {
@@ -206,16 +216,6 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
       }
     };
   }, [isRunning, enableAudio, onTimeUpdate, onTimerStop, handleAudioWarnings, isViewMode]);
-
-
-  // 初期時間の変更を監視
-  useEffect(() => {
-    if (!isRunning) {
-      setRemainingMs(initialTime);
-      setDisplayTime(formatTime(initialTime));
-      lastDisplayTimeRef.current = Math.floor(initialTime / 1000);
-    }
-  }, [initialTime, isRunning]);
 
   // クリーンアップ
   useEffect(() => {

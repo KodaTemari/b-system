@@ -31,7 +31,7 @@ const SHOW_MATCH_ID = false;
 
 const statusLabelMap = {
   scheduled: '待機',
-  announced: 'アナウンス済み',
+  announced: '配信済み',
   in_progress: '試合中',
   match_finished: '試合終了',
   court_approved: 'コート承認済み',

@@ -37,6 +37,19 @@
   transition: opacity 0.4s ease-in;
 }
 
+/* 同時確認ウォールの iframe 埋め込み: 縦スクロールバーを出さない */
+#scoreboard.embedWall {
+  overflow: hidden;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100vh;
+  box-sizing: border-box;
+}
+
+#scoreboard.embedWall main {
+  overflow: hidden;
+}
+
 [data-section="standby"] {
   animation: fadeIn 0.5s linear forwards;
 }
@@ -597,6 +610,11 @@ main h2 .name {
   transition: transform 0.3s ease;
   transform: scaleX(var(--textScale, 1));
   transform-origin: center;
+}
+
+/* 会場表示・待機中: 選手名（.name）のみ文字サイズを固定 */
+[data-mode="view"] [data-section="standby"] main h2 .name {
+  font-size: 11vmin;
 }
 
 /* プロフィール画像 */
