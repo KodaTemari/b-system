@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   buildPoolHueMap,
   collectPoolIds,
@@ -634,6 +634,14 @@ const HqProgress = () => {
                 >
                   {importing ? '登録中...' : 'SQLiteへ一括登録'}
                 </button>
+                <Link
+                  className="hqProgressActionButton hqProgressDbInspectLink"
+                  to={`/event/${eventId}/hq/progress-db${
+                    searchParams.toString() ? `?${searchParams.toString()}` : ''
+                  }`}
+                >
+                  進行DB
+                </Link>
                 <button
                   type="button"
                   className="hqProgressActionButton"

@@ -59,7 +59,7 @@ export const useScoreboardHandlers = ({
               isScoreAdjusting: gameData.screen?.isScoreAdjusting ?? false
             }
           };
-          saveData(updatedGameData);
+          saveData(updatedGameData, { gameOnly: true });
         }
       }
     }
@@ -162,7 +162,7 @@ export const useScoreboardHandlers = ({
             isScoreAdjusting: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? true : (gameData.screen?.isScoreAdjusting || false)
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
     
@@ -228,7 +228,7 @@ export const useScoreboardHandlers = ({
                 : (gameData.screen?.isMatchStarted ?? false),
             }
           };
-          saveData(updatedGameData);
+          saveData(updatedGameData, { gameOnly: true });
         }
       }
     } else {
@@ -305,7 +305,7 @@ export const useScoreboardHandlers = ({
                 active: ''
               }
             };
-            saveData(updatedGameData);
+            saveData(updatedGameData, { gameOnly: true });
           }
         } else {
           // ボールが0の場合でもタイマー停止とペナルティボール更新を保存（ctrlモードの場合のみ）
@@ -327,7 +327,7 @@ export const useScoreboardHandlers = ({
                 active: ''
               }
             };
-            saveData(updatedGameData);
+            saveData(updatedGameData, { gameOnly: true });
           }
         }
       } else {
@@ -356,7 +356,7 @@ export const useScoreboardHandlers = ({
                 active: ''
               }
             };
-            saveData(updatedGameData);
+            saveData(updatedGameData, { gameOnly: true });
           }
         } else {
           // ボールが0の場合でもタイマー停止を保存（ctrlモードの場合のみ）
@@ -377,7 +377,7 @@ export const useScoreboardHandlers = ({
                 active: ''
               }
             };
-            saveData(updatedGameData);
+            saveData(updatedGameData, { gameOnly: true });
           }
         }
       }
@@ -429,7 +429,7 @@ export const useScoreboardHandlers = ({
           ball: nextOtherBall
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
     }
   }, [updateBall, gameData, saveData, isCtrl]);
 
@@ -492,7 +492,7 @@ export const useScoreboardHandlers = ({
             isScoreAdjusting: (currentSection.startsWith('end') || currentSection === 'tieBreak') ? true : (gameData.screen?.isScoreAdjusting || false)
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
   }, [isCtrl, saveData, gameData, updateScreenActive, updateScoreAdjusting]);
@@ -899,7 +899,7 @@ export const useScoreboardHandlers = ({
           }
         }
         
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
   }, [gameData, updateSection, updateBall, updateTimer, updateScoreAdjusting, isCtrl, saveData, determineMatchWinner]);
@@ -951,7 +951,7 @@ export const useScoreboardHandlers = ({
             time: warmupTime
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     } else {
       // ウォームアップなしの場合、最初のエンドに直接遷移
@@ -1000,7 +1000,7 @@ export const useScoreboardHandlers = ({
               isScoreAdjusting: false
             }
           };
-          saveData(updatedGameData);
+          saveData(updatedGameData, { gameOnly: true });
         }
       }
     }
@@ -1069,7 +1069,7 @@ export const useScoreboardHandlers = ({
             isScoreAdjusting: false
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
       return;
     }
@@ -1124,7 +1124,7 @@ export const useScoreboardHandlers = ({
               isScoreAdjusting: false
             }
           };
-          saveData(updatedGameData);
+          saveData(updatedGameData, { gameOnly: true });
         }
       } else {
         // インターバルなしの場合、タイブレークのみを追加
@@ -1184,7 +1184,7 @@ export const useScoreboardHandlers = ({
               isScoreAdjusting: false
             }
           };
-          saveData(updatedGameData);
+          saveData(updatedGameData, { gameOnly: true });
         }
       }
     }
@@ -1211,7 +1211,7 @@ export const useScoreboardHandlers = ({
           active: ''
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
     }
   }, [resetForFinalShot, updateSection, gameData, isCtrl, saveData]);
 
@@ -1471,7 +1471,7 @@ export const useScoreboardHandlers = ({
         };
       }
       
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
     }
   }, [isCtrl, saveData, gameData, updateScreenActive, updateScoreAdjusting, updateBall, updateTimer, updateField, updateSection]);
 
@@ -1508,7 +1508,7 @@ export const useScoreboardHandlers = ({
           time: newTime
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
     }
   }, [gameData, updateField, updateTimer, saveData]);
 
@@ -1532,7 +1532,7 @@ export const useScoreboardHandlers = ({
           isScoreAdjusting: false
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
     }
   }, [isCtrl, updateScreenActive, updateScoreAdjusting, gameData, saveData]);
 

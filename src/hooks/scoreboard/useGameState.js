@@ -56,14 +56,38 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
     };
     
     const end = extractEndNumber(section);
-    const preserveRunningTimerState = (timerKey) => (
-      isSameMatch && isCtrl && prevData[timerKey]?.isRunning
-        ? {
-          isRunning: true,
-          time: prevData[timerKey]?.time,
-        }
-        : {}
-    );
+    // 進行中の取りこぼしを防ぐが、サーバーが isRunning: false を返したら必ず採用（旧実装は false でも上書きして停止を潰した）
+    const preserveRunningTimerState = (timerKey) => {
+      if (!isSameMatch || !isCtrl || !prevData[timerKey]?.isRunning) {
+        return {};
+      }
+      const incoming = incomingData[timerKey];
+      if (incoming && incoming.isRunning === false) {
+        return {};
+      }
+      return {
+        isRunning: true,
+        time: prevData[timerKey]?.time,
+      };
+    };
+    // ローカルで停止済みなのに取り込みだけ動作中（古い保存・遅延した onTimeUpdate 保存など）→ 停止を優先
+    const preferLocalStoppedTimer = (timerKey) => {
+      if (!isCtrl || !isSameMatch) {
+        return {};
+      }
+      const prev = prevData[timerKey];
+      const incoming = incomingData[timerKey];
+      if (!prev || !incoming) {
+        return {};
+      }
+      if (prev.isRunning === false && incoming.isRunning === true) {
+        return {
+          isRunning: false,
+          time: prev.time,
+        };
+      }
+      return {};
+    };
 
     return {
       ...prevData,
@@ -82,22 +106,26 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       red: {
         ...prevData.red,
         ...(incomingData.red || {}),
-        ...preserveRunningTimerState('red')
+        ...preserveRunningTimerState('red'),
+        ...preferLocalStoppedTimer('red')
       },
       blue: {
         ...prevData.blue,
         ...(incomingData.blue || {}),
-        ...preserveRunningTimerState('blue')
+        ...preserveRunningTimerState('blue'),
+        ...preferLocalStoppedTimer('blue')
       },
       warmup: {
         ...prevData.warmup,
         ...(incomingData.warmup || {}),
-        ...preserveRunningTimerState('warmup')
+        ...preserveRunningTimerState('warmup'),
+        ...preferLocalStoppedTimer('warmup')
       },
       interval: {
         ...prevData.interval,
         ...(incomingData.interval || {}),
-        ...preserveRunningTimerState('interval')
+        ...preserveRunningTimerState('interval'),
+        ...preferLocalStoppedTimer('interval')
       },
     };
   }, [isCtrl]);

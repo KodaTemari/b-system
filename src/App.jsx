@@ -9,6 +9,7 @@ const PoolStandings = lazy(() => import('./components/pool/PoolStandings'));
 const Tournament = lazy(() => import('./components/tournament/Tournament'));
 const Schedule = lazy(() => import('./components/schedule/Schedule'));
 const HqProgress = lazy(() => import('./components/hq/HqProgress'));
+const HqProgressDb = lazy(() => import('./components/hq/HqProgressDb'));
 const PlayerList = lazy(() => import('./components/players/PlayerList'));
 const ScoreboardWall = lazy(() => import('./components/scoreboard/ScoreboardWall'));
 
@@ -84,6 +85,12 @@ const App = () => {
                 <Route path="/event/:eventId/hq/progress" element={
                     <Suspense fallback={<div>Loading...</div>}>
                         <HqProgress />
+                    </Suspense>
+                } />
+
+                <Route path="/event/:eventId/hq/progress-db" element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <HqProgressDb />
                     </Suspense>
                 } />
 

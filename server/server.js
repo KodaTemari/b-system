@@ -199,6 +199,54 @@ function normalizeMatchRow(row) {
   };
 }
 
+const MATCH_STATUS_VALUES = new Set([
+  'scheduled',
+  'announced',
+  'in_progress',
+  'court_approved',
+  'hq_approved',
+  'reflected',
+]);
+
+function normalizeResultRow(row) {
+  if (!row) return null;
+  return {
+    eventId: row.event_id,
+    matchId: row.match_id,
+    redScore: row.red_score,
+    blueScore: row.blue_score,
+    winnerPlayerId: row.winner_player_id,
+    isCorrection: Boolean(row.is_correction),
+    correctionReason: row.correction_reason,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function normalizeApprovalRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    matchId: row.match_id,
+    stage: row.stage,
+    approverName: row.approver_name,
+    approvedAt: row.approved_at,
+    metaJson: row.meta_json,
+  };
+}
+
+function normalizeLockRow(row) {
+  if (!row) return null;
+  return {
+    eventId: row.event_id,
+    lockType: row.lock_type,
+    lockKey: row.lock_key,
+    matchId: row.match_id,
+    createdAt: row.created_at,
+  };
+}
+
 function createHttpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -938,6 +986,173 @@ app.get('/api/progress/:eventId/matches', async (req, res) => {
         [eventId],
       );
     res.json({ matches: rows.map(normalizeMatchRow) });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
+// 進行 SQLite 全テーブル参照（本部デバッグ・救済用）
+app.get('/api/progress/:eventId/db-overview', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const db = await getEventDb(eventId);
+    const matchRows = await allSql(
+      db,
+      `SELECT * FROM matches WHERE event_id = ? ORDER BY scheduled_at ASC, match_id ASC`,
+      [eventId],
+    );
+    const resultRows = await allSql(
+      db,
+      `SELECT * FROM results WHERE event_id = ? ORDER BY match_id ASC`,
+      [eventId],
+    );
+    const approvalRows = await allSql(
+      db,
+      `SELECT * FROM approvals WHERE event_id = ? ORDER BY id DESC`,
+      [eventId],
+    );
+    const lockRows = await allSql(
+      db,
+      `SELECT * FROM active_locks WHERE event_id = ? ORDER BY lock_type ASC, lock_key ASC`,
+      [eventId],
+    );
+    res.json({
+      success: true,
+      dbPath: getEventDbPath(eventId),
+      matches: matchRows.map(normalizeMatchRow),
+      results: resultRows.map(normalizeResultRow),
+      approvals: approvalRows.map(normalizeApprovalRow),
+      activeLocks: lockRows.map(normalizeLockRow),
+    });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
+// 進行 SQLite matches 行の直接更新（状態不整合の救済・検証用。通常フローは専用 API を利用）
+app.patch('/api/progress/:eventId/matches/:matchId', async (req, res) => {
+  try {
+    const { eventId, matchId } = req.params;
+    const body = req.body ?? {};
+    const patchMap = {
+      courtId: 'court_id',
+      redPlayerId: 'red_player_id',
+      bluePlayerId: 'blue_player_id',
+      scheduledAt: 'scheduled_at',
+      status: 'status',
+      warmupStartedAt: 'warmup_started_at',
+      warmupFinishedAt: 'warmup_finished_at',
+      startedAt: 'started_at',
+      finishedAt: 'finished_at',
+      courtApprovedAt: 'court_approved_at',
+      courtRefereeName: 'court_referee_name',
+      hqApprovedAt: 'hq_approved_at',
+      hqApproverName: 'hq_approver_name',
+      reflectedAt: 'reflected_at',
+    };
+    const setParts = [];
+    const values = [];
+    for (const [camel, snake] of Object.entries(patchMap)) {
+      if (!Object.prototype.hasOwnProperty.call(body, camel)) {
+        continue;
+      }
+      let v = body[camel];
+      if (v === '') {
+        v = null;
+      }
+      if (camel === 'status' && v != null && !MATCH_STATUS_VALUES.has(String(v))) {
+        throw createHttpError(400, `無効な status: ${v}`);
+      }
+      setParts.push(`${snake} = ?`);
+      values.push(v);
+    }
+    if (setParts.length === 0) {
+      throw createHttpError(400, '更新フィールドがありません');
+    }
+    const now = toIsoNow();
+    setParts.push('version = version + 1');
+    setParts.push('updated_at = ?');
+    values.push(now, eventId, matchId);
+    const db = await getEventDb(eventId);
+    const updateRun = await runSql(
+      db,
+      `UPDATE matches SET ${setParts.join(', ')} WHERE event_id = ? AND match_id = ?`,
+      values,
+    );
+    if (!updateRun || Number(updateRun.changes) === 0) {
+      throw createHttpError(404, `matchId=${matchId} が見つかりません`);
+    }
+    const updated = await getSql(
+      db,
+      `SELECT * FROM matches WHERE event_id = ? AND match_id = ?`,
+      [eventId, matchId],
+    );
+    res.json({ success: true, match: normalizeMatchRow(updated) });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
+// 進行 SQLite results 行の直接更新
+app.patch('/api/progress/:eventId/results/:matchId', async (req, res) => {
+  try {
+    const { eventId, matchId } = req.params;
+    const body = req.body ?? {};
+    const patchMap = {
+      redScore: 'red_score',
+      blueScore: 'blue_score',
+      winnerPlayerId: 'winner_player_id',
+      isCorrection: 'is_correction',
+      correctionReason: 'correction_reason',
+    };
+    const setParts = [];
+    const values = [];
+    for (const [camel, snake] of Object.entries(patchMap)) {
+      if (!Object.prototype.hasOwnProperty.call(body, camel)) {
+        continue;
+      }
+      let v = body[camel];
+      if (camel === 'correctionReason' && v === '') {
+        v = null;
+      }
+      if (camel === 'winnerPlayerId' && v === '') {
+        v = null;
+      }
+      if (camel === 'isCorrection') {
+        v = v ? 1 : 0;
+      }
+      if (camel === 'redScore' || camel === 'blueScore') {
+        if (v === '' || v === null || v === undefined) {
+          v = null;
+        } else {
+          const n = Number(v);
+          v = Number.isFinite(n) ? Math.trunc(n) : null;
+        }
+      }
+      setParts.push(`${snake} = ?`);
+      values.push(v);
+    }
+    if (setParts.length === 0) {
+      throw createHttpError(400, '更新フィールドがありません');
+    }
+    const now = toIsoNow();
+    setParts.push('updated_at = ?');
+    values.push(now, eventId, matchId);
+    const db = await getEventDb(eventId);
+    const updateRun = await runSql(
+      db,
+      `UPDATE results SET ${setParts.join(', ')} WHERE event_id = ? AND match_id = ?`,
+      values,
+    );
+    if (!updateRun || Number(updateRun.changes) === 0) {
+      throw createHttpError(404, `results に matchId=${matchId} がありません`);
+    }
+    const updated = await getSql(
+      db,
+      `SELECT * FROM results WHERE event_id = ? AND match_id = ?`,
+      [eventId, matchId],
+    );
+    res.json({ success: true, result: normalizeResultRow(updated) });
   } catch (error) {
     res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
   }

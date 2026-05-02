@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useGameState } from './useGameState';
 import { useTimerManagement } from './useTimerManagement';
@@ -64,6 +64,10 @@ export const useScoreboard = () => {
   // 0.1秒ごとに呼ばれるが、表示上の数字が変わった時（1秒ごと）のみ保存
   const handleRedTimeUpdate = useCallback((newTime) => {
     if (isCtrl && saveData) {
+      const latest = gameDataRef.current;
+      if (!latest?.red?.isRunning) {
+        return;
+      }
       // 表示上の数字（秒単位）を計算
       const displayTimeSeconds = Math.floor(newTime / 1000);
       
@@ -72,19 +76,23 @@ export const useScoreboard = () => {
         lastSavedRedDisplayTimeRef.current = displayTimeSeconds;
         
         const updatedGameData = {
-          ...gameData,
+          ...latest,
           red: {
-            ...gameData.red,
+            ...latest.red,
             time: newTime
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
-  }, [isCtrl, saveData, gameData]);
+  }, [isCtrl, saveData]);
 
   const handleBlueTimeUpdate = useCallback((newTime) => {
     if (isCtrl && saveData) {
+      const latest = gameDataRef.current;
+      if (!latest?.blue?.isRunning) {
+        return;
+      }
       // 表示上の数字（秒単位）を計算
       const displayTimeSeconds = Math.floor(newTime / 1000);
       
@@ -93,21 +101,22 @@ export const useScoreboard = () => {
         lastSavedBlueDisplayTimeRef.current = displayTimeSeconds;
         
         const updatedGameData = {
-          ...gameData,
+          ...latest,
           blue: {
-            ...gameData.blue,
+            ...latest.blue,
             time: newTime
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
-  }, [isCtrl, saveData, gameData]);
+  }, [isCtrl, saveData]);
 
   // タイマー停止時のコールバック（0.1秒単位で保存）
   // gameDataの依存を避けるため、refを使用して最新の値を取得
   const gameDataRef = useRef(gameData);
-  useEffect(() => {
+  // setInterval の tick が停止クリックより後に届く場合があるため、同一コミット内で ref を先に最新化する
+  useLayoutEffect(() => {
     gameDataRef.current = gameData;
   }, [gameData]);
 
@@ -123,7 +132,7 @@ export const useScoreboard = () => {
           isRunning: false
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
       // 保存済み表示時間のrefを更新
       lastSavedRedDisplayTimeRef.current = Math.floor(newTime / 1000);
     }
@@ -141,7 +150,7 @@ export const useScoreboard = () => {
           isRunning: false
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
       // 保存済み表示時間のrefを更新
       lastSavedBlueDisplayTimeRef.current = Math.floor(newTime / 1000);
     }
@@ -149,6 +158,10 @@ export const useScoreboard = () => {
 
   const handleWarmupTimeUpdate = useCallback((newTime) => {
     if (isCtrl && saveData) {
+      const latest = gameDataRef.current;
+      if (!latest?.warmup?.isRunning) {
+        return;
+      }
       // 表示上の数字（秒単位）を計算
       const displayTimeSeconds = Math.floor(newTime / 1000);
       
@@ -157,19 +170,23 @@ export const useScoreboard = () => {
         lastSavedWarmupDisplayTimeRef.current = displayTimeSeconds;
         
         const updatedGameData = {
-          ...gameData,
+          ...latest,
           warmup: {
-            ...gameData.warmup,
+            ...latest.warmup,
             time: newTime
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
-  }, [isCtrl, saveData, gameData]);
+  }, [isCtrl, saveData]);
 
   const handleIntervalTimeUpdate = useCallback((newTime) => {
     if (isCtrl && saveData) {
+      const latest = gameDataRef.current;
+      if (!latest?.interval?.isRunning) {
+        return;
+      }
       // 表示上の数字（秒単位）を計算
       const displayTimeSeconds = Math.floor(newTime / 1000);
       
@@ -178,16 +195,16 @@ export const useScoreboard = () => {
         lastSavedIntervalDisplayTimeRef.current = displayTimeSeconds;
         
         const updatedGameData = {
-          ...gameData,
+          ...latest,
           interval: {
-            ...gameData.interval,
+            ...latest.interval,
             time: newTime
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
-  }, [isCtrl, saveData, gameData]);
+  }, [isCtrl, saveData]);
 
   // タイマー管理（デフォルト値を設定）
   const redTimer = useTimerManagement({
@@ -330,7 +347,7 @@ export const useScoreboard = () => {
           time: currentTime
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
       // 保存済み表示時間のrefを更新
       lastSavedWarmupDisplayTimeRef.current = Math.floor(currentTime / 1000);
     }
@@ -358,7 +375,7 @@ export const useScoreboard = () => {
           time: currentTime
         }
       };
-      saveData(updatedGameData);
+      saveData(updatedGameData, { gameOnly: true });
       // 保存済み表示時間のrefを更新
       lastSavedIntervalDisplayTimeRef.current = Math.floor(currentTime / 1000);
     }
@@ -540,7 +557,7 @@ export const useScoreboard = () => {
             active: ''
           };
         }
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     } else if (gameData.red.isRunning && redTimer.remainingMs > 0) {
       // タイマーが再開されたらフラグをリセット
@@ -579,7 +596,7 @@ export const useScoreboard = () => {
             active: ''
           };
         }
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     } else if (gameData.blue.isRunning && blueTimer.remainingMs > 0) {
       // タイマーが再開されたらフラグをリセット
@@ -639,7 +656,7 @@ export const useScoreboard = () => {
             isPenaltyThrow: true
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
     // 赤・青両方のペナルティボールが0になった場合、penaltyThrow中を終了
@@ -653,7 +670,7 @@ export const useScoreboard = () => {
             isPenaltyThrow: false
           }
         };
-        saveData(updatedGameData);
+        saveData(updatedGameData, { gameOnly: true });
       }
     }
   }, [gameData.red?.ball, gameData.blue?.ball, gameData.red?.penaltyBall, gameData.blue?.penaltyBall, isCtrl, updateTimer, updateBall, saveData, gameData]);

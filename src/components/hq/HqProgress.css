@@ -214,6 +214,14 @@
   opacity: 0.45;
 }
 
+a.hqProgressDbInspectLink {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
 .hqProgressActionButton.isFullyTransparent {
   opacity: 0 !important;
   pointer-events: none;

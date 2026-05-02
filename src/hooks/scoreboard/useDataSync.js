@@ -418,7 +418,9 @@ export const useDataSync = (id, court, isCtrl) => {
   }, [id, court, isStandaloneMode, isCtrl]);
 
   // データを保存（設定と進行を分離して保存）
-  const saveToGameJson = useCallback(async (data) => {
+  // options.gameOnly: true のときは game.json のみ書き込む（タイマー等の高頻度更新で settings PUT を待たない）
+  const saveToGameJson = useCallback(async (data, options = {}) => {
+    const gameOnly = Boolean(options.gameOnly);
     // スタンドアロンモードの場合は、サーバー保存をスキップ
     if (isStandaloneMode || !id || !court || !data) return;
 
@@ -493,9 +495,17 @@ export const useDataSync = (id, court, isCtrl) => {
           limit: undefined
         }
       };
-      
-      // 非同期で両方のファイルを更新
-      // （※タイマーなどの頻繁な更新時は game.json のみでも良いが、まずは確実性を優先）
+
+      if (gameOnly) {
+        await fetch(`/api/data/${id}/court/${court}/game`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gameStateToSave)
+        });
+        return;
+      }
+
+      // 非同期で両方のファイルを更新（設定変更時・初回整形など）
       await Promise.all([
         fetch(`/api/data/${id}/court/${court}/settings`, {
           method: 'PUT',
@@ -549,7 +559,8 @@ export const useDataSync = (id, court, isCtrl) => {
   }, [id, court, isStandaloneMode]);
 
   // データをLocal Storageとgame.jsonの両方に保存
-  const saveData = useCallback(async (data) => {
+  // options.gameOnly: true でサーバーは game.json のみ更新（進行中のタイマー・スコア等）
+  const saveData = useCallback(async (data, options = {}) => {
     if (!data) return;
     
     // totalEndsが失われないように保護
@@ -577,7 +588,7 @@ export const useDataSync = (id, court, isCtrl) => {
     
     // game.jsonにも保存（ctrlモードの場合のみ）
     if (isCtrl) {
-      await saveToGameJson(protectedData);
+      await saveToGameJson(protectedData, options);
     }
   }, [saveToLocalStorage, saveToGameJson, isCtrl]);
 
