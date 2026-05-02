@@ -1150,32 +1150,36 @@ const Scoreboard = () => {
       {/* resultApprovalセクション（viewモードでも表示） */}
       {section === 'resultApproval' && (
         <div id="resultApproval">
-          {/* 承認ボタンはviewモードでも表示 */}
-          <div className="approvalButtons">
-            <button
-              type="button"
-              className={`btn approval ${approvals.red ? 'isApproved' : ''}`}
-              onClick={() => handleApproval('red')}
-            >
-              {getLocalizedText('buttons.redApproval', getCurrentLanguage())}
-            </button>
-            <button
-              type="button"
-              className={`btn approval ${approvals.referee ? 'isApproved' : ''}`}
-              onClick={() => handleApproval('referee')}
-            >
-              {getLocalizedText('buttons.refereeApproval', getCurrentLanguage())}
-            </button>
-            <button
-              type="button"
-              className={`btn approval ${approvals.blue ? 'isApproved' : ''}`}
-              onClick={() => handleApproval('blue')}
-            >
-              {getLocalizedText('buttons.blueApproval', getCurrentLanguage())}
-            </button>
-          </div>
+          {/* 全員承認後は承認ボタンを非表示（viewも同様） */}
+          {!allApproved && (
+            <div className="approvalButtons">
+              <button
+                type="button"
+                className={`btn approval ${approvals.red ? 'isApproved' : ''}`}
+                onClick={() => handleApproval('red')}
+              >
+                {getLocalizedText('buttons.redApproval', getCurrentLanguage())}
+              </button>
+              <button
+                type="button"
+                className={`btn approval ${approvals.referee ? 'isApproved' : ''}`}
+                onClick={() => handleApproval('referee')}
+              >
+                {getLocalizedText('buttons.refereeApproval', getCurrentLanguage())}
+              </button>
+              <button
+                type="button"
+                className={`btn approval ${approvals.blue ? 'isApproved' : ''}`}
+                onClick={() => handleApproval('blue')}
+              >
+                {getLocalizedText('buttons.blueApproval', getCurrentLanguage())}
+              </button>
+            </div>
+          )}
           <div className={`matchCompleted ${allApproved ? 'visible' : ''}`}>
-            {getLocalizedText('buttons.matchCompleted', getCurrentLanguage())}
+            {isCtrl
+              ? getLocalizedText('buttons.matchCompletedCtrl', getCurrentLanguage())
+              : getLocalizedText('buttons.matchCompleted', getCurrentLanguage())}
           </div>
         </div>
       )}

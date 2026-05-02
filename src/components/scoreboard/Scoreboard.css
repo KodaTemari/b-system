@@ -984,6 +984,10 @@ h2 .profilePic img {
   opacity: 1;
 }
 
+[data-mode="ctrl"] #resultApproval .matchCompleted {
+  font-size: calc(var(--font-size-m) / 2);
+}
+
 /* ========================================
    ペナルティアイコンとWinマーク
    ======================================== */

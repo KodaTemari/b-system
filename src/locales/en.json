@@ -45,6 +45,7 @@
     "refereeApproval": "Referee Approval",
     "blueApproval": "Blue Approval",
     "matchCompleted": "Match Completed",
+    "matchCompletedCtrl": "Thank you. Headquarters will approve the match result.",
     "penalty": "Penalty",
     "timeout": "Timeout",
     "redPenalty": "Red Penalty",
