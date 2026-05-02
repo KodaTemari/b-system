@@ -6,6 +6,7 @@ import {
   snapTimerRunningFlags,
   anyTimerStoppedTransition,
 } from '../../utils/scoreboard/gameOnlyPersist';
+import { resolveScoreboardCmImageUrl } from '../../utils/scoreboard/scoreboardCmImage';
 
 /** init.json の display.scoreboardPlayerNameFontSize（数値は vmin 相当） */
 function parseScoreboardPlayerNameFontSizeFromInit(initData) {
@@ -160,6 +161,13 @@ export const useDataSync = (id, court, isCtrl) => {
   const [scoreboardPlayerNameFontSize, setScoreboardPlayerNameFontSize] = useState(null);
   const [showClassification, setShowClassification] = useState(true);
   const [realtimeStatus, setRealtimeStatus] = useState('disconnected');
+  /** view のみ。cm-overlay.json（本部オペレーターが有効化） */
+  const [scoreboardCmOverlay, setScoreboardCmOverlay] = useState({
+    active: false,
+    imageUrl: null,
+  });
+  /** init の display.scoreboardCmImage を解決したフォールバック（cm-overlay に imageUrl が無い場合） */
+  const [scoreboardCmFallbackUrl, setScoreboardCmFallbackUrl] = useState(null);
   const wsRef = useRef(null);
   const reconnectTimerRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
@@ -178,7 +186,34 @@ export const useDataSync = (id, court, isCtrl) => {
 
   // スタンドアロンモード判定（id, courtがない場合）
   const isStandaloneMode = !id || !court;
-  
+
+  const refreshCmOverlay = useCallback(async () => {
+    if (isStandaloneMode || !id || !court || isCtrl) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/data/${id}/court/${court}/cm-overlay`);
+      if (res.status === 404) {
+        setScoreboardCmOverlay({ active: false, imageUrl: null });
+        return;
+      }
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      const fallbackUrl =
+        scoreboardCmFallbackUrl ?? resolveScoreboardCmImageUrl(null, id);
+      setScoreboardCmOverlay({
+        active: Boolean(data.active),
+        imageUrl:
+          typeof data.imageUrl === 'string' && data.imageUrl.trim()
+            ? data.imageUrl.trim()
+            : fallbackUrl,
+      });
+    } catch {
+      setScoreboardCmOverlay({ active: false, imageUrl: null });
+    }
+  }, [id, court, isStandaloneMode, isCtrl, scoreboardCmFallbackUrl]);
 
   const loadGameData = useCallback(async (loadOpts = {}) => {
     const silent = Boolean(loadOpts.silent);
@@ -237,6 +272,9 @@ export const useDataSync = (id, court, isCtrl) => {
         setEventName(initData.gameName || initData.eventName || id);
         setClassificationCount(Array.isArray(initData.classifications) ? initData.classifications.length : null);
         setShowClassification(parseShowClassificationFromInit(initData));
+        setScoreboardCmFallbackUrl(resolveScoreboardCmImageUrl(initData, id));
+      } else {
+        setScoreboardCmFallbackUrl(resolveScoreboardCmImageUrl(null, id));
       }
 
       if (settingsRes.ok) {
@@ -478,8 +516,11 @@ export const useDataSync = (id, court, isCtrl) => {
       if (!silent) {
         setIsLoading(false);
       }
+      if (!isStandaloneMode && !isCtrl && id && court) {
+        refreshCmOverlay();
+      }
     }
-  }, [id, court, isStandaloneMode, isCtrl]);
+  }, [id, court, isStandaloneMode, isCtrl, refreshCmOverlay]);
 
   // データを保存（設定と進行を分離して保存）
   // options.gameOnly: true のときは game.json のみ書き込む（タイマー等の高頻度更新で settings PUT を待たない）
@@ -758,6 +799,7 @@ export const useDataSync = (id, court, isCtrl) => {
         if (!initRes.ok) {
           setScoreboardPlayerNameFontSize(null);
           setShowClassification(true);
+          setScoreboardCmFallbackUrl(resolveScoreboardCmImageUrl(null, id));
           return;
         }
         const initData = await initRes.json();
@@ -766,10 +808,12 @@ export const useDataSync = (id, court, isCtrl) => {
         }
         setScoreboardPlayerNameFontSize(parseScoreboardPlayerNameFontSizeFromInit(initData));
         setShowClassification(parseShowClassificationFromInit(initData));
+        setScoreboardCmFallbackUrl(resolveScoreboardCmImageUrl(initData, id));
       } catch {
         if (!cancelled) {
           setScoreboardPlayerNameFontSize(null);
           setShowClassification(true);
+          setScoreboardCmFallbackUrl(resolveScoreboardCmImageUrl(null, id));
         }
       }
     })();
@@ -910,6 +954,7 @@ export const useDataSync = (id, court, isCtrl) => {
     classificationCount,
     scoreboardPlayerNameFontSize,
     showClassification,
+    scoreboardCmOverlay,
     saveToLocalStorage,
     saveData
   };

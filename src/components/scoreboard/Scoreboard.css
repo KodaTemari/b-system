@@ -35,6 +35,57 @@
   line-height: 1.5;
   opacity: 1;
   transition: opacity 0.4s ease-in;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 設定・確認などフォーム系だけは選択可能にする */
+#scoreboard input,
+#scoreboard textarea,
+#scoreboard select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* view のみ: 本部オペレーターが有効化した CM 静止画（全画面オーバーレイ） */
+#scoreboard .scoreboardCmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0, 0, 0);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+#scoreboard .scoreboardCmOverlay.isCmVisible {
+  opacity: 1;
+}
+
+/* view・結果承認が完了した直後: 一度全面を黒にしてからレイアウト変更をフェードインで見せる */
+#scoreboard .resultApprovalRevealCover {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  background: rgb(0, 0, 0);
+  opacity: 1;
+  transition: opacity 0.65s ease;
+  pointer-events: none;
+}
+
+#scoreboard .resultApprovalRevealCover.isFadingOut {
+  opacity: 0;
+}
+
+#scoreboard .scoreboardCmOverlay img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 /* 同時確認ウォールの iframe 埋め込み: 縦スクロールバーを出さない */
@@ -876,14 +927,41 @@ h2 .profilePic img {
 }
 
 [data-section="resultApproval"] .score,
-[data-mode="view"][data-section="resultApproval"] .score {
+[data-mode="view"] #scoreboard[data-section="resultApproval"] .score {
   height: 41vh;
   height: 41dvh;
+}
+
+/* view・全員承認後: data-mode は body、section / approval-all-done は #scoreboard 直下のため祖先で結合する */
+[data-mode="view"] #scoreboard[data-section="resultApproval"][data-approval-all-done="true"] #resultTableContainer {
+  display: none;
+}
+
+[data-mode="view"] #scoreboard[data-section="resultApproval"][data-approval-all-done="true"] .score {
+  height: 60dvh;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+[data-mode="view"] #scoreboard[data-section="resultApproval"][data-approval-all-done="true"] .win {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+[data-mode="view"] #scoreboard[data-section="resultApproval"][data-approval-all-done="true"] #blue .win {
+  margin-left: 0;
 }
 
 [data-section="resultApproval"] #red [name="redScoreBtn"],
 [data-section="resultApproval"] #blue [name="blueScoreBtn"] {
   font-size: 35vmin;
+}
+
+[data-section="resultApproval"][data-approval-all-done="true"] #red [name="redScoreBtn"],
+[data-section="resultApproval"][data-approval-all-done="true"] #blue [name="blueScoreBtn"] {
+  font-size: 55vmin;
 }
 
 /* Win表示 */
@@ -1165,6 +1243,11 @@ h2 .profilePic img {
 [data-mode="view"] [data-section="resultApproval"][data-tieBreak="red"] #red .winMark,
 [data-mode="view"] [data-section="resultApproval"][data-tieBreak="blue"] #blue .winMark {
   transform: scale(1.15);
+}
+
+[data-mode="view"] [data-section="resultApproval"][data-approval-all-done="true"][data-tieBreak="red"] #red .winMark,
+[data-mode="view"] [data-section="resultApproval"][data-approval-all-done="true"][data-tieBreak="blue"] #blue .winMark {
+  transform: scale(1.7);
 }
 
 /* ========================================

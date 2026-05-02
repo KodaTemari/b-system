@@ -152,7 +152,7 @@
 }
 
 .hqProgressStatus.isAnnounced {
-  color: rgb(var(--color-yellow));
+  color: rgb(var(--color-green));
 }
 
 .hqProgressStatus.isInProgress {
@@ -163,8 +163,26 @@
   color: rgb(var(--color-yellow));
 }
 
-.hqProgressStatus.isCourtApproved {
+.hqProgressStatus.isCourtApproved:not(.hqProgressStatusCourtApprovedNotice) {
   color: rgb(var(--color-green-light));
+}
+
+/* コート承認済み：2行表示・黄（本部承認待ち） */
+.hqProgressStatus.isCourtApproved.hqProgressStatusCourtApprovedNotice {
+  margin: 10px 0 8px;
+  line-height: 1.45;
+  color: rgb(var(--color-yellow));
+}
+
+.hqProgressStatusCourtApprovedLine1,
+.hqProgressStatusCourtApprovedLine2 {
+  display: inline-block;
+  color: inherit;
+}
+
+.hqProgressStatusCourtApprovedLine2 {
+  font-size: 0.92em;
+  font-weight: 700;
 }
 
 .hqProgressStatus.isHqApproved {
@@ -262,6 +280,11 @@ a.hqProgressDbInspectLink {
 .hqProgressActionButton.isAnnounceReady:focus-visible {
   outline: 2px solid rgb(var(--color-green-light));
   outline-offset: 2px;
+}
+
+.hqProgressCmButton:not(:disabled) {
+  border-color: rgba(255, 200, 120, 0.95);
+  color: rgb(255, 235, 200);
 }
 
 .hqProgressApproverModalOverlay {

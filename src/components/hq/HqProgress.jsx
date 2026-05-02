@@ -23,12 +23,34 @@ import {
   toShortMatchId,
   toTimeSlotKey,
 } from '../schedule/scheduleDisplayUtils';
+import { resolveScoreboardCmImageUrl } from '../../utils/scoreboard/scoreboardCmImage';
 
 const PoolStandings = lazy(() => import('../pool/PoolStandings'));
 const PlayerList = lazy(() => import('../players/PlayerList'));
 
 // 将来復活できるよう、試合ID表示はトグルで制御する
 const SHOW_MATCH_ID = false;
+
+/** 本部承認（hqApprovedAt）から CM ボタンを出すまでの待ち時間 */
+const CM_SHOW_DELAY_MS = 3 * 60 * 1000;
+
+/** 当該コートに配信済み・試合中の試合があるときは CM 不可（コートは稼働中） */
+function courtHasAnnouncedOrInProgressMatch(courtId, progressMap) {
+  const cid = String(courtId ?? '').trim();
+  if (!cid) {
+    return false;
+  }
+  for (const prog of progressMap.values()) {
+    if (String(prog?.courtId ?? '').trim() !== cid) {
+      continue;
+    }
+    const st = String(prog?.status ?? '');
+    if (st === 'announced' || st === 'in_progress') {
+      return true;
+    }
+  }
+  return false;
+}
 
 /** TD（本部承認）モードの承認者名デフォルト（テスト時の入力負荷軽減） */
 const DEFAULT_HQ_TD_APPROVER_NAME = 'TD';
@@ -128,6 +150,12 @@ const HqProgress = () => {
   const [approverNameDraft, setApproverNameDraft] = useState(DEFAULT_HQ_TD_APPROVER_NAME);
   const [actionBusyKey, setActionBusyKey] = useState('');
   const [importing, setImporting] = useState(false);
+  /** init.display.scoreboardCmImage を解決した CM 画像 URL（CM ボタン PUT 用） */
+  const [scoreboardCmImageUrl, setScoreboardCmImageUrl] = useState('');
+  /** 各コートの cm-overlay.json の active（ボタン文言・トグル用） */
+  const [cmOverlayActiveByCourt, setCmOverlayActiveByCourt] = useState({});
+  /** CM ボタン表示の「本部承認から3分」判定用 */
+  const [nowTick, setNowTick] = useState(() => Date.now());
   /** 本部ヘッダー中央タブ: 選手一覧 / 試合進行 / プール表 */
   const [hqMainView, setHqMainView] = useState('schedule');
   const mode = useMemo(() => {
@@ -183,6 +211,38 @@ const HqProgress = () => {
     setProgressMap(nextMap);
   }, [eventId]);
 
+  const refreshCmOverlayStatesForCourts = useCallback(
+    async (courtsList) => {
+      if (!eventId || !Array.isArray(courtsList)) {
+        return;
+      }
+      const next = {};
+      await Promise.all(
+        courtsList.map(async (cidRaw) => {
+          const c = String(cidRaw ?? '').trim();
+          if (!c) {
+            return;
+          }
+          try {
+            const res = await fetch(
+              `/api/data/${encodeURIComponent(eventId)}/court/${encodeURIComponent(c)}/cm-overlay`,
+            );
+            if (res.ok) {
+              const j = await res.json();
+              next[c] = Boolean(j.active);
+            } else {
+              next[c] = false;
+            }
+          } catch {
+            next[c] = false;
+          }
+        }),
+      );
+      setCmOverlayActiveByCourt((prev) => ({ ...prev, ...next }));
+    },
+    [eventId],
+  );
+
   useEffect(() => {
     const loadData = async () => {
       if (!eventId) {
@@ -204,8 +264,11 @@ const HqProgress = () => {
         const playersRes = await fetch(`/data/${eventId}/classes/${playerClassCode}/player.json`);
         const playersJson = playersRes.ok ? await playersRes.json() : [];
 
+        const courtsArr = Array.isArray(scheduleJson.courts)
+          ? scheduleJson.courts.map((court) => String(court))
+          : [];
         setSchedule({
-          courts: Array.isArray(scheduleJson.courts) ? scheduleJson.courts.map((court) => String(court)) : [],
+          courts: courtsArr,
           matches: Array.isArray(scheduleJson.matches) ? scheduleJson.matches : [],
           pools: Array.isArray(scheduleJson.pools) ? scheduleJson.pools : [],
           eventDate: String(scheduleJson.eventDate ?? ''),
@@ -213,6 +276,18 @@ const HqProgress = () => {
           startTime: String(scheduleJson.startTime ?? ''),
         });
         setPlayers(normalizePlayers(playersJson));
+        let cmUrl = resolveScoreboardCmImageUrl(null, eventId);
+        try {
+          const initRes = await fetch(`/data/${encodeURIComponent(eventId)}/init.json`);
+          if (initRes.ok) {
+            const initJson = await initRes.json();
+            cmUrl = resolveScoreboardCmImageUrl(initJson, eventId);
+          }
+        } catch {
+          // init なしのときはデフォルト
+        }
+        setScoreboardCmImageUrl(cmUrl);
+        await refreshCmOverlayStatesForCourts(courtsArr);
         await fetchProgress();
         setError('');
       } catch (err) {
@@ -223,7 +298,7 @@ const HqProgress = () => {
     };
 
     loadData();
-  }, [eventId, fetchProgress]);
+  }, [eventId, fetchProgress, refreshCmOverlayStatesForCourts]);
 
   useEffect(() => {
     if (!eventId) {
@@ -236,6 +311,11 @@ const HqProgress = () => {
     }, 2000);
     return () => clearInterval(timer);
   }, [eventId, fetchProgress]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!eventId) {
@@ -442,6 +522,12 @@ const HqProgress = () => {
       if (!response.ok) {
         throw new Error(data.error || `${action} の実行に失敗しました。`);
       }
+      if (action === 'announce') {
+        const cid = String(match.courtId ?? '').trim();
+        if (cid) {
+          setCmOverlayActiveByCourt((prev) => ({ ...prev, [cid]: false }));
+        }
+      }
       await fetchProgress();
       let message = `${toShortMatchId(match.matchId)} を更新しました。`;
       if (action === 'announce' && data.scoreboardSync && data.scoreboardSync.ok === false) {
@@ -476,6 +562,44 @@ const HqProgress = () => {
         bluePlayerId: String(m.bluePlayerId ?? ''),
         scheduledAt: String(m.scheduledStart ?? ''),
       });
+    }
+  };
+
+  const handleCmToggleOnCourt = async (courtId) => {
+    if (!eventId) {
+      return;
+    }
+    const cid = String(courtId ?? '').trim();
+    if (!cid) {
+      return;
+    }
+    const isActive = cmOverlayActiveByCourt[cid] === true;
+    const imageUrl =
+      (scoreboardCmImageUrl && String(scoreboardCmImageUrl).trim()) ||
+      resolveScoreboardCmImageUrl(null, eventId);
+    const busyKey = `cm:${cid}`;
+    try {
+      setActionBusyKey(busyKey);
+      setOperationError('');
+      const body = isActive ? { active: false } : { active: true, imageUrl };
+      const response = await fetch(
+        `/api/data/${encodeURIComponent(eventId)}/court/${encodeURIComponent(cid)}/cm-overlay`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || (isActive ? 'CM の解除に失敗しました。' : 'CM の有効化に失敗しました。'));
+      }
+      setCmOverlayActiveByCourt((prev) => ({ ...prev, [cid]: !isActive }));
+      setOperationMessage('');
+    } catch (err) {
+      setOperationError(err.message || 'CM の更新に失敗しました。');
+    } finally {
+      setActionBusyKey('');
     }
   };
 
@@ -931,6 +1055,16 @@ const HqProgress = () => {
                         -1,
                       );
 
+                      const hqApprovedAtMs = progress?.hqApprovedAt
+                        ? new Date(progress.hqApprovedAt).getTime()
+                        : NaN;
+                      const showCmButton =
+                        isOperatorMode &&
+                        (rawStatus === 'hq_approved' || rawStatus === 'reflected') &&
+                        Number.isFinite(hqApprovedAtMs) &&
+                        nowTick >= hqApprovedAtMs + CM_SHOW_DELAY_MS &&
+                        !courtHasAnnouncedOrInProgressMatch(court, progressMap);
+
                       return (
                         <td key={`${slot}-${court}`} className="scheduleCell" style={inProgressPoolBgStyle}>
                           {poolRoundLabel ? (
@@ -991,7 +1125,19 @@ const HqProgress = () => {
                           {SHOW_MATCH_ID && (
                             <p className="scheduleMatchSub">{`ID: ${toShortMatchId(match.matchId)}`}</p>
                           )}
-                          <p className={`hqProgressStatus ${statusClassName}`}>{statusLabel}</p>
+                          {displayStatus === 'court_approved' ? (
+                            <p
+                              className={`hqProgressStatus ${statusClassName} hqProgressStatusCourtApprovedNotice`}
+                            >
+                              <span className="hqProgressStatusCourtApprovedLine1">コート承認済み</span>
+                              <br />
+                              <span className="hqProgressStatusCourtApprovedLine2">
+                                本部承認をお願いします
+                              </span>
+                            </p>
+                          ) : (
+                            <p className={`hqProgressStatus ${statusClassName}`}>{statusLabel}</p>
+                          )}
                           {isOperatorMode && (
                             <div className="hqProgressTimeline">
                               <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 0 ? 'isDone' : ''}`}>
@@ -1006,6 +1152,20 @@ const HqProgress = () => {
                               <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 3 ? 'isDone' : ''}`}>
                                 {finishedLabel ? `試合終了 ${finishedLabel}` : '試合終了 -'}
                               </p>
+                            </div>
+                          )}
+                          {isOperatorMode && showCmButton && (
+                            <div className="hqProgressButtonRow">
+                              <button
+                                type="button"
+                                className="hqProgressActionButton hqProgressCmButton"
+                                onClick={() => handleCmToggleOnCourt(court)}
+                                disabled={actionBusyKey !== '' || importing}
+                              >
+                                {cmOverlayActiveByCourt[String(court)] === true
+                                  ? 'CM取り消し'
+                                  : 'CM配信'}
+                              </button>
                             </div>
                           )}
                           {isOperatorMode && (canAnnounce || canUnannounce) && (

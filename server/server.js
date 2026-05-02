@@ -266,6 +266,24 @@ function unregisterRealtimeClient(ws) {
   }
 }
 
+/** 次試合の announce 時に view の CM 静止画オーバーレイを解除する */
+async function clearCmOverlayForCourt(eventId, courtId) {
+  const cid = String(courtId ?? '').trim();
+  if (!cid) {
+    return;
+  }
+  try {
+    const courtDir = path.join(DATA_ROOT, eventId, 'court', cid);
+    await fs.ensureDir(courtDir);
+    const cmPath = path.join(courtDir, 'cm-overlay.json');
+    const jsonString = JSON.stringify({ active: false }, null, 2);
+    await queueCourtFileWrite(cmPath, () => writeTextFileAtomicResilient(cmPath, jsonString));
+    broadcastRealtimeUpdate({ eventId, courtId: cid, filename: 'cm-overlay' });
+  } catch (error) {
+    console.error('[cm-overlay] clear failed', eventId, courtId, error);
+  }
+}
+
 function broadcastRealtimeUpdate(payload) {
   const message = JSON.stringify({
     type: 'scoreboard-updated',
@@ -932,6 +950,7 @@ async function syncAnnounceToCourtFiles(eventId, match) {
   };
   await writeJsonFileAtomic(gamePath, nextGame, { spaces: 2 });
   broadcastRealtimeUpdate({ eventId, courtId, filename: 'game' });
+  await clearCmOverlayForCourt(eventId, courtId);
 }
 
 /** 配信取り消し時: コートの表示名をスコアボード初期表示に近づける（DEFAULT_GAME_DATA と揃える） */

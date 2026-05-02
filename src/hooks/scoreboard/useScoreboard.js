@@ -37,6 +37,7 @@ export const useScoreboard = () => {
     classificationCount,
     scoreboardPlayerNameFontSize,
     showClassification,
+    scoreboardCmOverlay,
     saveData,
   } = useDataSync(id, court, isCtrl);
 
@@ -678,6 +679,7 @@ export const useScoreboard = () => {
     eventName,
     scoreboardPlayerNameFontSize,
     showClassification,
+    scoreboardCmOverlay,
     matchName: gameData.matchName,
     classification: gameData.classification,
     classificationCount,

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useScoreboard } from '../../hooks/scoreboard/useScoreboard';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../locales';
 import { calculateBallCount } from '../../utils/scoreboard/gameLogic';
@@ -62,6 +62,7 @@ const Scoreboard = () => {
     eventName,
     scoreboardPlayerNameFontSize,
     showClassification,
+    scoreboardCmOverlay,
     matchName,
     classification,
     classificationCount,
@@ -103,6 +104,53 @@ const Scoreboard = () => {
 
   // Tracks pending changes in the settings modal
   const [settingPendingChanges, setSettingPendingChanges] = useState({});
+
+  const [scoreboardCmImgFailed, setScoreboardCmImgFailed] = useState(false);
+  useEffect(() => {
+    setScoreboardCmImgFailed(false);
+  }, [scoreboardCmOverlay?.active, scoreboardCmOverlay?.imageUrl]);
+
+  const cmPictureOk =
+    !isCtrl &&
+    Boolean(scoreboardCmOverlay?.active) &&
+    Boolean(scoreboardCmOverlay?.imageUrl) &&
+    !scoreboardCmImgFailed;
+
+  const [cmFadeSrc, setCmFadeSrc] = useState('');
+  const [cmLayerMounted, setCmLayerMounted] = useState(false);
+  const [cmLayerOpaque, setCmLayerOpaque] = useState(false);
+
+  useEffect(() => {
+    if (cmPictureOk && scoreboardCmOverlay?.imageUrl) {
+      setCmFadeSrc(scoreboardCmOverlay.imageUrl);
+      setCmLayerMounted(true);
+      let innerRaf;
+      const outerRaf = requestAnimationFrame(() => {
+        innerRaf = requestAnimationFrame(() => setCmLayerOpaque(true));
+      });
+      return () => {
+        cancelAnimationFrame(outerRaf);
+        if (innerRaf != null) {
+          cancelAnimationFrame(innerRaf);
+        }
+      };
+    }
+    setCmLayerOpaque(false);
+    return undefined;
+  }, [cmPictureOk, scoreboardCmOverlay?.imageUrl]);
+
+  const handleScoreboardCmOverlayTransitionEnd = (event) => {
+    if (event.propertyName !== 'opacity') {
+      return;
+    }
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (!cmLayerOpaque) {
+      setCmLayerMounted(false);
+      setCmFadeSrc('');
+    }
+  };
   
   // フルスクリーン状態を管理
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -850,6 +898,60 @@ const Scoreboard = () => {
 
   const allApproved = approvals.red && approvals.referee && approvals.blue;
 
+  /** view・結果承認: 全員承認完了時に一度だけ全面黒→フェードイン（初回マウント時の既に承認済みはアニメしない） */
+  const resultApprovalRevealPrevRef = useRef(null);
+  const [resultApprovalReveal, setResultApprovalReveal] = useState({ show: false, fadeOut: false });
+
+  useLayoutEffect(() => {
+    if (isCtrl || section !== 'resultApproval') {
+      resultApprovalRevealPrevRef.current = null;
+      setResultApprovalReveal({ show: false, fadeOut: false });
+      return;
+    }
+    const prev = resultApprovalRevealPrevRef.current;
+    if (prev === null) {
+      resultApprovalRevealPrevRef.current = allApproved;
+      return;
+    }
+    resultApprovalRevealPrevRef.current = allApproved;
+    if (allApproved && !prev) {
+      setResultApprovalReveal({ show: true, fadeOut: false });
+    }
+  }, [isCtrl, section, allApproved]);
+
+  useEffect(() => {
+    if (!resultApprovalReveal.show || resultApprovalReveal.fadeOut) {
+      return undefined;
+    }
+    let innerRaf;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(() => {
+        setResultApprovalReveal((s) => ({ ...s, fadeOut: true }));
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outerRaf);
+      if (innerRaf != null) {
+        cancelAnimationFrame(innerRaf);
+      }
+    };
+  }, [resultApprovalReveal.show, resultApprovalReveal.fadeOut]);
+
+  const handleResultApprovalRevealTransitionEnd = useCallback((event) => {
+    if (event.propertyName !== 'opacity') {
+      return;
+    }
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    setResultApprovalReveal((s) => {
+      if (!s.fadeOut) {
+        return s;
+      }
+      return { show: false, fadeOut: false };
+    });
+  }, []);
+
   // data-tieBreak属性をred?.isTieBreakとblue?.isTieBreakの値から設定（すべてのセクションで）
   useEffect(() => {
     const scoreboardElement = document.getElementById('scoreboard');
@@ -1068,7 +1170,21 @@ const Scoreboard = () => {
 
 
   return (
-    <div id="scoreboard" style={scoreboardStyle} data-profilepic={profilePicMode} data-section={section} data-setcolor={isColorSet} data-active={active} data-scoreadjust={isScoreAdjusting ? 'true' : 'false'} data-penaltythrow={isPenaltyThrow ? 'true' : 'false'} data-fullscreen={isFullscreen ? 'true' : 'false'} className={`${settingOpen ? 'settingOpen' : ''} ${customModalOpen ? 'customModalOpen' : ''}${isEmbedWall ? ' embedWall' : ''}`}>
+    <div
+      id="scoreboard"
+      style={scoreboardStyle}
+      data-profilepic={profilePicMode}
+      data-section={section}
+      data-setcolor={isColorSet}
+      data-active={active}
+      data-scoreadjust={isScoreAdjusting ? 'true' : 'false'}
+      data-penaltythrow={isPenaltyThrow ? 'true' : 'false'}
+      data-fullscreen={isFullscreen ? 'true' : 'false'}
+      data-approval-all-done={
+        !isCtrl && section === 'resultApproval' && allApproved ? 'true' : undefined
+      }
+      className={`${settingOpen ? 'settingOpen' : ''} ${customModalOpen ? 'customModalOpen' : ''}${isEmbedWall ? ' embedWall' : ''}`}
+    >
       <Header
         section={section}
         sectionID={sectionID}
@@ -1140,8 +1256,8 @@ const Scoreboard = () => {
         </div>
       )}
 
-      {/* 結果表 - resultApprovalセクションの時のみ表示 */}
-      {section === 'resultApproval' && (
+      {/* 結果表 - resultApproval（view かつ全員承認後は非表示。代わりに CSS でスコア枠を拡大） */}
+      {section === 'resultApproval' && (isCtrl || !allApproved) && (
         <ResultTable
           ends={match?.ends || []}
         />
@@ -1176,11 +1292,11 @@ const Scoreboard = () => {
               </button>
             </div>
           )}
-          <div className={`matchCompleted ${allApproved ? 'visible' : ''}`}>
-            {isCtrl
-              ? getLocalizedText('buttons.matchCompletedCtrl', getCurrentLanguage())
-              : getLocalizedText('buttons.matchCompleted', getCurrentLanguage())}
-          </div>
+          {isCtrl && (
+            <div className={`matchCompleted ${allApproved ? 'visible' : ''}`}>
+              {getLocalizedText('buttons.matchCompletedCtrl', getCurrentLanguage())}
+            </div>
+          )}
         </div>
       )}
 
@@ -1530,6 +1646,30 @@ const Scoreboard = () => {
           }}
         />
       )}
+
+      {cmLayerMounted && cmFadeSrc ? (
+        <div
+          className={`scoreboardCmOverlay ${cmLayerOpaque ? 'isCmVisible' : ''}`}
+          aria-hidden="true"
+          onTransitionEnd={handleScoreboardCmOverlayTransitionEnd}
+        >
+          <img
+            src={cmFadeSrc}
+            alt=""
+            onError={() => setScoreboardCmImgFailed(true)}
+          />
+        </div>
+      ) : null}
+
+      {!isCtrl &&
+        section === 'resultApproval' &&
+        resultApprovalReveal.show && (
+          <div
+            className={`resultApprovalRevealCover ${resultApprovalReveal.fadeOut ? 'isFadingOut' : ''}`}
+            aria-hidden="true"
+            onTransitionEnd={handleResultApprovalRevealTransitionEnd}
+          />
+        )}
     </div>
   );
 };

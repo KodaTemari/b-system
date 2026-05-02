@@ -2,7 +2,8 @@
   "gameName": "BOCCIA GRAND PRIX 2026 予選ラウンド",
   "display": {
     "scoreboardPlayerNameFontSize": 11,
-    "showClassification": false
+    "showClassification": false,
+    "scoreboardCmImage": "assets/bg.jpg"
   },
   "classifications": [
     { "id": "Friendly" }
