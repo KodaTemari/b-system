@@ -1465,8 +1465,14 @@ app.post('/api/progress/:eventId/matches/:matchId/court-approve', async (req, re
     const db = await getEventDb(eventId);
     const result = await withTransaction(db, async () => {
       const row = await getMatchOrFail(db, eventId, matchId);
-      if (row.status !== 'in_progress') {
-        throw createHttpError(409, `in_progress のみ court-approve 可能です（現在: ${row.status}）`);
+      const canCourtApprove =
+        row.status === 'in_progress' ||
+        (row.status === 'announced' && row.finished_at);
+      if (!canCourtApprove) {
+        throw createHttpError(
+          409,
+          `court-approve は試合進行中（in_progress）、または終了記録済みの announced のみ可能です（現在: ${row.status}）`,
+        );
       }
       const now = toIsoNow();
       await runSql(

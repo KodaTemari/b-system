@@ -797,12 +797,8 @@ const Scoreboard = () => {
     };
 
     // 主審承認がONになった瞬間に、本部進行DBへ court_approved を通知
-    if (
-      type === 'referee' &&
-      !currentApprovals.referee &&
-      newApprovals.referee &&
-      isCtrl
-    ) {
+    // （view でも承認ボタンが使えるため、isCtrl に限定しない）
+    if (type === 'referee' && !currentApprovals.referee && newApprovals.referee) {
       const eventId = String(id ?? '').trim();
       const matchId = String(gameData?.matchID ?? '').trim();
       const redPlayerId = String(gameData?.red?.playerID ?? '').trim();
