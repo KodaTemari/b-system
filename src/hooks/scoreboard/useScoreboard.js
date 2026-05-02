@@ -82,7 +82,7 @@ export const useScoreboard = () => {
             time: newTime
           }
         };
-        saveData(updatedGameData, { gameOnly: true });
+        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
       }
     }
   }, [isCtrl, saveData]);
@@ -107,7 +107,7 @@ export const useScoreboard = () => {
             time: newTime
           }
         };
-        saveData(updatedGameData, { gameOnly: true });
+        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
       }
     }
   }, [isCtrl, saveData]);
@@ -176,7 +176,7 @@ export const useScoreboard = () => {
             time: newTime
           }
         };
-        saveData(updatedGameData, { gameOnly: true });
+        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
       }
     }
   }, [isCtrl, saveData]);
@@ -201,7 +201,7 @@ export const useScoreboard = () => {
             time: newTime
           }
         };
-        saveData(updatedGameData, { gameOnly: true });
+        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
       }
     }
   }, [isCtrl, saveData]);

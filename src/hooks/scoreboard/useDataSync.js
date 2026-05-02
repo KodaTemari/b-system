@@ -141,6 +141,27 @@ function buildGameJsonPutBody(data) {
   };
 }
 
+function snapTimerRunningFlags(d) {
+  if (!d || typeof d !== 'object') {
+    return { red: false, blue: false, warmup: false, interval: false };
+  }
+  return {
+    red: Boolean(d.red?.isRunning),
+    blue: Boolean(d.blue?.isRunning),
+    warmup: Boolean(d.warmup?.isRunning),
+    interval: Boolean(d.interval?.isRunning),
+  };
+}
+
+function anyTimerStoppedTransition(prev, next) {
+  return (
+    (prev.red && !next.red) ||
+    (prev.blue && !next.blue) ||
+    (prev.warmup && !next.warmup) ||
+    (prev.interval && !next.interval)
+  );
+}
+
 /**
  * データ同期のカスタムフック
  * Local Storage同期を管理
@@ -160,7 +181,26 @@ export const useDataSync = (id, court, isCtrl) => {
   /** gameOnly: LocalStorage + PUT をまとめてデバウンス（低スペック端末での merge / stringify 連発を防ぐ） */
   const gameOnlyUnifiedTimerRef = useRef(null);
   const pendingGameOnlyDataRef = useRef(null);
-  
+  /** gameOnlyLocal: タイマー tick 用。LS のみ更新し PUT しない */
+  const gameOnlyLocalTimerRef = useRef(null);
+  const pendingGameOnlyLocalRef = useRef(null);
+  /** 直近でキューした gameOnly の実行フラグ（停止直後に古い「実行中」ペイロードが遅延フラッシュされるのを検知する） */
+  const lastGameOnlyRunningRef = useRef({
+    red: false,
+    blue: false,
+    warmup: false,
+    interval: false,
+  });
+
+  useEffect(() => {
+    lastGameOnlyRunningRef.current = {
+      red: false,
+      blue: false,
+      warmup: false,
+      interval: false,
+    };
+  }, [id, court]);
+
   // スタンドアロンモード判定（id, courtがない場合）
   const isStandaloneMode = !id || !court;
   
@@ -444,6 +484,7 @@ export const useDataSync = (id, court, isCtrl) => {
         });
       } else {
         setLocalData(mergedData);
+        lastGameOnlyRunningRef.current = snapTimerRunningFlags(mergedData);
         localStorage.setItem(storageKey, JSON.stringify(mergedData));
 
         // 初回のみ：ファイルが存在しなかった場合、作成したデフォルトをサーバーに保存
@@ -561,6 +602,7 @@ export const useDataSync = (id, court, isCtrl) => {
 
   // データをLocal Storageとgame.jsonの両方に保存
   // options.gameOnly: true でサーバーは game.json のみ更新（進行中のタイマー・スコア等）
+  // options.gameOnlyLocal: true のときは LS のみ（PUT しない）。タイマー実行中の tick 用。停止・スコア操作等は gameOnly のみ。
   const saveData = useCallback(async (data, options = {}) => {
     if (!data) return;
     
@@ -585,15 +627,55 @@ export const useDataSync = (id, court, isCtrl) => {
     };
 
     const gameOnly = Boolean(options.gameOnly);
+    const gameOnlyLocal = Boolean(options.gameOnlyLocal);
+
+    // gameOnlyLocal: タイマー tick のみ。merge / PUT 競合を避けるためサーバーは触らない（view は storage で追随）
+    if (isCtrl && gameOnly && gameOnlyLocal) {
+      pendingGameOnlyLocalRef.current = protectedData;
+      const nextRun = snapTimerRunningFlags(protectedData);
+      lastGameOnlyRunningRef.current = nextRun;
+
+      const performGameOnlyLocalFlush = () => {
+        if (gameOnlyLocalTimerRef.current != null) {
+          clearTimeout(gameOnlyLocalTimerRef.current);
+          gameOnlyLocalTimerRef.current = null;
+        }
+        const d = pendingGameOnlyLocalRef.current;
+        pendingGameOnlyLocalRef.current = null;
+        if (!d || isStandaloneMode || !id || !court) {
+          return;
+        }
+        saveToLocalStorage(d);
+      };
+
+      if (gameOnlyLocalTimerRef.current != null) {
+        clearTimeout(gameOnlyLocalTimerRef.current);
+      }
+      gameOnlyLocalTimerRef.current = window.setTimeout(performGameOnlyLocalFlush, 140);
+      return;
+    }
+
+    // フルの gameOnly に進むときは local-only の待ちを破棄（停止などが優先）
+    if (gameOnlyLocalTimerRef.current != null) {
+      clearTimeout(gameOnlyLocalTimerRef.current);
+      gameOnlyLocalTimerRef.current = null;
+    }
+    pendingGameOnlyLocalRef.current = null;
 
     // gameOnly: LocalStorage + PUT を同一デバウンス（Surface Go 等で stringify / merge の連発を抑える）
     if (isCtrl && gameOnly) {
       pendingGameOnlyDataRef.current = protectedData;
-      if (gameOnlyUnifiedTimerRef.current != null) {
-        clearTimeout(gameOnlyUnifiedTimerRef.current);
-      }
-      gameOnlyUnifiedTimerRef.current = window.setTimeout(() => {
-        gameOnlyUnifiedTimerRef.current = null;
+      const prevRun = lastGameOnlyRunningRef.current;
+      const nextRun = snapTimerRunningFlags(protectedData);
+      const stopTransition =
+        anyTimerStoppedTransition(prevRun, nextRun) || Boolean(options.gameOnlyImmediate);
+      lastGameOnlyRunningRef.current = nextRun;
+
+      const performGameOnlyFlush = () => {
+        if (gameOnlyUnifiedTimerRef.current != null) {
+          clearTimeout(gameOnlyUnifiedTimerRef.current);
+          gameOnlyUnifiedTimerRef.current = null;
+        }
         const d = pendingGameOnlyDataRef.current;
         pendingGameOnlyDataRef.current = null;
         if (!d || isStandaloneMode || !id || !court) {
@@ -608,7 +690,18 @@ export const useDataSync = (id, court, isCtrl) => {
         }).catch((error) => {
           console.error('保存エラー:', error);
         });
-      }, 140);
+      };
+
+      // タイマー停止時は遅延フラッシュが「停止より前の実行中スナップショット」になり得るため即書き込み
+      if (stopTransition) {
+        performGameOnlyFlush();
+        return;
+      }
+
+      if (gameOnlyUnifiedTimerRef.current != null) {
+        clearTimeout(gameOnlyUnifiedTimerRef.current);
+      }
+      gameOnlyUnifiedTimerRef.current = window.setTimeout(performGameOnlyFlush, 140);
       return;
     }
 
@@ -657,6 +750,10 @@ export const useDataSync = (id, court, isCtrl) => {
       if (gameOnlyUnifiedTimerRef.current != null) {
         clearTimeout(gameOnlyUnifiedTimerRef.current);
         gameOnlyUnifiedTimerRef.current = null;
+      }
+      if (gameOnlyLocalTimerRef.current != null) {
+        clearTimeout(gameOnlyLocalTimerRef.current);
+        gameOnlyLocalTimerRef.current = null;
       }
     };
   }, []);

@@ -89,6 +89,30 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       return {};
     };
 
+    // どちらも停止かつ time が近いときはローカル優先（遅延した gameOnly / localData 周回で ±1 秒チラつくのを防ぐ）
+    const preferStoppedTimeWhenClose = (timerKey) => {
+      if (!isCtrl || !isSameMatch) {
+        return {};
+      }
+      const prev = prevData[timerKey];
+      const incoming = incomingData[timerKey];
+      if (!prev || !incoming) {
+        return {};
+      }
+      if (prev.isRunning || incoming.isRunning) {
+        return {};
+      }
+      const tPrev = Number(prev.time) || 0;
+      const tInc = Number(incoming.time) || 0;
+      if (tPrev <= 0 || tInc <= 0) {
+        return {};
+      }
+      if (Math.abs(tPrev - tInc) < 2000) {
+        return { time: tPrev };
+      }
+      return {};
+    };
+
     return {
       ...prevData,
       ...incomingData,
@@ -107,25 +131,29 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         ...prevData.red,
         ...(incomingData.red || {}),
         ...preserveRunningTimerState('red'),
-        ...preferLocalStoppedTimer('red')
+        ...preferLocalStoppedTimer('red'),
+        ...preferStoppedTimeWhenClose('red')
       },
       blue: {
         ...prevData.blue,
         ...(incomingData.blue || {}),
         ...preserveRunningTimerState('blue'),
-        ...preferLocalStoppedTimer('blue')
+        ...preferLocalStoppedTimer('blue'),
+        ...preferStoppedTimeWhenClose('blue')
       },
       warmup: {
         ...prevData.warmup,
         ...(incomingData.warmup || {}),
         ...preserveRunningTimerState('warmup'),
-        ...preferLocalStoppedTimer('warmup')
+        ...preferLocalStoppedTimer('warmup'),
+        ...preferStoppedTimeWhenClose('warmup')
       },
       interval: {
         ...prevData.interval,
         ...(incomingData.interval || {}),
         ...preserveRunningTimerState('interval'),
-        ...preferLocalStoppedTimer('interval')
+        ...preferLocalStoppedTimer('interval'),
+        ...preferStoppedTimeWhenClose('interval')
       },
     };
   }, [isCtrl]);

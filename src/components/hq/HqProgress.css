@@ -245,6 +245,25 @@ a.hqProgressDbInspectLink {
   outline-offset: 2px;
 }
 
+/* 前スロットが本部承認完了後、次スロットの一斉配信・個別配信を緑で強調（待機がなくなったら解除） */
+.hqProgressActionButton.isAnnounceReady:not(:disabled) {
+  border-color: rgb(var(--color-green));
+  background: rgb(var(--color-green));
+  color: rgb(var(--color-white));
+}
+
+.hqProgressActionButton.isAnnounceReady:hover:not(:disabled) {
+  /* 明るい緑へ変えると白文字が見えなくなるため、ホバーでも見た目は維持 */
+  background: rgb(var(--color-green));
+  border-color: rgb(var(--color-green));
+  color: rgb(var(--color-white));
+}
+
+.hqProgressActionButton.isAnnounceReady:focus-visible {
+  outline: 2px solid rgb(var(--color-green-light));
+  outline-offset: 2px;
+}
+
 .hqProgressApproverModalOverlay {
   position: fixed;
   inset: 0;
@@ -299,11 +318,42 @@ a.hqProgressDbInspectLink {
   top: 8px;
   bottom: 46px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   white-space: nowrap;
   text-align: center;
   box-sizing: border-box;
+}
+
+.hqProgressTimeClock {
+  line-height: 1.2;
+}
+
+/* 同一スロットの本部承認がすべて終わったとき、時刻の下に表示 */
+.hqProgressSlotCompleteLabel {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgb(var(--color-gray-mid-light));
+}
+
+.hqProgressTimeTdStack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+/* スロット内すべて本部承認済み: 行全体を終了済みのトーン（透明度 0.5） */
+.scheduleTable tr.scheduleRow.isSlotHqComplete .scheduleTimeCell,
+.scheduleTable tr.scheduleRow.isSlotHqComplete .scheduleCell {
+  opacity: 0.5;
 }
 
 /* 見た目は .hqProgressActionButton に完全準拠。ここでは時間セル下端への配置のみ */

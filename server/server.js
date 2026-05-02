@@ -318,10 +318,98 @@ async function writeTextFileAtomic(filePath, text) {
   }
 }
 
+/** 複数タブ・複数コート同時稼働やウイルス対策のロックで rename が一時失敗することがある */
+async function writeTextFileAtomicResilient(filePath, text, options = {}) {
+  const maxAttempts = options.maxAttempts ?? 6;
+  const baseDelayMs = options.baseDelayMs ?? 15;
+  let lastError;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      await writeTextFileAtomic(filePath, text);
+      return;
+    } catch (error) {
+      lastError = error;
+      const code = error && error.code;
+      const retryable =
+        code === 'EBUSY' ||
+        code === 'EPERM' ||
+        code === 'EACCES' ||
+        code === 'ENOTEMPTY' ||
+        code === 'UNKNOWN' ||
+        (typeof error.message === 'string' && /EBUSY|resource busy|being used/i.test(error.message));
+      if (!retryable || attempt === maxAttempts - 1) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, baseDelayMs * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * 同一ファイルへの並行 write（tmp + rename）が重なると Windows 等で失敗しやすいため直列化する
+ */
+const courtFileWriteQueues = new Map();
+
+function queueCourtFileWrite(filePath, task) {
+  const prev = courtFileWriteQueues.get(filePath) || Promise.resolve();
+  const next = prev.then(
+    () => task(),
+    () => task()
+  );
+  courtFileWriteQueues.set(
+    filePath,
+    next.then(
+      () => {},
+      () => {}
+    )
+  );
+  return next;
+}
+
 async function writeJsonFileAtomic(filePath, data, options = {}) {
   const spaces = options.spaces ?? 2;
   const jsonString = JSON.stringify(data, null, spaces);
   await writeTextFileAtomic(filePath, jsonString);
+}
+
+/** game.json 用: match.ends の shots を1行化（PUT /api/data とスナップショットで共通） */
+function stringifyGameJsonForDisk(data) {
+  let jsonString = JSON.stringify(data, null, 2);
+  jsonString = jsonString.replace(
+    /(\s+)\{\s+"end":\s+("[^"]+"|\d+),\s+"shots":[\s\S]+?\}/g,
+    (full, indent) => {
+      return indent + full.replace(/\n/g, '').replace(/\s\s+/g, ' ').trim();
+    },
+  );
+  return jsonString;
+}
+
+/**
+ * コート承認直後: 当該コートの game.json を {matchId}-game-snapshot.json に保存（分析用）。
+ * 失敗しても court-approve 自体は成功させるため、呼び出し側で try/catch する。
+ */
+async function writeMatchGameSnapshotAfterCourtApprove(eventId, matchId, courtId) {
+  const game = await readJsonUnderEvent(eventId, 'court', courtId, 'game.json');
+  if (!game || typeof game !== 'object') {
+    console.warn(
+      `[game-snapshot] game.json がありません（スキップ） eventId=${eventId} courtId=${courtId} matchId=${matchId}`,
+    );
+    return { ok: false, reason: 'missing_game' };
+  }
+  const fileMatchId = game.matchID != null && game.matchID !== '' ? String(game.matchID) : '';
+  if (fileMatchId && fileMatchId !== String(matchId)) {
+    console.warn(
+      `[game-snapshot] matchID が一致しないためスキップ expected=${matchId} actual=${fileMatchId} courtId=${courtId}`,
+    );
+    return { ok: false, reason: 'match_id_mismatch' };
+  }
+  const dir = path.join(DATA_ROOT, eventId, 'match-snapshots');
+  await fs.ensureDir(dir);
+  const filePath = path.join(dir, `${matchId}-game-snapshot.json`);
+  const jsonString = stringifyGameJsonForDisk(game);
+  await writeTextFileAtomic(filePath, jsonString);
+  return { ok: true, path: filePath };
 }
 
 /** 読み取り: DATA_ROOT を優先し、無ければ public/data（共有 JSON・別 eventId のデモ用） */
@@ -1503,6 +1591,12 @@ app.post('/api/progress/:eventId/matches/:matchId/court-approve', async (req, re
       return getMatchOrFail(db, eventId, matchId);
     });
 
+    try {
+      await writeMatchGameSnapshotAfterCourtApprove(eventId, matchId, result.court_id);
+    } catch (snapshotError) {
+      console.error('[game-snapshot] 書き込み失敗（court-approve は成功のまま）', snapshotError);
+    }
+
     res.json({ success: true, match: normalizeMatchRow(result) });
   } catch (error) {
     res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
@@ -1733,6 +1827,10 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
     const { eventId, courtId, filename } = req.params;
     let data = req.body;
 
+    if (filename === 'game' && (data == null || typeof data !== 'object' || Array.isArray(data))) {
+      throw createHttpError(400, 'game 更新は JSON オブジェクトの body が必要です');
+    }
+
     // ファイルパスを構築
     const filePath = path.join(DATA_ROOT, eventId, 'court', courtId, `${filename}.json`);
     
@@ -1773,25 +1871,15 @@ app.put('/api/data/:eventId/court/:courtId/:filename', async (req, res) => {
       }
     }
 
-    // インデント設定
-    let jsonString = JSON.stringify(data, null, 2);
+    const jsonString =
+      filename === 'game' ? stringifyGameJsonForDisk(data) : JSON.stringify(data, null, 2);
 
-    // match.ends 配列内の整形（game.jsonの場合のみ）
-    if (filename === 'game') {
-      // インデントを保持しつつ、"shots" を含むオブジェクト（各エンドの記録）のみを1行化
-      jsonString = jsonString.replace(
-        /(\s+)\{\s+"end":\s+("[^"]+"|\d+),\s+"shots":[\s\S]+?\}/g,
-        (match, indent) => {
-          return indent + match.replace(/\n/g, '').replace(/\s\s+/g, ' ').trim();
-        }
-      );
-    }
-    
-    await writeTextFileAtomic(filePath, jsonString);
+    await queueCourtFileWrite(filePath, () => writeTextFileAtomicResilient(filePath, jsonString));
     broadcastRealtimeUpdate({ eventId, courtId, filename });
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('[PUT /api/data]', req.params?.eventId, req.params?.courtId, req.params?.filename, error);
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
   }
 });
 

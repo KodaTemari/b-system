@@ -54,14 +54,19 @@ const ScoreboardWall = () => {
     };
   }, [eventId]);
 
-  const iframeSrcList = useMemo(() => {
+  const courtFrames = useMemo(() => {
     if (!eventId) {
       return [];
     }
-    return courts.map(
-      (court) =>
-        `/event/${encodeURIComponent(eventId)}/court/${encodeURIComponent(court)}/scoreboard?embedWall=1`,
-    );
+    return courts.map((court) => {
+      const base = `/event/${encodeURIComponent(eventId)}/court/${encodeURIComponent(court)}/scoreboard`;
+      return {
+        court,
+        viewSrc: `${base}?embedWall=1`,
+        /** 操作 UI は縦に長いため embedWall なし（iframe 内スクロール可） */
+        ctrlSrc: `${base}?p=ctrl`,
+      };
+    });
   }, [courts, eventId]);
 
   if (!eventId) {
@@ -73,40 +78,66 @@ const ScoreboardWall = () => {
   }
 
   const cells = Array.from({ length: 8 }, (_, index) => {
-    if (index >= iframeSrcList.length) {
+    if (index >= courtFrames.length) {
       return { kind: 'empty', key: `empty-${index}` };
     }
+    const frame = courtFrames[index];
     return {
-      kind: 'iframe',
-      key: `court-${courts[index]}-${index}`,
-      src: iframeSrcList[index],
-      court: courts[index],
+      kind: 'court',
+      key: `court-${frame.court}-${index}`,
+      court: frame.court,
+      viewSrc: frame.viewSrc,
+      ctrlSrc: frame.ctrlSrc,
     };
   });
 
   return (
     <main className="scoreboardWallPage">
-      <div className="scoreboardWallGrid" role="region" aria-label="スコアボード同時表示">
-        {cells.map((cell) =>
-          cell.kind === 'empty' ? (
-            <div key={cell.key} className="scoreboardWallCell scoreboardWallCell--empty" aria-hidden />
-          ) : (
-            <div key={cell.key} className="scoreboardWallCell">
-              <p className="scoreboardWallLabel">{`コート ${cell.court}`}</p>
-              <div className="scoreboardWallFrameWrap">
-                <div className="scoreboardWallFrame">
-                  <iframe
-                    className="scoreboardWallIframe"
-                    title={`コート ${cell.court} のスコアボード`}
-                    src={cell.src}
-                    scrolling="no"
-                  />
+      <section className="scoreboardWallSection scoreboardWallSection--views">
+        <div className="scoreboardWallGrid" role="region" aria-label="スコアボード表示">
+          {cells.map((cell) =>
+            cell.kind === 'empty' ? (
+              <div key={cell.key} className="scoreboardWallCell scoreboardWallCell--empty" aria-hidden />
+            ) : (
+              <div key={`${cell.key}-view`} className="scoreboardWallCell">
+                <p className="scoreboardWallLabel">{`コート ${cell.court}`}</p>
+                <div className="scoreboardWallFrameWrap">
+                  <div className="scoreboardWallFrame">
+                    <iframe
+                      className="scoreboardWallIframe"
+                      title={`コート ${cell.court} のスコアボード（表示）`}
+                      src={cell.viewSrc}
+                      scrolling="no"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          ),
-        )}
-      </div>
+            ),
+          )}
+        </div>
+      </section>
+      <section className="scoreboardWallSection scoreboardWallSection--ctrl">
+        <div className="scoreboardWallGrid" role="region" aria-label="スコアボード操作">
+          {cells.map((cell) =>
+            cell.kind === 'empty' ? (
+              <div key={`${cell.key}-ctrl`} className="scoreboardWallCell scoreboardWallCell--empty" aria-hidden />
+            ) : (
+              <div key={`${cell.key}-ctrl`} className="scoreboardWallCell">
+                <p className="scoreboardWallLabel">{`コート ${cell.court} · 操作`}</p>
+                <div className="scoreboardWallFrameWrap scoreboardWallFrameWrap--ctrl">
+                  <div className="scoreboardWallFrame scoreboardWallFrame--ctrl">
+                    <iframe
+                      className="scoreboardWallIframe scoreboardWallIframe--ctrl"
+                      title={`コート ${cell.court} のスコアボード（操作）`}
+                      src={cell.ctrlSrc}
+                    />
+                  </div>
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      </section>
     </main>
   );
 };

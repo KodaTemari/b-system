@@ -375,6 +375,30 @@ const HqProgress = () => {
     return slotMap;
   }, [schedule.matches, timeSlots]);
 
+  /** 同一スロット内の全試合が本部承認済み（reflected 含む） */
+  const slotHqCompleteMap = useMemo(() => {
+    const done = new Set(['hq_approved', 'reflected']);
+    const map = new Map();
+    for (const slot of timeSlots) {
+      let hasAny = false;
+      let allHqDone = true;
+      for (const court of schedule.courts) {
+        const match = matrix.get(slot)?.get(court);
+        if (!match) {
+          continue;
+        }
+        hasAny = true;
+        const st = String(progressMap.get(String(match.matchId))?.status ?? 'scheduled');
+        if (!done.has(st)) {
+          allHqDone = false;
+          break;
+        }
+      }
+      map.set(slot, hasAny && allHqDone);
+    }
+    return map;
+  }, [timeSlots, schedule.courts, matrix, progressMap]);
+
   const poolLetterByCourt = useMemo(
     () => buildPoolLetterByCourtMap(schedule.matches, schedule.courts),
     [schedule.matches, schedule.courts],
@@ -682,6 +706,7 @@ const HqProgress = () => {
             <table className="scheduleTable">
               <tbody>
                 {timeSlots.flatMap((slot, index) => {
+                  const slotAllHqDone = slotHqCompleteMap.get(slot) === true;
                   const matchesInRow = schedule.courts
                     .map((court) => matrix.get(slot)?.get(court))
                     .filter(Boolean);
@@ -721,6 +746,12 @@ const HqProgress = () => {
                     matrix,
                     progressMap,
                   );
+                  const prevSlotAllHqDone =
+                    index > 0 && slotHqCompleteMap.get(timeSlots[index - 1]) === true;
+                  const highlightAnnounceButtons =
+                    isOperatorMode &&
+                    prevSlotAllHqDone &&
+                    slotBulkTargets.length > 0;
 
                   const rows = [];
                   if (shouldInsertHeaderAtTop || shouldInsertHeaderAboveCurrent) {
@@ -746,16 +777,26 @@ const HqProgress = () => {
                     );
                   }
                   rows.push(
-                  <tr key={slot} className={`scheduleRow ${rowPhaseClass}`}>
+                  <tr
+                    key={slot}
+                    className={`scheduleRow ${rowPhaseClass}${slotAllHqDone ? ' isSlotHqComplete' : ''}`}
+                  >
                     <th
                       className={`scheduleTimeCell${isOperatorMode ? ' hqProgressTimeCellWithBulk' : ''}`}
                     >
                       {isOperatorMode ? (
                         <>
-                          <span className="hqProgressTimeLabel">{toDateTimeLabel(slot)}</span>
+                          <span className="hqProgressTimeLabel">
+                            <span className="hqProgressTimeClock">{toDateTimeLabel(slot)}</span>
+                            {slotAllHqDone ? (
+                              <span className="hqProgressSlotCompleteLabel">完了</span>
+                            ) : null}
+                          </span>
                           <button
                             type="button"
-                            className="hqProgressActionButton hqProgressBulkAnnounceButton"
+                            className={`hqProgressActionButton hqProgressBulkAnnounceButton${
+                              highlightAnnounceButtons ? ' isAnnounceReady' : ''
+                            }`}
                             onClick={() => handleBulkAnnounceForSlot(slot)}
                             disabled={
                               slotBulkTargets.length === 0 || actionBusyKey !== '' || importing
@@ -769,6 +810,11 @@ const HqProgress = () => {
                             一斉配信
                           </button>
                         </>
+                      ) : slotAllHqDone ? (
+                        <span className="hqProgressTimeTdStack">
+                          <span className="hqProgressTimeClock">{toDateTimeLabel(slot)}</span>
+                          <span className="hqProgressSlotCompleteLabel">完了</span>
+                        </span>
                       ) : (
                         toDateTimeLabel(slot)
                       )}
@@ -974,7 +1020,9 @@ const HqProgress = () => {
                                 ) : (
                                   <button
                                     type="button"
-                                    className="hqProgressActionButton"
+                                    className={`hqProgressActionButton${
+                                      highlightAnnounceButtons && canAnnounce ? ' isAnnounceReady' : ''
+                                    }`}
                                     onClick={() => handleAnnounce(match)}
                                     disabled={!canAnnounce || actionBusyKey !== '' || importing}
                                   >

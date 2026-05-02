@@ -20,6 +20,8 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
   const timerRef = useRef(null);
   const lastDisplayTimeRef = useRef(0);
   const initialRemainingMsRef = useRef(null);
+  /** ctrl 停止中、親の initialTime が localData 周回で ms だけ揺れても表示秒は同じ → 巻き戻り/進みを出さない */
+  const lastStoppedParentMsRef = useRef(null);
   
   // 音声再生フラグ
   const hasPlayed1Min = useRef(false);
@@ -117,10 +119,27 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
    * - 停止中: 常に親の値に合わせる。
    */
   useEffect(() => {
+    if (isRunning && !isViewMode) {
+      lastStoppedParentMsRef.current = null;
+    }
+
     const syncFromParent = !isRunning || isViewMode;
     if (!syncFromParent) {
       return;
     }
+
+    const raw = Math.max(0, Number(initialTime) || 0);
+    if (!isRunning && !isViewMode) {
+      const prevMs = lastStoppedParentMsRef.current;
+      if (prevMs != null) {
+        const sameSecond = Math.floor(raw / 1000) === Math.floor(Number(prevMs) / 1000);
+        if (sameSecond && Math.abs(raw - Number(prevMs)) < 1000) {
+          return;
+        }
+      }
+      lastStoppedParentMsRef.current = raw;
+    }
+
     setRemainingMs(initialTime);
     setDisplayTime(formatTime(initialTime));
     lastDisplayTimeRef.current = Math.floor(initialTime / 1000);
@@ -159,6 +178,10 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
       return undefined;
     }
 
+    // tick 実行中に isRunning が false になりクリーンアップされても、tick 末尾で次フレームを
+    // 予約してしまうレースがある（cancel では止められない）。フラグで予約自体を抑止する。
+    let isEffectActive = true;
+
     if (isRunning) {
       // ctrl 実行中は親の initialTime を同期しないため、前回 0 で止まった remainingMs が残り
       // 「開始したのに動かない」ことがある。残りが 0 のときは initialTime でシードする。
@@ -173,12 +196,18 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
         // メインスレッドが詰まって CSS（ボール点滅など）と表示が同時に止まって見える。
         // state は「秒が変わったとき」と「ゼロ到達」のみ更新し、その間は Ref の時計のみ進める。
         const tick = () => {
+          if (!isEffectActive) {
+            return;
+          }
           const newRemainingMs = calculateRemainingTime(
             startTimeRef.current,
             initialRemainingMsRef.current
           );
 
           if (newRemainingMs <= 0) {
+            if (!isEffectActive) {
+              return;
+            }
             setRemainingMs(0);
             setDisplayTime(formatTime(0));
             if (timerRef.current != null) {
@@ -212,6 +241,9 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
             }
           }
 
+          if (!isEffectActive) {
+            return;
+          }
           timerRef.current = requestAnimationFrame(tick);
         };
 
@@ -243,6 +275,7 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
     }
 
     return () => {
+      isEffectActive = false;
       if (timerRef.current != null) {
         cancelAnimationFrame(timerRef.current);
         timerRef.current = null;
