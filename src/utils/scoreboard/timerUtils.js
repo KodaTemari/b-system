@@ -7,7 +7,9 @@
  */
 export const formatTime = (ms) => {
   const total = Math.max(0, Number(ms) || 0);
-  const totalSeconds = Math.ceil(total / 1000);
+  // 残り秒の切り捨て（useTimerManagement の秒境界と一致）。ceil だと表示だけが先に進み、
+  // 更新間隔が不規則に見えやすい。
+  const totalSeconds = Math.floor(total / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;

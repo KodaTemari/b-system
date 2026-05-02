@@ -1096,7 +1096,7 @@ const Scoreboard = () => {
           dataBall={red.ball}
           onScoreChange={(delta) => scoreAdjust('red', delta)}
           onAdjust={(color, delta) => scoreAdjust(color, delta)}
-          onTimerToggle={(isRunning) => handleTimerToggle('red', isRunning, redTimer.remainingMs)}
+          onTimerToggle={(isRunning) => handleTimerToggle('red', isRunning, redTimer.getLiveRemainingMs?.() ?? redTimer.remainingMs)}
           onBallChange={(newBallValue) => handleBallChange('red', newBallValue)}
           onSelect={handleSelect}
           onTieBreakSelect={handleTieBreakSelect}
@@ -1120,7 +1120,7 @@ const Scoreboard = () => {
           dataBall={blue.ball}
           onScoreChange={(delta) => scoreAdjust('blue', delta)}
           onAdjust={(color, delta) => scoreAdjust(color, delta)}
-          onTimerToggle={(isRunning) => handleTimerToggle('blue', isRunning, blueTimer.remainingMs)}
+          onTimerToggle={(isRunning) => handleTimerToggle('blue', isRunning, blueTimer.getLiveRemainingMs?.() ?? blueTimer.remainingMs)}
           onBallChange={(newBallValue) => handleBallChange('blue', newBallValue)}
           onSelect={handleSelect}
           onTieBreakSelect={handleTieBreakSelect}

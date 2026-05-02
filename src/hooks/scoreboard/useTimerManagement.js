@@ -92,8 +92,8 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
 
   // タイマーリセット
   const resetTimer = useCallback((newTime) => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    if (timerRef.current != null) {
+      cancelAnimationFrame(timerRef.current);
       timerRef.current = null;
     }
     startTimeRef.current = null;
@@ -111,7 +111,7 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
 
   /**
    * 親から渡る initialTime を表示に反映する。
-   * - ctrl + 実行中: ローカルの setInterval が残り時間の正とする（保存や merge で initialTime が
+   * - ctrl + 実行中: ローカルの rAF ループが残り時間の正とする（保存や merge で initialTime が
    *   毎秒変わると、旧実装ではここで表示が上書きされ「巻き戻り」やチラつきの原因になっていた）。
    * - view + 実行中: ポーリングで届くサーバー時刻をそのまま反映。
    * - 停止中: 常に親の値に合わせる。
@@ -134,102 +134,123 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
     }
   }, [initialTime, isRunning, isViewMode]);
 
+  /** クリック時などに Ref の時計で即時計算（React state はフレーム単位でわずかに遅れることがある） */
+  const getLiveRemainingMs = useCallback(() => {
+    if (isViewMode) {
+      return remainingMs;
+    }
+    if (
+      isRunning &&
+      startTimeRef.current != null &&
+      initialRemainingMsRef.current != null
+    ) {
+      return Math.max(
+        0,
+        calculateRemainingTime(startTimeRef.current, initialRemainingMsRef.current)
+      );
+    }
+    return remainingMs;
+  }, [isViewMode, isRunning, remainingMs]);
+
   // isRunningの変更を監視
   useEffect(() => {
     // viewモードでは自動カウントダウンを無効にする
     if (isViewMode) {
-      return;
+      return undefined;
     }
-    
+
     if (isRunning) {
       // 残り時間がある場合のみタイマー開始
-      if (!timerRef.current && remainingMs > 0) {
+      if (timerRef.current == null && remainingMs > 0) {
         startTimeRef.current = Date.now();
         initialRemainingMsRef.current = remainingMs;
-        
-        timerRef.current = setInterval(() => {
-          const newRemainingMs = calculateRemainingTime(startTimeRef.current, initialRemainingMsRef.current);
-          
-          // タイマー終了チェック
+
+        // rAF で秒境界を細かく検出するが、毎フレーム setRemainingMs すると親が ~60fps 再レンダーし、
+        // メインスレッドが詰まって CSS（ボール点滅など）と表示が同時に止まって見える。
+        // state は「秒が変わったとき」と「ゼロ到達」のみ更新し、その間は Ref の時計のみ進める。
+        const tick = () => {
+          const newRemainingMs = calculateRemainingTime(
+            startTimeRef.current,
+            initialRemainingMsRef.current
+          );
+
           if (newRemainingMs <= 0) {
             setRemainingMs(0);
             setDisplayTime(formatTime(0));
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-            
+            if (timerRef.current != null) {
+              cancelAnimationFrame(timerRef.current);
+              timerRef.current = null;
+            }
+
             if (onTimeUpdate) {
               onTimeUpdate(0);
             }
-            
+
             if (enableAudio && !hasPlayedTime.current) {
               hasPlayedTime.current = true;
               playAudio(AUDIO_FILES.TIME_UP);
             }
             return;
           }
-          
-          if (onTimeUpdate) {
-            onTimeUpdate(newRemainingMs);
-          }
-          
-          setRemainingMs(newRemainingMs);
 
           const displayTimeSeconds = Math.floor(newRemainingMs / 1000);
           if (displayTimeSeconds !== lastDisplayTimeRef.current) {
             lastDisplayTimeRef.current = displayTimeSeconds;
+            setRemainingMs(newRemainingMs);
             setDisplayTime(formatTime(newRemainingMs));
-            
+
+            if (onTimeUpdate) {
+              onTimeUpdate(newRemainingMs);
+            }
+
             if (enableAudio && newRemainingMs > 0) {
               handleAudioWarnings(newRemainingMs);
             }
           }
-        }, 100);
+
+          timerRef.current = requestAnimationFrame(tick);
+        };
+
+        timerRef.current = requestAnimationFrame(tick);
       }
-    } else {
+    } else if (timerRef.current != null) {
       // タイマー停止
-      if (timerRef.current) {
-        if (startTimeRef.current !== null && initialRemainingMsRef.current !== null) {
-          const currentRemainingMs = calculateRemainingTime(startTimeRef.current, initialRemainingMsRef.current);
-          setRemainingMs(currentRemainingMs);
-          setDisplayTime(formatTime(currentRemainingMs));
-          
-          if (onTimeUpdate) {
-            onTimeUpdate(currentRemainingMs);
-          }
-          
-          if (onTimerStop) {
-            onTimerStop(currentRemainingMs);
-          }
+      if (startTimeRef.current !== null && initialRemainingMsRef.current !== null) {
+        const currentRemainingMs = calculateRemainingTime(
+          startTimeRef.current,
+          initialRemainingMsRef.current
+        );
+        setRemainingMs(currentRemainingMs);
+        setDisplayTime(formatTime(currentRemainingMs));
+
+        if (onTimeUpdate) {
+          onTimeUpdate(currentRemainingMs);
         }
-        
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-        startTimeRef.current = null;
-        initialRemainingMsRef.current = null;
+
+        if (onTimerStop) {
+          onTimerStop(currentRemainingMs);
+        }
       }
+
+      cancelAnimationFrame(timerRef.current);
+      timerRef.current = null;
+      startTimeRef.current = null;
+      initialRemainingMsRef.current = null;
     }
-    
+
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (timerRef.current != null) {
+        cancelAnimationFrame(timerRef.current);
         timerRef.current = null;
       }
     };
   }, [isRunning, enableAudio, onTimeUpdate, onTimerStop, handleAudioWarnings, isViewMode]);
 
-  // クリーンアップ
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
-
   return {
     remainingMs,
     displayTime,
     isRunning,
-    resetTimer
+    resetTimer,
+    getLiveRemainingMs
   };
 };

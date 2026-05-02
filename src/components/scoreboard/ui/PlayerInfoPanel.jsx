@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import winIcon from '../img/icon_win.png';
 
 /**
@@ -273,4 +273,4 @@ const PlayerInfoPanel = ({
   );
 };
 
-export default PlayerInfoPanel;
+export default memo(PlayerInfoPanel);

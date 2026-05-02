@@ -12,6 +12,7 @@ import {
   buildPoolLetterByCourtMap,
   extractPoolLetterFromMatch,
   getScheduleDisplayProgressStatus,
+  getScheduleLeftIsCourtRed,
   getScheduleRowPhase,
   isTieBreakScoreSingleDigit,
   isWinnerPlaceholder,
@@ -186,13 +187,20 @@ const Schedule = () => {
             const redScore = Number(row?.red_score);
             const blueScore = Number(row?.blue_score);
             if (!Number.isFinite(redScore) || !Number.isFinite(blueScore)) continue;
-            const redPlayerId = String(row?.red_player_id ?? '').trim();
-            const bluePlayerId = String(row?.blue_player_id ?? '').trim();
+            const prev = nextMap.get(matchID) || {};
+            const rowRedPlayerId = String(row?.red_player_id ?? '').trim();
+            const rowBluePlayerId = String(row?.blue_player_id ?? '').trim();
             const winnerPlayerId = String(row?.winner_player_id ?? '').trim();
+            // game.json の red/blue はコートの実際の赤・青。pool/standings の *_player_id はスケジュール左・右のことがあり、上書きすると得点マッピングが逆転する。
+            const courtRedId = String(prev.redPlayerId ?? '').trim();
+            const courtBlueId = String(prev.bluePlayerId ?? '').trim();
+            const hasCourtIdsFromGame = Boolean(courtRedId && courtBlueId);
+            const idRedForWinner = hasCourtIdsFromGame ? courtRedId : rowRedPlayerId;
+            const idBlueForWinner = hasCourtIdsFromGame ? courtBlueId : rowBluePlayerId;
             let winnerSide = '';
-            if (winnerPlayerId && winnerPlayerId === redPlayerId) {
+            if (winnerPlayerId && winnerPlayerId === idRedForWinner) {
               winnerSide = 'red';
-            } else if (winnerPlayerId && winnerPlayerId === bluePlayerId) {
+            } else if (winnerPlayerId && winnerPlayerId === idBlueForWinner) {
               winnerSide = 'blue';
             } else if (redScore > blueScore) {
               winnerSide = 'red';
@@ -200,16 +208,15 @@ const Schedule = () => {
               winnerSide = 'blue';
             }
             nextMap.set(matchID, {
-              ...(nextMap.get(matchID) || {}),
+              ...prev,
               matchID,
-              redPlayerId,
-              bluePlayerId,
               redScore,
               blueScore,
               winnerSide,
               isScoreVisible: true,
               // pool/standings は hq_approved / reflected のみのため、この経路のスコアは確定扱い
               scheduleResultFinal: true,
+              ...(hasCourtIdsFromGame ? {} : { redPlayerId: rowRedPlayerId, bluePlayerId: rowBluePlayerId }),
             });
           }
         }
@@ -230,13 +237,18 @@ const Schedule = () => {
             if (prev?.isScoreVisible) {
               continue;
             }
-            const redPlayerId = String(row?.red_player_id ?? '').trim();
-            const bluePlayerId = String(row?.blue_player_id ?? '').trim();
+            const rowRedPlayerId = String(row?.red_player_id ?? '').trim();
+            const rowBluePlayerId = String(row?.blue_player_id ?? '').trim();
             const winnerPlayerId = String(row?.winner_player_id ?? '').trim();
+            const courtRedId = String(prev?.redPlayerId ?? '').trim();
+            const courtBlueId = String(prev?.bluePlayerId ?? '').trim();
+            const hasCourtIdsFromGame = Boolean(courtRedId && courtBlueId);
+            const idRedForWinner = hasCourtIdsFromGame ? courtRedId : rowRedPlayerId;
+            const idBlueForWinner = hasCourtIdsFromGame ? courtBlueId : rowBluePlayerId;
             let winnerSide = '';
-            if (winnerPlayerId && winnerPlayerId === redPlayerId) {
+            if (winnerPlayerId && winnerPlayerId === idRedForWinner) {
               winnerSide = 'red';
-            } else if (winnerPlayerId && winnerPlayerId === bluePlayerId) {
+            } else if (winnerPlayerId && winnerPlayerId === idBlueForWinner) {
               winnerSide = 'blue';
             } else if (redScore > blueScore) {
               winnerSide = 'red';
@@ -246,12 +258,11 @@ const Schedule = () => {
             nextMap.set(matchID, {
               ...(prev || {}),
               matchID,
-              redPlayerId,
-              bluePlayerId,
               redScore,
               blueScore,
               winnerSide,
               isScoreVisible: true,
+              ...(hasCourtIdsFromGame ? {} : { redPlayerId: rowRedPlayerId, bluePlayerId: rowBluePlayerId }),
             });
           }
         }
@@ -455,21 +466,24 @@ const Schedule = () => {
                       ].includes(rawProgressStatus);
                       const isColorConfirmed =
                         colorState?.isColorSet === true || sidesLockedByProgress;
-                      const displayRedName = isColorConfirmed
-                        ? playerNameMap.get(
-                            String(colorState?.redPlayerId ?? match.redPlayerId ?? ''),
-                          ) || redName
-                        : redName;
-                      const displayBlueName = isColorConfirmed
-                        ? playerNameMap.get(
-                            String(colorState?.bluePlayerId ?? match.bluePlayerId ?? ''),
-                          ) || blueName
-                        : blueName;
+                      const scheduleLeftIsCourtRed = getScheduleLeftIsCourtRed(
+                        match,
+                        colorState,
+                        isColorConfirmed,
+                      );
+                      const courtRedScore = Number(colorState?.redScore ?? 0);
+                      const courtBlueScore = Number(colorState?.blueScore ?? 0);
+                      const leftScore = scheduleLeftIsCourtRed ? courtRedScore : courtBlueScore;
+                      const rightScore = scheduleLeftIsCourtRed ? courtBlueScore : courtRedScore;
                       const scoreLabel = colorState?.isScoreVisible
-                        ? `${colorState?.redScore ?? 0} - ${colorState?.blueScore ?? 0}`
+                        ? `${leftScore} - ${rightScore}`
                         : '-';
                       const isRedWinner = colorState?.winnerSide === 'red';
                       const isBlueWinner = colorState?.winnerSide === 'blue';
+                      const leftWon =
+                        (scheduleLeftIsCourtRed && isRedWinner) || (!scheduleLeftIsCourtRed && isBlueWinner);
+                      const rightWon =
+                        (scheduleLeftIsCourtRed && isBlueWinner) || (!scheduleLeftIsCourtRed && isRedWinner);
                       const displayProgressStatus = getScheduleDisplayProgressStatus(progressInfo);
                       // 本部進行と同様: 試合終了表示・コート/本部承認後のみ勝者黄色ボーダー（リード中の試合中は付けない）
                       const isScheduleResultFinal =
@@ -486,12 +500,20 @@ const Schedule = () => {
                         colorState?.isScoreVisible === true &&
                         (isRedWinner || isBlueWinner) &&
                         isScheduleResultFinal;
-                      const redNameClass = shouldHighlightWinnerBorder
-                        ? (isRedWinner ? 'isWinner' : '')
-                        : (isColorConfirmed ? 'isRedConfirmed' : '');
-                      const blueNameClass = shouldHighlightWinnerBorder
-                        ? (isBlueWinner ? 'isWinner' : '')
-                        : (isColorConfirmed ? 'isBlueConfirmed' : '');
+                      const leftNameClass = shouldHighlightWinnerBorder
+                        ? (leftWon ? 'isWinner' : '')
+                        : isColorConfirmed
+                          ? scheduleLeftIsCourtRed
+                            ? 'isRedConfirmed'
+                            : 'isBlueConfirmed'
+                          : '';
+                      const rightNameClass = shouldHighlightWinnerBorder
+                        ? (rightWon ? 'isWinner' : '')
+                        : isColorConfirmed
+                          ? scheduleLeftIsCourtRed
+                            ? 'isBlueConfirmed'
+                            : 'isRedConfirmed'
+                          : '';
                       const letterForPoolHue =
                         extractPoolLetterFromMatch(match) ?? poolLetterByCourt.get(String(court));
                       const hueForPoolTint = letterForPoolHue
@@ -514,49 +536,49 @@ const Schedule = () => {
                         <td key={`${slot}-${court}`} className="scheduleCell" style={inProgressPoolBgStyle}>
                           <div className="scheduleMatchMain">
                             <p
-                              className={`schedulePlayerName ${redNameClass} ${isWinnerPlaceholder(displayRedName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${leftNameClass} ${isWinnerPlaceholder(redName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(displayRedName)}
+                              {renderNameWithLineBreaks(redName)}
                             </p>
                             <p className="scheduleVersus">VS</p>
                             <p
-                              className={`schedulePlayerName ${blueNameClass} ${isWinnerPlaceholder(displayBlueName) ? 'isPlaceholderName' : ''}`}
+                              className={`schedulePlayerName ${rightNameClass} ${isWinnerPlaceholder(blueName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(displayBlueName)}
+                              {renderNameWithLineBreaks(blueName)}
                             </p>
                           </div>
                           <p className="scheduleLiveScore">
                             {colorState?.isScoreVisible ? (
                               <span className="scheduleLiveScoreCluster">
                                 <span className="scheduleLiveScoreValue">
-                                  {showTbTag && isRedWinner ? (
+                                  {showTbTag && leftWon ? (
                                     <span
                                       className={`scheduleScoreCircled${
-                                        isTieBreakScoreSingleDigit(colorState?.redScore)
+                                        isTieBreakScoreSingleDigit(leftScore)
                                           ? ' scheduleScoreCircledIsRound'
                                           : ''
                                       }`}
                                     >
-                                      {colorState?.redScore ?? 0}
+                                      {leftScore}
                                     </span>
                                   ) : (
-                                    (colorState?.redScore ?? 0)
+                                    leftScore
                                   )}
                                 </span>
                                 <span className="scheduleLiveScoreDash"> - </span>
                                 <span className="scheduleLiveScoreValue">
-                                  {showTbTag && isBlueWinner ? (
+                                  {showTbTag && rightWon ? (
                                     <span
                                       className={`scheduleScoreCircled${
-                                        isTieBreakScoreSingleDigit(colorState?.blueScore)
+                                        isTieBreakScoreSingleDigit(rightScore)
                                           ? ' scheduleScoreCircledIsRound'
                                           : ''
                                       }`}
                                     >
-                                      {colorState?.blueScore ?? 0}
+                                      {rightScore}
                                     </span>
                                   ) : (
-                                    (colorState?.blueScore ?? 0)
+                                    rightScore
                                   )}
                                 </span>
                               </span>

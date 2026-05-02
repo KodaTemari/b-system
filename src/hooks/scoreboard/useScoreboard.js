@@ -332,7 +332,7 @@ export const useScoreboard = () => {
     // タイマーを停止するときは、現在の残り時間を保存する
     const currentTime = isRunning 
       ? (gameData.warmup.time !== undefined ? gameData.warmup.time : gameData.warmup.limit)
-      : warmupTimer.remainingMs;
+      : (warmupTimer.getLiveRemainingMs?.() ?? warmupTimer.remainingMs);
     
     // タイマーの開始/停止を切り替え
     updateTimer('warmup', currentTime, isRunning);
@@ -360,7 +360,7 @@ export const useScoreboard = () => {
     // タイマーを停止するときは、現在の残り時間を保存する
     const currentTime = isRunning 
       ? (gameData.interval.time !== undefined ? gameData.interval.time : gameData.interval.limit)
-      : intervalTimer.remainingMs;
+      : (intervalTimer.getLiveRemainingMs?.() ?? intervalTimer.remainingMs);
     
     // タイマーの開始/停止を切り替え
     updateTimer('interval', currentTime, isRunning);
@@ -500,11 +500,11 @@ export const useScoreboard = () => {
       switch(event.key) {
         case '1':
           event.preventDefault();
-          handlers.handleTimerToggle('red', !gameData.red.isRunning, redTimer.remainingMs);
+          handlers.handleTimerToggle('red', !gameData.red.isRunning, redTimer.getLiveRemainingMs?.() ?? redTimer.remainingMs);
           break;
         case '2':
           event.preventDefault();
-          handlers.handleTimerToggle('blue', !gameData.blue.isRunning, blueTimer.remainingMs);
+          handlers.handleTimerToggle('blue', !gameData.blue.isRunning, blueTimer.getLiveRemainingMs?.() ?? blueTimer.remainingMs);
           break;
         default:
           break;

@@ -96,6 +96,51 @@ function buildHqBroadcastSignature(data) {
   ].join('\u0001');
 }
 
+/** game.json PUT 用ボディ（settings 専用フィールドを除去）— saveToGameJson と gameOnly バッチで共用 */
+function buildGameJsonPutBody(data) {
+  if (!data || typeof data !== 'object') {
+    return {};
+  }
+  return {
+    ...data,
+    classification: undefined,
+    category: undefined,
+    matchName: undefined,
+    match: {
+      ...data.match,
+      totalEnds: undefined,
+      warmup: undefined,
+      interval: undefined,
+      rules: undefined,
+      resultApproval: undefined,
+      tieBreak: undefined,
+      sections: undefined
+    },
+    red: {
+      ...data.red,
+      name: undefined,
+      limit: undefined,
+      country: undefined,
+      profilePic: undefined
+    },
+    blue: {
+      ...data.blue,
+      name: undefined,
+      limit: undefined,
+      country: undefined,
+      profilePic: undefined
+    },
+    warmup: {
+      ...data.warmup,
+      limit: undefined
+    },
+    interval: {
+      ...data.interval,
+      limit: undefined
+    }
+  };
+}
+
 /**
  * データ同期のカスタムフック
  * Local Storage同期を管理
@@ -112,6 +157,9 @@ export const useDataSync = (id, court, isCtrl) => {
   const wsRef = useRef(null);
   const reconnectTimerRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
+  /** gameOnly: LocalStorage + PUT をまとめてデバウンス（低スペック端末での merge / stringify 連発を防ぐ） */
+  const gameOnlyUnifiedTimerRef = useRef(null);
+  const pendingGameOnlyDataRef = useRef(null);
   
   // スタンドアロンモード判定（id, courtがない場合）
   const isStandaloneMode = !id || !court;
@@ -419,8 +467,7 @@ export const useDataSync = (id, court, isCtrl) => {
 
   // データを保存（設定と進行を分離して保存）
   // options.gameOnly: true のときは game.json のみ書き込む（タイマー等の高頻度更新で settings PUT を待たない）
-  const saveToGameJson = useCallback(async (data, options = {}) => {
-    const gameOnly = Boolean(options.gameOnly);
+  const saveToGameJson = useCallback(async (data, _options = {}) => {
     // スタンドアロンモードの場合は、サーバー保存をスキップ
     if (isStandaloneMode || !id || !court || !data) return;
 
@@ -456,55 +503,9 @@ export const useDataSync = (id, court, isCtrl) => {
       };
 
       // 2. 進行データ (game.json)
-      // 設定データに含まれる項目を除外して保存（冗長性を排除し、役割を分離）
-      const gameStateToSave = {
-        ...data,
-        classification: undefined,
-        category: undefined,
-        matchName: undefined,
-        match: {
-          ...data.match,
-          totalEnds: undefined,
-          warmup: undefined,
-          interval: undefined,
-          rules: undefined,
-          resultApproval: undefined,
-          tieBreak: undefined,
-          sections: undefined
-        },
-        red: {
-          ...data.red,
-          name: undefined,
-          limit: undefined,
-          country: undefined,
-          profilePic: undefined
-        },
-        blue: {
-          ...data.blue,
-          name: undefined,
-          limit: undefined,
-          country: undefined,
-          profilePic: undefined
-        },
-        warmup: {
-          ...data.warmup,
-          limit: undefined
-        },
-        interval: {
-          ...data.interval,
-          limit: undefined
-        }
-      };
+      const gameStateToSave = buildGameJsonPutBody(data);
 
-      if (gameOnly) {
-        await fetch(`/api/data/${id}/court/${court}/game`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(gameStateToSave)
-        });
-        return;
-      }
-
+      // gameOnly は saveData 側で LocalStorage とまとめてデバウンスするためここには来ない
       // 非同期で両方のファイルを更新（設定変更時・初回整形など）
       await Promise.all([
         fetch(`/api/data/${id}/court/${court}/settings`, {
@@ -582,15 +583,41 @@ export const useDataSync = (id, court, isCtrl) => {
           : 4)
       } : data.match
     };
-    
-    // Local Storageに保存
+
+    const gameOnly = Boolean(options.gameOnly);
+
+    // gameOnly: LocalStorage + PUT を同一デバウンス（Surface Go 等で stringify / merge の連発を抑える）
+    if (isCtrl && gameOnly) {
+      pendingGameOnlyDataRef.current = protectedData;
+      if (gameOnlyUnifiedTimerRef.current != null) {
+        clearTimeout(gameOnlyUnifiedTimerRef.current);
+      }
+      gameOnlyUnifiedTimerRef.current = window.setTimeout(() => {
+        gameOnlyUnifiedTimerRef.current = null;
+        const d = pendingGameOnlyDataRef.current;
+        pendingGameOnlyDataRef.current = null;
+        if (!d || isStandaloneMode || !id || !court) {
+          return;
+        }
+        saveToLocalStorage(d);
+        const body = buildGameJsonPutBody(d);
+        fetch(`/api/data/${id}/court/${court}/game`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).catch((error) => {
+          console.error('保存エラー:', error);
+        });
+      }, 140);
+      return;
+    }
+
     saveToLocalStorage(protectedData);
-    
-    // game.jsonにも保存（ctrlモードの場合のみ）
+
     if (isCtrl) {
       await saveToGameJson(protectedData, options);
     }
-  }, [saveToLocalStorage, saveToGameJson, isCtrl]);
+  }, [saveToLocalStorage, saveToGameJson, isCtrl, id, court, isStandaloneMode]);
 
   // Local Storageの変更を監視
   useEffect(() => {
@@ -624,6 +651,15 @@ export const useDataSync = (id, court, isCtrl) => {
       window.removeEventListener('scoreboardDataUpdate', handleCustomEvent);
     };
   }, [id, court, isStandaloneMode]);
+
+  useEffect(() => {
+    return () => {
+      if (gameOnlyUnifiedTimerRef.current != null) {
+        clearTimeout(gameOnlyUnifiedTimerRef.current);
+        gameOnlyUnifiedTimerRef.current = null;
+      }
+    };
+  }, []);
 
   /**
    * view かつ LocalStorage 命中時は loadGameData を呼ばないため、ここで init の表示設定だけ必ず同期する。
@@ -781,7 +817,7 @@ export const useDataSync = (id, court, isCtrl) => {
     if (!shouldPoll) {
       return undefined;
     }
-    const intervalMs = 2000;
+    const intervalMs = 3000;
     const timer = setInterval(() => {
       loadGameData({ silent: true });
     }, intervalMs);

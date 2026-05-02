@@ -88,6 +88,19 @@ export const isTieBreakScoreSingleDigit = (score) => {
   return Number.isFinite(n) && n >= 0 && n <= 9;
 };
 
+/**
+ * スケジュール表・本部進行表では選手名を schedule（match.redPlayerId = 左・match.bluePlayerId = 右）で固定する。
+ * コートで赤青が入れ替わった場合は名前は動かさず、下線・スコア列だけコート側に合わせる。
+ *
+ * @returns {boolean} 左列の選手がコートの赤側か。色未確定や court の赤 ID が無いときは true（従来どおり左=コート赤とみなす）
+ */
+export const getScheduleLeftIsCourtRed = (match, colorState, isColorConfirmed) => {
+  if (!isColorConfirmed || colorState?.redPlayerId == null || String(colorState.redPlayerId).trim() === '') {
+    return true;
+  }
+  return String(match?.redPlayerId ?? '') === String(colorState.redPlayerId ?? '');
+};
+
 export const normalizePlayers = (players) => {
   if (!Array.isArray(players)) {
     return [];
