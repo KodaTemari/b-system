@@ -36,6 +36,9 @@ export const TIMER_WARNINGS = {
   TIME_UP: 100
 };
 
+/** mergeGameData: 両者停止かつ time の差がこれ未満なら prev を採用（遅延した localData の軽いズレ対策） */
+export const MERGE_STOPPED_TIMER_TIME_EPSILON_MS = 2000;
+
 export const UI_CONSTANTS = {
   TIME_MODAL_DISPLAY_DURATION: 3000
 };

@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useGameState } from './useGameState';
 import { useTimerManagement } from './useTimerManagement';
 import { useDataSync } from './useDataSync';
+import { createTimerTickSaveCallback } from './timerTickSave';
 import { useScoreboardHandlers } from './useScoreboardHandlers';
 import { getPlayerName, isLastEnd, determineWinner } from '../../utils/scoreboard/gameLogic';
 import { TIMER_LIMITS } from '../../utils/scoreboard/constants';
@@ -60,66 +61,35 @@ export const useScoreboard = () => {
   const lastSavedWarmupDisplayTimeRef = useRef(null);
   const lastSavedIntervalDisplayTimeRef = useRef(null);
 
-  // タイマー時間更新コールバック（ctrlモードでのみ保存）
-  // 0.1秒ごとに呼ばれるが、表示上の数字が変わった時（1秒ごと）のみ保存
-  const handleRedTimeUpdate = useCallback((newTime) => {
-    if (isCtrl && saveData) {
-      const latest = gameDataRef.current;
-      if (!latest?.red?.isRunning) {
-        return;
-      }
-      // 表示上の数字（秒単位）を計算
-      const displayTimeSeconds = Math.floor(newTime / 1000);
-      
-      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
-      if (lastSavedRedDisplayTimeRef.current !== displayTimeSeconds) {
-        lastSavedRedDisplayTimeRef.current = displayTimeSeconds;
-        
-        const updatedGameData = {
-          ...latest,
-          red: {
-            ...latest.red,
-            time: newTime
-          }
-        };
-        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
-      }
-    }
-  }, [isCtrl, saveData]);
-
-  const handleBlueTimeUpdate = useCallback((newTime) => {
-    if (isCtrl && saveData) {
-      const latest = gameDataRef.current;
-      if (!latest?.blue?.isRunning) {
-        return;
-      }
-      // 表示上の数字（秒単位）を計算
-      const displayTimeSeconds = Math.floor(newTime / 1000);
-      
-      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
-      if (lastSavedBlueDisplayTimeRef.current !== displayTimeSeconds) {
-        lastSavedBlueDisplayTimeRef.current = displayTimeSeconds;
-        
-        const updatedGameData = {
-          ...latest,
-          blue: {
-            ...latest.blue,
-            time: newTime
-          }
-        };
-        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
-      }
-    }
-  }, [isCtrl, saveData]);
-
-  // タイマー停止時のコールバック（0.1秒単位で保存）
-  // gameDataの依存を避けるため、refを使用して最新の値を取得
   const gameDataRef = useRef(gameData);
-  // setInterval の tick が停止クリックより後に届く場合があるため、同一コミット内で ref を先に最新化する
   useLayoutEffect(() => {
     gameDataRef.current = gameData;
   }, [gameData]);
 
+  // タイマー tick（秒が変わったときのみ LS。サーバー PUT は停止・別操作時）
+  const handleRedTimeUpdate = useCallback(
+    createTimerTickSaveCallback({
+      timerKey: 'red',
+      lastSavedDisplaySecRef: lastSavedRedDisplayTimeRef,
+      gameDataRef,
+      isCtrl,
+      saveData,
+    }),
+    [isCtrl, saveData]
+  );
+
+  const handleBlueTimeUpdate = useCallback(
+    createTimerTickSaveCallback({
+      timerKey: 'blue',
+      lastSavedDisplaySecRef: lastSavedBlueDisplayTimeRef,
+      gameDataRef,
+      isCtrl,
+      saveData,
+    }),
+    [isCtrl, saveData]
+  );
+
+  // タイマー停止時のコールバック（0.1秒単位で保存）
   const handleRedTimerStop = useCallback((newTime) => {
     if (isCtrl && saveData) {
       // refから最新のgameDataを取得
@@ -156,55 +126,27 @@ export const useScoreboard = () => {
     }
   }, [isCtrl, saveData]);
 
-  const handleWarmupTimeUpdate = useCallback((newTime) => {
-    if (isCtrl && saveData) {
-      const latest = gameDataRef.current;
-      if (!latest?.warmup?.isRunning) {
-        return;
-      }
-      // 表示上の数字（秒単位）を計算
-      const displayTimeSeconds = Math.floor(newTime / 1000);
-      
-      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
-      if (lastSavedWarmupDisplayTimeRef.current !== displayTimeSeconds) {
-        lastSavedWarmupDisplayTimeRef.current = displayTimeSeconds;
-        
-        const updatedGameData = {
-          ...latest,
-          warmup: {
-            ...latest.warmup,
-            time: newTime
-          }
-        };
-        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
-      }
-    }
-  }, [isCtrl, saveData]);
+  const handleWarmupTimeUpdate = useCallback(
+    createTimerTickSaveCallback({
+      timerKey: 'warmup',
+      lastSavedDisplaySecRef: lastSavedWarmupDisplayTimeRef,
+      gameDataRef,
+      isCtrl,
+      saveData,
+    }),
+    [isCtrl, saveData]
+  );
 
-  const handleIntervalTimeUpdate = useCallback((newTime) => {
-    if (isCtrl && saveData) {
-      const latest = gameDataRef.current;
-      if (!latest?.interval?.isRunning) {
-        return;
-      }
-      // 表示上の数字（秒単位）を計算
-      const displayTimeSeconds = Math.floor(newTime / 1000);
-      
-      // 表示上の数字が変わった時のみ保存（負荷軽減のため）
-      if (lastSavedIntervalDisplayTimeRef.current !== displayTimeSeconds) {
-        lastSavedIntervalDisplayTimeRef.current = displayTimeSeconds;
-        
-        const updatedGameData = {
-          ...latest,
-          interval: {
-            ...latest.interval,
-            time: newTime
-          }
-        };
-        saveData(updatedGameData, { gameOnly: true, gameOnlyLocal: true });
-      }
-    }
-  }, [isCtrl, saveData]);
+  const handleIntervalTimeUpdate = useCallback(
+    createTimerTickSaveCallback({
+      timerKey: 'interval',
+      lastSavedDisplaySecRef: lastSavedIntervalDisplayTimeRef,
+      gameDataRef,
+      isCtrl,
+      saveData,
+    }),
+    [isCtrl, saveData]
+  );
 
   // タイマー管理（デフォルト値を設定）
   const redTimer = useTimerManagement({

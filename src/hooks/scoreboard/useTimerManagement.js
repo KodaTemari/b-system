@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatTime, calculateRemainingTime, playAudio, shouldPlayWarning } from '../../utils/scoreboard/timerUtils';
 import { TIMER_WARNINGS, AUDIO_FILES } from '../../utils/scoreboard/constants';
+import { shouldSkipCtrlStoppedParentSync } from '../../utils/scoreboard/timerParentSync';
 
 /**
  * タイマー管理のカスタムフック
@@ -131,11 +132,8 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
     const raw = Math.max(0, Number(initialTime) || 0);
     if (!isRunning && !isViewMode) {
       const prevMs = lastStoppedParentMsRef.current;
-      if (prevMs != null) {
-        const sameSecond = Math.floor(raw / 1000) === Math.floor(Number(prevMs) / 1000);
-        if (sameSecond && Math.abs(raw - Number(prevMs)) < 1000) {
-          return;
-        }
+      if (shouldSkipCtrlStoppedParentSync(prevMs, raw)) {
+        return;
       }
       lastStoppedParentMsRef.current = raw;
     }

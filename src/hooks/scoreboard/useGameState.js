@@ -1,5 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
-import { TIMER_LIMITS, BALL_COUNTS, GAME_SECTIONS } from '../../utils/scoreboard/constants';
+import {
+  TIMER_LIMITS,
+  BALL_COUNTS,
+  GAME_SECTIONS,
+  MERGE_STOPPED_TIMER_TIME_EPSILON_MS,
+} from '../../utils/scoreboard/constants';
 
 /**
  * Custom hook for game state management
@@ -107,7 +112,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
       if (tPrev <= 0 || tInc <= 0) {
         return {};
       }
-      if (Math.abs(tPrev - tInc) < 2000) {
+      if (Math.abs(tPrev - tInc) < MERGE_STOPPED_TIMER_TIME_EPSILON_MS) {
         return { time: tPrev };
       }
       return {};

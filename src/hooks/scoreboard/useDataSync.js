@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { DEFAULT_GAME_DATA, TIMER_LIMITS } from '../../utils/scoreboard/constants';
+import {
+  GAME_ONLY_DEBOUNCE_MS,
+  EMPTY_TIMER_RUNNING_SNAP,
+  snapTimerRunningFlags,
+  anyTimerStoppedTransition,
+} from '../../utils/scoreboard/gameOnlyPersist';
 
 /** init.json の display.scoreboardPlayerNameFontSize（数値は vmin 相当） */
 function parseScoreboardPlayerNameFontSizeFromInit(initData) {
@@ -141,27 +147,6 @@ function buildGameJsonPutBody(data) {
   };
 }
 
-function snapTimerRunningFlags(d) {
-  if (!d || typeof d !== 'object') {
-    return { red: false, blue: false, warmup: false, interval: false };
-  }
-  return {
-    red: Boolean(d.red?.isRunning),
-    blue: Boolean(d.blue?.isRunning),
-    warmup: Boolean(d.warmup?.isRunning),
-    interval: Boolean(d.interval?.isRunning),
-  };
-}
-
-function anyTimerStoppedTransition(prev, next) {
-  return (
-    (prev.red && !next.red) ||
-    (prev.blue && !next.blue) ||
-    (prev.warmup && !next.warmup) ||
-    (prev.interval && !next.interval)
-  );
-}
-
 /**
  * データ同期のカスタムフック
  * Local Storage同期を管理
@@ -185,20 +170,10 @@ export const useDataSync = (id, court, isCtrl) => {
   const gameOnlyLocalTimerRef = useRef(null);
   const pendingGameOnlyLocalRef = useRef(null);
   /** 直近でキューした gameOnly の実行フラグ（停止直後に古い「実行中」ペイロードが遅延フラッシュされるのを検知する） */
-  const lastGameOnlyRunningRef = useRef({
-    red: false,
-    blue: false,
-    warmup: false,
-    interval: false,
-  });
+  const lastGameOnlyRunningRef = useRef({ ...EMPTY_TIMER_RUNNING_SNAP });
 
   useEffect(() => {
-    lastGameOnlyRunningRef.current = {
-      red: false,
-      blue: false,
-      warmup: false,
-      interval: false,
-    };
+    lastGameOnlyRunningRef.current = { ...EMPTY_TIMER_RUNNING_SNAP };
   }, [id, court]);
 
   // スタンドアロンモード判定（id, courtがない場合）
@@ -651,7 +626,10 @@ export const useDataSync = (id, court, isCtrl) => {
       if (gameOnlyLocalTimerRef.current != null) {
         clearTimeout(gameOnlyLocalTimerRef.current);
       }
-      gameOnlyLocalTimerRef.current = window.setTimeout(performGameOnlyLocalFlush, 140);
+      gameOnlyLocalTimerRef.current = window.setTimeout(
+        performGameOnlyLocalFlush,
+        GAME_ONLY_DEBOUNCE_MS
+      );
       return;
     }
 
@@ -701,7 +679,10 @@ export const useDataSync = (id, court, isCtrl) => {
       if (gameOnlyUnifiedTimerRef.current != null) {
         clearTimeout(gameOnlyUnifiedTimerRef.current);
       }
-      gameOnlyUnifiedTimerRef.current = window.setTimeout(performGameOnlyFlush, 140);
+      gameOnlyUnifiedTimerRef.current = window.setTimeout(
+        performGameOnlyFlush,
+        GAME_ONLY_DEBOUNCE_MS
+      );
       return;
     }
 
