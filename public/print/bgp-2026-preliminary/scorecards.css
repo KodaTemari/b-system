@@ -1,0 +1,237 @@
+/* BOCCIA GRAND PRIX 2026 予選 — スコアカード印刷 */
+
+:root {
+  --ink: #111;
+  --border: #000;
+  /* 上下半分の境界に引く切り取り線（印刷でも視認しやすい薄めのグレー） */
+  --scorecard-cut-line: #bfbfbf;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 11pt;
+  color: var(--ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "BIZ UDPGothic", "BIZ UDP ゴシック", "BIZ UDPゴシック", sans-serif;
+  line-height: 1.35;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 8mm 10mm;
+}
+
+.print-root {
+  background: transparent;
+}
+
+/*
+ * 印刷: 1枚の .sheet = A4 1ページにスコアカード2枚（@page の余白はブラウザが適用）
+ * 上下を半分にした各領域の縦方向中央に scorecard を配置（裁断線は概ねシート中央）
+ */
+.sheet {
+  position: relative;
+  page-break-after: always;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  justify-items: stretch;
+  row-gap: 0;
+  column-gap: 0;
+}
+
+/* A4 のちょうど中央（上下 2 グリッドの境目）に切り取りガイド */
+.sheet::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0;
+  border: none;
+  border-top: 1px dashed var(--scorecard-cut-line);
+  transform: translateY(-50%);
+  pointer-events: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.sheet:last-child {
+  page-break-after: auto;
+}
+
+@media print {
+  /*
+   * A4 縦 297mm − 上下 @page margin 8mm×2 = 281mm（印刷エリアの目安）
+   * 高さを確定させて 1fr / 1fr で上下を等分する
+   */
+  .sheet {
+    height: 281mm;
+    min-height: 281mm;
+  }
+}
+
+.scorecard {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 3mm 4mm 4mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.scorecard__title {
+  text-align: center;
+  font-size: 10.5pt;
+  font-weight: normal;
+  margin: 0 0 10mm;
+  letter-spacing: 0.02em;
+}
+
+.scorecard__meta {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  font-size: 12pt;
+  margin-bottom: 2.5mm;
+  gap: 2mm;
+}
+
+.scorecard__meta-left {
+  text-align: left;
+  white-space: normal;
+  min-width: 0;
+}
+
+.scorecard__meta-center {
+  text-align: center;
+}
+
+.scorecard__meta-right {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.scorecard__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 9.5pt;
+}
+
+.scorecard__table th,
+.scorecard__table td {
+  border: 1px solid var(--border);
+  padding: 2mm 2.5mm;
+  vertical-align: middle;
+}
+
+.scorecard__table th {
+  font-weight: normal;
+}
+
+.scorecard__table .col-label {
+  width: 22%;
+  text-align: center;
+}
+
+.scorecard__table .col-side {
+  width: 39%;
+}
+
+.side-cell {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  min-height: 10mm;
+}
+
+.side-cell--blue {
+  flex-direction: row-reverse;
+}
+
+.rb-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 8mm;
+  height: 8mm;
+  border: 1px dotted var(--border);
+  border-radius: 50%;
+  font-size: 6.5pt;
+  line-height: 1.1;
+  text-align: center;
+  flex-shrink: 0;
+  padding: 0.5mm;
+}
+
+.player-line {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  font-size: 12px;
+  text-align: center;
+}
+
+.scorecard__table .player-line {
+  font-size: 14pt;
+}
+
+.score-cell {
+  height: 13mm;
+}
+
+.scorecard__umpire {
+  margin-top: 12mm;
+  text-align: right;
+  font-size: 12pt;
+}
+
+@media screen {
+  /* A4 を並べたプレビュー（余白は @page と同じ 8mm / 10mm をパディングで再現） */
+  body {
+    padding: 20px 16px 40px;
+    background: #b0b0b0;
+  }
+
+  .print-root {
+    max-width: none;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .sheet {
+    width: min(210mm, 100%);
+    /* 外寸 A4 縦 = 297mm（パディング込み）。内側のグリッド領域が上下ちょうど半分ずつになる */
+    height: 297mm;
+    min-height: 297mm;
+    margin: 0 auto 28px;
+    padding: 8mm 10mm;
+    box-sizing: border-box;
+    background: #fff;
+    box-shadow:
+      0 1px 4px rgba(0, 0, 0, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .sheet:last-child {
+    margin-bottom: 0;
+  }
+
+  /* プレビュー上の左右パディング（10mm）に合わせて線幅を揃える */
+  .sheet::after {
+    left: 10mm;
+    right: 10mm;
+  }
+}

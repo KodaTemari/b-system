@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test",
+    "print:scorecards": "node scripts/generate-print-scorecards.mjs",
     "deploy": "npm run build && node -e \"console.log('ビルド完了。deploy.ps1またはdeploy.shを実行してデプロイしてください。')\"",
     "server": "cd server && node server.js"
   },

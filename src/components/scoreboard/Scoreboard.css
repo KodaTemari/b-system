@@ -783,18 +783,20 @@ h2 .profilePic img {
   opacity: 0.8;
 }
 
-/* TieBreakボタン表示条件（finalShotとtieBreakセクションのみ） */
-#scoreboard[data-section="finalShot"][data-active="red-score"] #red .score .tieBreak,
-#scoreboard[data-section="finalShot"][data-active="blue-score"] #blue .score .tieBreak,
-#scoreboard[data-section="tieBreak"][data-active="red-score"] #red .score .tieBreak,
-#scoreboard[data-section="tieBreak"][data-active="blue-score"] #blue .score .tieBreak {
+/* TieBreakボタン表示条件（ctrl のみ・finalShot と tieBreak セクション） */
+[data-mode="ctrl"] #scoreboard[data-section="finalShot"][data-active="red-score"] #red .score .tieBreak,
+[data-mode="ctrl"] #scoreboard[data-section="finalShot"][data-active="blue-score"] #blue .score .tieBreak,
+[data-mode="ctrl"] #scoreboard[data-section="tieBreak"][data-active="red-score"] #red .score .tieBreak,
+[data-mode="ctrl"] #scoreboard[data-section="tieBreak"][data-active="blue-score"] #blue .score .tieBreak {
   display: block !important;
   opacity: 0.8;
 }
 
-/* viewモードではタイブレーク決定ボタン（〇）を常に非表示 */
-[data-mode="view"]#scoreboard #red .score .tieBreak,
-[data-mode="view"]#scoreboard #blue .score .tieBreak {
+/* view：body に data-mode、#scoreboard に data-section のため祖先結合（上記より弱い view 用 hide は詳細度負けしていた） */
+[data-mode="view"] #scoreboard[data-section="finalShot"] #red .score .tieBreak,
+[data-mode="view"] #scoreboard[data-section="finalShot"] #blue .score .tieBreak,
+[data-mode="view"] #scoreboard[data-section="tieBreak"] #red .score .tieBreak,
+[data-mode="view"] #scoreboard[data-section="tieBreak"] #blue .score .tieBreak {
   display: none !important;
 }
 

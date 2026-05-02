@@ -237,15 +237,17 @@ const PlayerInfoPanel = ({
             </button>
           </>
         )}
-        <button 
-          type="button" 
-          name={tieBreakBtnName} 
-          value="false" 
-          className="tieBreak" 
-          onClick={onTieBreakSelect}
-        >
-          〇
-        </button>
+        {isCtrl && (
+          <button 
+            type="button" 
+            name={tieBreakBtnName} 
+            value="false" 
+            className="tieBreak" 
+            onClick={onTieBreakSelect}
+          >
+            〇
+          </button>
+        )}
         <span className="winMark"></span>
       </div>
       <div className="time">
