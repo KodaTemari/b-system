@@ -373,6 +373,15 @@ async function writeJsonFileAtomic(filePath, data, options = {}) {
   await writeTextFileAtomic(filePath, jsonString);
 }
 
+/** 廃止した red/blue フィールドを除外してから spread（match.ends / 選手マスタで代替） */
+function omitLegacyGameTeamFields(side) {
+  if (!side || typeof side !== 'object') {
+    return {};
+  }
+  const { scores, affiliation, ...rest } = side;
+  return rest;
+}
+
 /** game.json 用: match.ends の shots を1行化（PUT /api/data とスナップショットで共通） */
 function stringifyGameJsonForDisk(data) {
   let jsonString = JSON.stringify(data, null, 2);
@@ -383,6 +392,48 @@ function stringifyGameJsonForDisk(data) {
     },
   );
   return jsonString;
+}
+
+/**
+ * match-snapshots 用: 試合後に不要な UI・タイマー系を除き、視認性のため軽量化する（court の game.json はそのまま）。
+ */
+function pruneGameSnapshotForDisk(game) {
+  if (!game || typeof game !== 'object') {
+    return game;
+  }
+  const out = { ...game };
+  delete out.profilePic;
+  delete out.screen;
+  delete out.warmup;
+  delete out.interval;
+
+  if (out.match && typeof out.match === 'object') {
+    const m = { ...out.match };
+    delete m.end;
+    delete m.sectionID;
+    delete m.approvals;
+    out.match = m;
+  }
+
+  const stripSide = (side) => {
+    if (!side || typeof side !== 'object') {
+      return side;
+    }
+    const s = { ...side };
+    delete s.ball;
+    delete s.isRunning;
+    delete s.time;
+    delete s.scores;
+    delete s.affiliation;
+    return s;
+  };
+  if (out.red) {
+    out.red = stripSide(out.red);
+  }
+  if (out.blue) {
+    out.blue = stripSide(out.blue);
+  }
+  return out;
 }
 
 /**
@@ -407,7 +458,8 @@ async function writeMatchGameSnapshotAfterCourtApprove(eventId, matchId, courtId
   const dir = path.join(DATA_ROOT, eventId, 'match-snapshots');
   await fs.ensureDir(dir);
   const filePath = path.join(dir, `${matchId}-game-snapshot.json`);
-  const jsonString = stringifyGameJsonForDisk(game);
+  const pruned = pruneGameSnapshotForDisk(game);
+  const jsonString = stringifyGameJsonForDisk(pruned);
   await writeTextFileAtomic(filePath, jsonString);
   return { ok: true, path: filePath };
 }
@@ -844,13 +896,12 @@ async function syncAnnounceToCourtFiles(eventId, match) {
       time: initDefaults.intervalLimit,
     },
     red: {
-      ...(game.red || {}),
+      ...omitLegacyGameTeamFields(game.red),
       name: redName,
       playerID: redId,
       limit: redLimitMs,
       ...(initDefaults.profilePicMode === 'none' ? { profilePic: '' } : {}),
       score: 0,
-      scores: [],
       ball: 6,
       isRunning: false,
       time: redLimitMs,
@@ -861,13 +912,12 @@ async function syncAnnounceToCourtFiles(eventId, match) {
       redCard: 0,
     },
     blue: {
-      ...(game.blue || {}),
+      ...omitLegacyGameTeamFields(game.blue),
       name: blueName,
       playerID: blueId,
       limit: blueLimitMs,
       ...(initDefaults.profilePicMode === 'none' ? { profilePic: '' } : {}),
       score: 0,
-      scores: [],
       ball: 6,
       isRunning: false,
       time: blueLimitMs,
@@ -912,12 +962,12 @@ async function syncUnannounceToCourtFiles(eventId, match) {
       ...game,
       matchID: '',
       red: {
-        ...(game.red || {}),
+        ...omitLegacyGameTeamFields(game.red),
         name: SCOREBOARD_DEFAULT_RED_NAME,
         playerID: '',
       },
       blue: {
-        ...(game.blue || {}),
+        ...omitLegacyGameTeamFields(game.blue),
         name: SCOREBOARD_DEFAULT_BLUE_NAME,
         playerID: '',
       },
@@ -995,11 +1045,10 @@ async function resetAllCourtFilesForRetest(eventId) {
           time: intervalLimit,
         },
         red: {
-          ...(game.red || {}),
+          ...omitLegacyGameTeamFields(game.red),
           name: SCOREBOARD_DEFAULT_RED_NAME,
           playerID: '',
           score: 0,
-          scores: [],
           ball: 6,
           isRunning: false,
           time: redLimit,
@@ -1010,11 +1059,10 @@ async function resetAllCourtFilesForRetest(eventId) {
           redCard: 0,
         },
         blue: {
-          ...(game.blue || {}),
+          ...omitLegacyGameTeamFields(game.blue),
           name: SCOREBOARD_DEFAULT_BLUE_NAME,
           playerID: '',
           score: 0,
-          scores: [],
           ball: 6,
           isRunning: false,
           time: blueLimit,

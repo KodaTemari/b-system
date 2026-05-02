@@ -17,7 +17,6 @@ import {
   isTieBreakScoreSingleDigit,
   isWinnerPlaceholder,
   normalizePlayers,
-  renderNameWithLineBreaks,
   toDateTimeLabel,
   toEventDateLabel,
   toShortMatchId,
@@ -457,15 +456,8 @@ const Schedule = () => {
                       const colorState = courtColorStateMap.get(String(match.matchId ?? ''));
                       const progressInfo = matchProgressInfoMap.get(String(match.matchId ?? ''));
                       const rawProgressStatus = String(progressInfo?.status ?? 'scheduled');
-                      const sidesLockedByProgress = [
-                        'announced',
-                        'in_progress',
-                        'court_approved',
-                        'hq_approved',
-                        'reflected',
-                      ].includes(rawProgressStatus);
-                      const isColorConfirmed =
-                        colorState?.isColorSet === true || sidesLockedByProgress;
+                      /** 赤青下線はコートで色確定（screen.isColorSet）後のみ。配信済みでも未確定なら非表示 */
+                      const isColorConfirmed = colorState?.isColorSet === true;
                       const scheduleLeftIsCourtRed = getScheduleLeftIsCourtRed(
                         match,
                         colorState,
@@ -485,6 +477,10 @@ const Schedule = () => {
                       const rightWon =
                         (scheduleLeftIsCourtRed && isBlueWinner) || (!scheduleLeftIsCourtRed && isRedWinner);
                       const displayProgressStatus = getScheduleDisplayProgressStatus(progressInfo);
+                      /** 試合開始前は「-」行のみで縦幅を食うため非表示（16:9 一覧性向上） */
+                      const showScheduleLiveScore =
+                        colorState?.isScoreVisible === true ||
+                        !['scheduled', 'announced'].includes(rawProgressStatus);
                       // 本部承認（または反映済み）まで isWinner は付けない。プール表マージは HQ 承認済みデータのみ。
                       const isScheduleWinnerMarked =
                         colorState?.scheduleResultFinal === true ||
@@ -532,58 +528,62 @@ const Schedule = () => {
                         : undefined;
                       return (
                         <td key={`${slot}-${court}`} className="scheduleCell" style={inProgressPoolBgStyle}>
-                          <div className="scheduleMatchMain">
+                          <div
+                            className={`scheduleMatchMain${showScheduleLiveScore ? '' : ' scheduleMatchMain--noScore'}`}
+                          >
                             <p
                               className={`schedulePlayerName ${leftNameClass} ${isWinnerPlaceholder(redName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(redName)}
+                              {redName}
                             </p>
                             <p className="scheduleVersus">VS</p>
                             <p
                               className={`schedulePlayerName ${rightNameClass} ${isWinnerPlaceholder(blueName) ? 'isPlaceholderName' : ''}`}
                             >
-                              {renderNameWithLineBreaks(blueName)}
+                              {blueName}
                             </p>
                           </div>
-                          <p className="scheduleLiveScore">
-                            {colorState?.isScoreVisible ? (
-                              <span className="scheduleLiveScoreCluster">
-                                <span className="scheduleLiveScoreValue">
-                                  {showTbTag && leftWon ? (
-                                    <span
-                                      className={`scheduleScoreCircled${
-                                        isTieBreakScoreSingleDigit(leftScore)
-                                          ? ' scheduleScoreCircledIsRound'
-                                          : ''
-                                      }`}
-                                    >
-                                      {leftScore}
-                                    </span>
-                                  ) : (
-                                    leftScore
-                                  )}
+                          {showScheduleLiveScore ? (
+                            <p className="scheduleLiveScore">
+                              {colorState?.isScoreVisible ? (
+                                <span className="scheduleLiveScoreCluster">
+                                  <span className="scheduleLiveScoreValue">
+                                    {showTbTag && leftWon ? (
+                                      <span
+                                        className={`scheduleScoreCircled${
+                                          isTieBreakScoreSingleDigit(leftScore)
+                                            ? ' scheduleScoreCircledIsRound'
+                                            : ''
+                                        }`}
+                                      >
+                                        {leftScore}
+                                      </span>
+                                    ) : (
+                                      leftScore
+                                    )}
+                                  </span>
+                                  <span className="scheduleLiveScoreDash"> - </span>
+                                  <span className="scheduleLiveScoreValue">
+                                    {showTbTag && rightWon ? (
+                                      <span
+                                        className={`scheduleScoreCircled${
+                                          isTieBreakScoreSingleDigit(rightScore)
+                                            ? ' scheduleScoreCircledIsRound'
+                                            : ''
+                                        }`}
+                                      >
+                                        {rightScore}
+                                      </span>
+                                    ) : (
+                                      rightScore
+                                    )}
+                                  </span>
                                 </span>
-                                <span className="scheduleLiveScoreDash"> - </span>
-                                <span className="scheduleLiveScoreValue">
-                                  {showTbTag && rightWon ? (
-                                    <span
-                                      className={`scheduleScoreCircled${
-                                        isTieBreakScoreSingleDigit(rightScore)
-                                          ? ' scheduleScoreCircledIsRound'
-                                          : ''
-                                      }`}
-                                    >
-                                      {rightScore}
-                                    </span>
-                                  ) : (
-                                    rightScore
-                                  )}
-                                </span>
-                              </span>
-                            ) : (
-                              scoreLabel
-                            )}
-                          </p>
+                              ) : (
+                                scoreLabel
+                              )}
+                            </p>
+                          ) : null}
                           {SHOW_MATCH_ID && (
                             <p className="scheduleMatchSub">{`ID: ${toShortMatchId(match.matchId)}`}</p>
                           )}

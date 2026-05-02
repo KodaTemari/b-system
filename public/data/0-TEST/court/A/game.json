@@ -3,8 +3,18 @@
   "match": {
     "end": 0,
     "ends": [
-      { "end": 1, "shots": [], "redScore": 1, "blueScore": 0 },
-      { "end": 2, "shots": [], "redScore": 0, "blueScore": 2 }
+      {
+        "end": 1,
+        "shots": [],
+        "redScore": 1,
+        "blueScore": 0
+      },
+      {
+        "end": 2,
+        "shots": [],
+        "redScore": 0,
+        "blueScore": 2
+      }
     ],
     "sectionID": 5,
     "section": "matchFinished",
@@ -37,8 +47,6 @@
     "isTieBreak": false,
     "result": "lose",
     "playerID": "",
-    "affiliation": "",
-    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
@@ -51,8 +59,6 @@
     "isTieBreak": false,
     "result": "win",
     "playerID": "",
-    "affiliation": "",
-    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0

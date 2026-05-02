@@ -4,6 +4,7 @@ import {
   BALL_COUNTS,
   GAME_SECTIONS,
   MERGE_STOPPED_TIMER_TIME_EPSILON_MS,
+  stripLegacyTeamFields,
 } from '../../utils/scoreboard/constants';
 
 /**
@@ -132,20 +133,20 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         totalEnds: incomingData.match?.totalEnds ?? prevData.match?.totalEnds,
         ends: incomingData.match?.ends || prevData.match?.ends || []
       },
-      red: {
+      red: stripLegacyTeamFields({
         ...prevData.red,
         ...(incomingData.red || {}),
         ...preserveRunningTimerState('red'),
         ...preferLocalStoppedTimer('red'),
         ...preferStoppedTimeWhenClose('red')
-      },
-      blue: {
+      }),
+      blue: stripLegacyTeamFields({
         ...prevData.blue,
         ...(incomingData.blue || {}),
         ...preserveRunningTimerState('blue'),
         ...preferLocalStoppedTimer('blue'),
         ...preferStoppedTimeWhenClose('blue')
-      },
+      }),
       warmup: {
         ...prevData.warmup,
         ...(incomingData.warmup || {}),
@@ -209,7 +210,6 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         isTieBreak: false,
         result: '',
         playerID: '',
-        affiliation: '',
         country: '',
         profilePic: ''
       },
@@ -223,7 +223,6 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
         isTieBreak: false,
         result: '',
         playerID: '',
-        affiliation: '',
         country: '',
         profilePic: ''
       }
@@ -318,8 +317,8 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           section,
           sections
         },
-        red: { ...defaultData.red, ...(dataWithConsolidatedEnds.red || {}) },
-        blue: { ...defaultData.blue, ...(dataWithConsolidatedEnds.blue || {}) }
+        red: stripLegacyTeamFields({ ...defaultData.red, ...(dataWithConsolidatedEnds.red || {}) }),
+        blue: stripLegacyTeamFields({ ...defaultData.blue, ...(dataWithConsolidatedEnds.blue || {}) })
       };
     }
 
@@ -578,11 +577,10 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           time: settings.interval.limit || TIMER_LIMITS.INTERVAL,
           isRunning: false
         },
-        red: {
+        red: stripLegacyTeamFields({
           ...prevData.red,
           ...settings.red,
           score: 0,
-          scores: [],
           time: settings.red.limit || TIMER_LIMITS.GAME,
           isRunning: false,
           ball: 6,
@@ -591,12 +589,11 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           yellowCard: 0,
           penaltyBall: 0,
           redCard: 0
-        },
-        blue: {
+        }),
+        blue: stripLegacyTeamFields({
           ...prevData.blue,
           ...settings.blue,
           score: 0,
-          scores: [],
           time: settings.blue.limit || TIMER_LIMITS.GAME,
           isRunning: false,
           ball: 6,
@@ -605,7 +602,7 @@ export const useGameState = (initialData = {}, isCtrl = false) => {
           yellowCard: 0,
           penaltyBall: 0,
           redCard: 0
-        },
+        }),
         screen: {
           active: '',
           isColorSet: false,

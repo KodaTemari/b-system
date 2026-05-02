@@ -34,8 +34,6 @@
     "isTieBreak": false,
     "result": "",
     "playerID": "",
-    "affiliation": "",
-    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0
@@ -48,8 +46,6 @@
     "isTieBreak": false,
     "result": "",
     "playerID": "",
-    "affiliation": "",
-    "scores": [],
     "yellowCard": 0,
     "penaltyBall": 0,
     "redCard": 0

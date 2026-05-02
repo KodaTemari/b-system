@@ -99,7 +99,6 @@ export const DEFAULT_GAME_DATA = {
   red: {
     name: 'Red',
     score: 0,
-    scores: [], // [{ end: number, score: number, penalties?: string[] }]
     limit: TIMER_LIMITS.GAME,
     ball: 6,
     isRunning: false,
@@ -114,7 +113,6 @@ export const DEFAULT_GAME_DATA = {
   blue: {
     name: 'Blue',
     score: 0,
-    scores: [], // [{ end: number, score: number, penalties?: string[] }]
     limit: TIMER_LIMITS.GAME,
     ball: 6,
     isRunning: false,
@@ -133,3 +131,12 @@ export const DEFAULT_GAME_DATA = {
   scene: 'official',
   lastUpdated: ''
 };
+
+/** 旧 game.json の廃止フィールド（match.ends / 選手マスタで代替）。マージ・保存前に除去する */
+export function stripLegacyTeamFields(team) {
+  if (!team || typeof team !== 'object') {
+    return team;
+  }
+  const { scores, affiliation, ...rest } = team;
+  return rest;
+}

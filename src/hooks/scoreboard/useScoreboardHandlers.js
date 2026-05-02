@@ -1,5 +1,11 @@
 import { useCallback } from 'react';
-import { TIMER_LIMITS, UI_CONSTANTS, GAME_SECTIONS, DEFAULT_GAME_DATA } from '../../utils/scoreboard/constants';
+import {
+  TIMER_LIMITS,
+  UI_CONSTANTS,
+  GAME_SECTIONS,
+  DEFAULT_GAME_DATA,
+  stripLegacyTeamFields,
+} from '../../utils/scoreboard/constants';
 import { getText as getLocalizedText } from '../../locales';
 import { calculateBallCount } from '../../utils/scoreboard/gameLogic';
 
@@ -1302,11 +1308,10 @@ export const useScoreboardHandlers = ({
           time: settings.interval.limit || TIMER_LIMITS.INTERVAL,
           isRunning: false
         },
-        red: {
+        red: stripLegacyTeamFields({
           ...DEFAULT_GAME_DATA.red,
           ...settings.red,
           score: 0,
-          scores: [],
           time: settings.red.limit || TIMER_LIMITS.GAME,
           isRunning: false,
           ball: 6,
@@ -1315,12 +1320,11 @@ export const useScoreboardHandlers = ({
           yellowCard: 0,
           penaltyBall: 0,
           redCard: 0
-        },
-        blue: {
+        }),
+        blue: stripLegacyTeamFields({
           ...DEFAULT_GAME_DATA.blue,
           ...settings.blue,
           score: 0,
-          scores: [],
           time: settings.blue.limit || TIMER_LIMITS.GAME,
           isRunning: false,
           ball: 6,
@@ -1329,7 +1333,7 @@ export const useScoreboardHandlers = ({
           yellowCard: 0,
           penaltyBall: 0,
           redCard: 0
-        },
+        }),
         lastUpdated: new Date().toISOString()
       };
       
@@ -1551,7 +1555,7 @@ export const useScoreboardHandlers = ({
     }
     
     // 入れ替える対象のフィールドリスト
-    const playerFields = ['name', 'playerID', 'affiliation', 'country', 'profilePic', 'limit'];
+    const playerFields = ['name', 'playerID', 'country', 'profilePic', 'limit'];
     
     const newRed = { ...gameData.red };
     const newBlue = { ...gameData.blue };

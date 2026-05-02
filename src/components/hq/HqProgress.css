@@ -294,6 +294,10 @@ a.hqProgressDbInspectLink {
   color: rgb(var(--color-gray-lighter));
 }
 
+.hqProgressApproverModalForm {
+  margin: 0;
+}
+
 .hqProgressApproverModalActions {
   margin-top: 10px;
 }

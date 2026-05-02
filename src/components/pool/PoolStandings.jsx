@@ -319,6 +319,8 @@ const PoolStandings = ({ embedInHq = false, showEndsWonColumn = false }) => {
     matches: [],
   });
   const [courtGamesList, setCourtGamesList] = useState([]);
+  /** プール表にコートの得点・エンドを反映してよい試合（本部承認／反映済みのみ） */
+  const [hqApprovedMatchIds, setHqApprovedMatchIds] = useState(() => new Set());
 
   useEffect(() => {
     if (!eventId) {
@@ -354,16 +356,28 @@ const PoolStandings = ({ embedInHq = false, showEndsWonColumn = false }) => {
     for (const entry of courtGamesList) {
       const game = entry?.game ?? {};
       const mid = String(game.matchID ?? '').trim();
-      if (!mid) {
+      if (!mid || !hqApprovedMatchIds.has(mid)) {
         continue;
       }
       const { red, blue } = countRegulationEndsWonFromMatchEnds(game?.match?.ends);
       map.set(mid, { redEndsWon: red, blueEndsWon: blue });
     }
     return map;
-  }, [courtGamesList]);
+  }, [courtGamesList, hqApprovedMatchIds]);
 
-  const courtByMatchId = useMemo(() => buildCourtByMatchId(courtGamesList), [courtGamesList]);
+  const courtByMatchId = useMemo(() => {
+    const full = buildCourtByMatchId(courtGamesList);
+    if (hqApprovedMatchIds.size === 0) {
+      return new Map();
+    }
+    const filtered = new Map();
+    for (const [matchId, row] of full) {
+      if (hqApprovedMatchIds.has(matchId)) {
+        filtered.set(matchId, row);
+      }
+    }
+    return filtered;
+  }, [courtGamesList, hqApprovedMatchIds]);
 
   useEffect(() => {
     if (!eventId) {
@@ -378,6 +392,12 @@ const PoolStandings = ({ embedInHq = false, showEndsWonColumn = false }) => {
         }
         const payload = await response.json();
         const rows = Array.isArray(payload?.matches) ? payload.matches : [];
+        const approvedIds = new Set(
+          rows.map((row) => String(row?.match_id ?? '').trim()).filter(Boolean)
+        );
+        if (!cancelled) {
+          setHqApprovedMatchIds(approvedIds);
+        }
         const resultMap = new Map();
         for (const row of rows) {
           const matchId = String(row?.match_id ?? '').trim();

@@ -30,6 +30,9 @@ const PlayerList = lazy(() => import('../players/PlayerList'));
 // 将来復活できるよう、試合ID表示はトグルで制御する
 const SHOW_MATCH_ID = false;
 
+/** TD（本部承認）モードの承認者名デフォルト（テスト時の入力負荷軽減） */
+const DEFAULT_HQ_TD_APPROVER_NAME = 'TD';
+
 const statusLabelMap = {
   scheduled: '待機',
   announced: '配信済み',
@@ -122,7 +125,7 @@ const HqProgress = () => {
   const [operationMessage, setOperationMessage] = useState('');
   const [hqApproverName, setHqApproverName] = useState('');
   const [showApproverModal, setShowApproverModal] = useState(false);
-  const [approverNameDraft, setApproverNameDraft] = useState('');
+  const [approverNameDraft, setApproverNameDraft] = useState(DEFAULT_HQ_TD_APPROVER_NAME);
   const [actionBusyKey, setActionBusyKey] = useState('');
   const [importing, setImporting] = useState(false);
   /** 本部ヘッダー中央タブ: 選手一覧 / 試合進行 / プール表 */
@@ -151,10 +154,17 @@ const HqProgress = () => {
       return;
     }
     if (!hqApproverName.trim()) {
-      setApproverNameDraft('');
       setShowApproverModal(true);
     }
   }, [isTdMode, hqApproverName]);
+
+  /** モーダル表示時は常に入力の value に TD を入れた状態から始める */
+  useEffect(() => {
+    if (!isTdMode || !showApproverModal) {
+      return;
+    }
+    setApproverNameDraft(DEFAULT_HQ_TD_APPROVER_NAME);
+  }, [isTdMode, showApproverModal]);
 
   const fetchProgress = useCallback(async () => {
     if (!eventId) {
@@ -485,6 +495,7 @@ const HqProgress = () => {
     const approverName = hqApproverName.trim();
     if (!approverName) {
       setOperationError('本部承認者名を入力してください。');
+      setApproverNameDraft((prev) => String(prev).trim() || DEFAULT_HQ_TD_APPROVER_NAME);
       setShowApproverModal(true);
       return;
     }
@@ -851,16 +862,8 @@ const HqProgress = () => {
                             ),
                           }
                         : undefined;
-                      // コート game.json の isColorSet が無くても、アナウンス以降は赤青が確定しているのでボーダーを表示する
-                      const sidesLockedByProgress = [
-                        'announced',
-                        'in_progress',
-                        'court_approved',
-                        'hq_approved',
-                        'reflected',
-                      ].includes(rawStatus);
-                      const isColorConfirmed =
-                        colorState?.isColorSet === true || sidesLockedByProgress;
+                      /** 赤青下線はコートで色確定（screen.isColorSet）後のみ。一斉配信直後も未確定なら非表示 */
+                      const isColorConfirmed = colorState?.isColorSet === true;
                       const scheduleLeftIsCourtRed = getScheduleLeftIsCourtRed(
                         match,
                         colorState,
@@ -1070,23 +1073,26 @@ const HqProgress = () => {
           <div className="hqProgressApproverModal">
             <h2 id="hq-approver-modal-title" className="hqProgressApproverModalTitle">本部承認者名を入力</h2>
             <p className="hqProgressApproverModalNote">この名前で本部承認を実行します。</p>
-            <input
-              type="text"
-              className="hqProgressApproverInput"
-              value={approverNameDraft}
-              onChange={(event) => setApproverNameDraft(event.target.value)}
-              placeholder="例: TD"
-              autoFocus
-            />
-            <div className="hqProgressApproverModalActions">
-              <button
-                type="button"
-                className="hqProgressActionButton"
-                onClick={handleApproverModalSubmit}
-              >
-                設定
-              </button>
-            </div>
+            <form
+              className="hqProgressApproverModalForm"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleApproverModalSubmit();
+              }}
+            >
+              <input
+                type="text"
+                className="hqProgressApproverInput"
+                value={approverNameDraft}
+                onChange={(event) => setApproverNameDraft(event.target.value)}
+                autoFocus
+              />
+              <div className="hqProgressApproverModalActions">
+                <button type="submit" className="hqProgressActionButton">
+                  確定
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       ) : null}

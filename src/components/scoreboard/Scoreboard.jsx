@@ -1413,7 +1413,7 @@ const Scoreboard = () => {
                     sections: newSections
                   };
 
-                  // totalEndsが変更された場合、scores配列は既存のエントリのみ保持（事前生成しない）
+                  // totalEnds が変更された場合、match.ends は既存エントリのみ保持（事前生成しない）
                 }
 
                 saveData(updatedGameData);
