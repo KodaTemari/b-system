@@ -485,21 +485,19 @@ const Schedule = () => {
                       const rightWon =
                         (scheduleLeftIsCourtRed && isBlueWinner) || (!scheduleLeftIsCourtRed && isRedWinner);
                       const displayProgressStatus = getScheduleDisplayProgressStatus(progressInfo);
-                      // 本部進行と同様: 試合終了表示・コート/本部承認後のみ勝者黄色ボーダー（リード中の試合中は付けない）
-                      const isScheduleResultFinal =
+                      // 本部承認（または反映済み）まで isWinner は付けない。プール表マージは HQ 承認済みデータのみ。
+                      const isScheduleWinnerMarked =
                         colorState?.scheduleResultFinal === true ||
-                        ['match_finished', 'court_approved', 'hq_approved', 'reflected'].includes(
-                          displayProgressStatus,
-                        );
+                        ['hq_approved', 'reflected'].includes(displayProgressStatus);
                       const showTbTag =
                         colorState?.isScoreVisible === true &&
-                        isScheduleResultFinal &&
+                        isScheduleWinnerMarked &&
                         (isRedWinner || isBlueWinner) &&
                         Number(colorState?.redScore ?? NaN) === Number(colorState?.blueScore ?? NaN);
                       const shouldHighlightWinnerBorder =
                         colorState?.isScoreVisible === true &&
                         (isRedWinner || isBlueWinner) &&
-                        isScheduleResultFinal;
+                        isScheduleWinnerMarked;
                       const leftNameClass = shouldHighlightWinnerBorder
                         ? (leftWon ? 'isWinner' : '')
                         : isColorConfirmed

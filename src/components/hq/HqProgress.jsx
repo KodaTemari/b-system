@@ -992,7 +992,7 @@ const HqProgress = () => {
                                   ['hq_approved', 'reflected'].includes(effectiveStatus)
                                     ? 'isFullyTransparent'
                                     : ''
-                                }`}
+                                } ${effectiveStatus === 'court_approved' ? 'isHqApproveReady' : ''}`}
                                 onClick={() => handleHqApprove(match)}
                                 disabled={!canHqApprove || actionBusyKey !== '' || importing}
                               >

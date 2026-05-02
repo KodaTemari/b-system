@@ -655,8 +655,11 @@ export const useScoreboardHandlers = ({
       updateTimer('blue', gameData.blue.limit || TIMER_LIMITS.GAME, false);
       updateField('warmup', 'isRunning', false);
       updateField('warmup', 'time', gameData.warmup.limit);
-      updateField('interval', 'isRunning', false);
-      updateField('interval', 'time', gameData.interval.limit);
+      // インターバルへ遷移するときは直前の updateTimer(interval, …, true) で開始済み。ここで止めると常に動かない。
+      if (nextSection !== 'interval') {
+        updateField('interval', 'isRunning', false);
+        updateField('interval', 'time', gameData.interval.limit);
+      }
       
       // スクリーン表示をリセット
       if (isCtrl) {

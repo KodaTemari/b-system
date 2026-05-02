@@ -160,10 +160,14 @@ export const useTimerManagement = ({ initialTime, isRunning, enableAudio = true,
     }
 
     if (isRunning) {
-      // 残り時間がある場合のみタイマー開始
-      if (timerRef.current == null && remainingMs > 0) {
+      // ctrl 実行中は親の initialTime を同期しないため、前回 0 で止まった remainingMs が残り
+      // 「開始したのに動かない」ことがある。残りが 0 のときは initialTime でシードする。
+      const seedMs =
+        remainingMs > 0 ? remainingMs : Math.max(0, Number(initialTime) || 0);
+      if (timerRef.current == null && seedMs > 0) {
         startTimeRef.current = Date.now();
-        initialRemainingMsRef.current = remainingMs;
+        initialRemainingMsRef.current = seedMs;
+        lastDisplayTimeRef.current = Math.floor(seedMs / 1000);
 
         // rAF で秒境界を細かく検出するが、毎フレーム setRemainingMs すると親が ~60fps 再レンダーし、
         // メインスレッドが詰まって CSS（ボール点滅など）と表示が同時に止まって見える。

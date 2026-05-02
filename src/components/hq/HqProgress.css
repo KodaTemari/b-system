@@ -164,7 +164,7 @@
 }
 
 .hqProgressStatus.isCourtApproved {
-  color: rgb(var(--color-yellow));
+  color: rgb(var(--color-green-light));
 }
 
 .hqProgressStatus.isHqApproved {
@@ -225,6 +225,24 @@ a.hqProgressDbInspectLink {
 .hqProgressActionButton.isFullyTransparent {
   opacity: 0 !important;
   pointer-events: none;
+}
+
+/* コート承認済み：本部承認が押せるタイミングを緑で強調 */
+.hqProgressActionButton.isHqApproveReady {
+  border-color: rgb(var(--color-green));
+  background: rgba(var(--color-green), 0.24);
+  color: rgb(var(--color-white));
+  box-shadow: 0 0 0 1px rgba(var(--color-green), 0.45);
+}
+
+.hqProgressActionButton.isHqApproveReady:hover:not(:disabled) {
+  background: rgba(var(--color-green), 0.34);
+  border-color: rgb(var(--color-green-light));
+}
+
+.hqProgressActionButton.isHqApproveReady:focus-visible {
+  outline: 2px solid rgb(var(--color-green-light));
+  outline-offset: 2px;
 }
 
 .hqProgressApproverModalOverlay {
