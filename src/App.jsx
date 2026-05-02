@@ -2,6 +2,7 @@ import './styles/tokens.css';
 import './App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
+import { DocumentTitle } from './components/DocumentTitle';
 
 const Scoreboard = lazy(() => import('./components/scoreboard/Scoreboard'));
 const PoolResults = lazy(() => import('./components/results/PoolResults'));
@@ -16,6 +17,7 @@ const ScoreboardWall = lazy(() => import('./components/scoreboard/ScoreboardWall
 const App = () => {
     return (
         <BrowserRouter>
+            <DocumentTitle />
             <Routes>
                 {/* 大会モード（サーバー連携） */}
                 <Route path="/event/:id/court/:court/scoreboard" element={
