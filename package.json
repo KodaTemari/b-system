@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test": "node --test",
     "deploy": "npm run build && node -e \"console.log('ビルド完了。deploy.ps1またはdeploy.shを実行してデプロイしてください。')\"",
     "server": "cd server && node server.js"
   },

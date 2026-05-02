@@ -70,6 +70,33 @@ const toMatchScore = (match) => {
   return { red, blue };
 };
 
+/**
+ * game.json の red/blue はコート上の実際の席。schedule の redPlayerId/bluePlayerId はスケジュール表の左右とズレることがある。
+ * matchID → コート側の選手IDと得点（色交換後も正しいマッピング）
+ */
+const buildCourtByMatchId = (courtGamesList) => {
+  const map = new Map();
+  if (!Array.isArray(courtGamesList)) {
+    return map;
+  }
+  for (const entry of courtGamesList) {
+    const game = entry?.game ?? {};
+    const mid = String(game.matchID ?? '').trim();
+    if (!mid) {
+      continue;
+    }
+    const courtRedId = String(game?.red?.playerID ?? '').trim();
+    const courtBlueId = String(game?.blue?.playerID ?? '').trim();
+    if (!courtRedId || !courtBlueId) {
+      continue;
+    }
+    const redScore = Number(game?.red?.score ?? 0);
+    const blueScore = Number(game?.blue?.score ?? 0);
+    map.set(mid, { courtRedId, courtBlueId, redScore, blueScore });
+  }
+  return map;
+};
+
 const getNotationMode = (lang) => {
   return lang === 'ja' ? 'jp' : 'wl';
 };
@@ -117,7 +144,15 @@ const resolveMatchPoolId = (match, playerPoolGroupMap) => {
   return '';
 };
 
-const buildPoolViewData = (poolId, players, schedule, playerNameMap, playerPoolGroupMap, endsWonByMatchId) => {
+const buildPoolViewData = (
+  poolId,
+  players,
+  schedule,
+  playerNameMap,
+  playerPoolGroupMap,
+  endsWonByMatchId,
+  courtByMatchId = new Map()
+) => {
   const endsMap = endsWonByMatchId instanceof Map ? endsWonByMatchId : new Map();
   const targetPool = schedule.pools.find((pool) => pool.poolId.toUpperCase() === poolId) ?? null;
   const poolMatches = schedule.matches
@@ -182,16 +217,25 @@ const buildPoolViewData = (poolId, players, schedule, playerNameMap, playerPoolG
   const cellMap = new Map();
   const tieMatches = [];
   for (const match of poolMatches) {
-    const redId = String(match.redPlayerId ?? '').trim();
-    const blueId = String(match.bluePlayerId ?? '').trim();
+    const matchId = String(match.matchId ?? '').trim();
+    const court = matchId && courtByMatchId.size ? courtByMatchId.get(matchId) : null;
+
+    let redId = String(match.redPlayerId ?? '').trim();
+    let blueId = String(match.bluePlayerId ?? '').trim();
+    let score = toMatchScore(match);
+
+    if (court && statsMap.has(court.courtRedId) && statsMap.has(court.courtBlueId)) {
+      redId = court.courtRedId;
+      blueId = court.courtBlueId;
+      score = { red: court.redScore, blue: court.blueScore };
+    }
+
     if (!statsMap.has(redId) || !statsMap.has(blueId)) {
       continue;
     }
-    const score = toMatchScore(match);
     if (!score) {
       continue;
     }
-    const matchId = String(match.matchId ?? '').trim();
     const endsRec = matchId && endsMap.has(matchId) ? endsMap.get(matchId) : { redEndsWon: 0, blueEndsWon: 0 };
     const redStats = statsMap.get(redId);
     const blueStats = statsMap.get(blueId);
@@ -318,6 +362,8 @@ const PoolStandings = ({ embedInHq = false, showEndsWonColumn = false }) => {
     }
     return map;
   }, [courtGamesList]);
+
+  const courtByMatchId = useMemo(() => buildCourtByMatchId(courtGamesList), [courtGamesList]);
 
   useEffect(() => {
     if (!eventId) {
@@ -528,10 +574,27 @@ const PoolStandings = ({ embedInHq = false, showEndsWonColumn = false }) => {
 
   const allPoolViews = useMemo(() => {
     return allPoolIds.map((id) => ({
-      ...buildPoolViewData(id, players, schedule, playerNameMap, playerPoolGroupMap, endsWonByMatchId),
+      ...buildPoolViewData(
+        id,
+        players,
+        schedule,
+        playerNameMap,
+        playerPoolGroupMap,
+        endsWonByMatchId,
+        courtByMatchId
+      ),
       hue: poolHueMap.get(id) ?? 110,
     }));
-  }, [allPoolIds, endsWonByMatchId, playerNameMap, playerPoolGroupMap, players, poolHueMap, schedule]);
+  }, [
+    allPoolIds,
+    courtByMatchId,
+    endsWonByMatchId,
+    playerNameMap,
+    playerPoolGroupMap,
+    players,
+    poolHueMap,
+    schedule,
+  ]);
 
   useEffect(() => {
     const sameIds =

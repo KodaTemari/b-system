@@ -92,12 +92,117 @@ export function computeMiniStatsForTieBreak(groupIds, matchRecords) {
 }
 
 /**
+ * ③〜⑤（プール全体の得失点差・総得点・総勝ちエンド）
+ * @param {Array<{ id: string, pointsFor: number, pointsAgainst: number, endsWon: number }>} rows
+ */
+function sortByFullPoolTiebreak(rows) {
+  return [...rows].sort((a, b) => {
+    const fd =
+      b.pointsFor - b.pointsAgainst - (a.pointsFor - a.pointsAgainst);
+    if (fd !== 0) {
+      return fd;
+    }
+    if (b.pointsFor !== a.pointsFor) {
+      return b.pointsFor - a.pointsFor;
+    }
+    if (b.endsWon !== a.endsWon) {
+      return b.endsWon - a.endsWon;
+    }
+    return String(a.id).localeCompare(String(b.id), 'ja');
+  });
+}
+
+/**
+ * ミニリーグ統計のタプル（降順ソート用）
+ * @param {Map<string, { wins: number, pointsFor: number, pointsAgainst: number, endsWon: number }>} mini
+ * @param {string} id
+ */
+function miniTupleFor(mini, id) {
+  const m = mini.get(id) ?? {
+    wins: 0,
+    pointsFor: 0,
+    pointsAgainst: 0,
+    endsWon: 0,
+  };
+  return [
+    Number(m.wins ?? 0),
+    Number(m.pointsFor ?? 0) - Number(m.pointsAgainst ?? 0),
+    Number(m.pointsFor ?? 0),
+    Number(m.endsWon ?? 0),
+  ];
+}
+
+function lexCompareDesc(ta, tb) {
+  for (let i = 0; i < ta.length; i++) {
+    if (tb[i] !== ta[i]) {
+      return tb[i] - ta[i];
+    }
+  }
+  return 0;
+}
+
+/**
+ * 同勝ちの選手だけで②直接対決（ミニリーグ）を適用し、まだ同順ならサブグループに再帰。
+ * ミニリーグでも全員同一なら③〜⑤で決定。
+ *
+ * @param {Array<{ id: string, wins: number, pointsFor: number, pointsAgainst: number, endsWon: number }>} rows
+ * @param {Array<{ redId: string, blueId: string, redScore: number, blueScore: number, winnerId: string | null, redEndsWon: number, blueEndsWon: number }>} matchRecords
+ */
+export function orderTiedSubgroupByBgpRules(rows, matchRecords) {
+  if (!Array.isArray(rows) || rows.length <= 1) {
+    return rows;
+  }
+  const ids = rows.map((r) => String(r.id ?? '').trim()).filter(Boolean);
+  const mini = computeMiniStatsForTieBreak(ids, matchRecords);
+  const t0 = miniTupleFor(mini, ids[0]);
+  const allMiniEqual = ids.every((id) => {
+    const t = miniTupleFor(mini, id);
+    return t.every((v, i) => v === t0[i]);
+  });
+  if (allMiniEqual) {
+    return sortByFullPoolTiebreak(rows);
+  }
+
+  const sorted = [...rows].sort((a, b) => {
+    const c = lexCompareDesc(miniTupleFor(mini, a.id), miniTupleFor(mini, b.id));
+    if (c !== 0) {
+      return c;
+    }
+    return String(a.id).localeCompare(String(b.id), 'ja');
+  });
+
+  const out = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i + 1;
+    while (j < sorted.length) {
+      const ti = miniTupleFor(mini, sorted[i].id);
+      const tj = miniTupleFor(mini, sorted[j].id);
+      if (ti.some((v, idx) => v !== tj[idx])) {
+        break;
+      }
+      j++;
+    }
+    const run = sorted.slice(i, j);
+    if (run.length === 1) {
+      out.push(run[0]);
+    } else {
+      out.push(...orderTiedSubgroupByBgpRules(run, matchRecords));
+    }
+    i = j;
+  }
+  return out;
+}
+
+/**
  * 同勝ち帯の並び替え用（groupIds は同じ wins の選手 id の配列）
+ * ペア比較では、その勝ち帯全体のミニリーグ統計で比較する（sortPoolRowsByBgpRules は orderTiedSubgroupByBgpRules を使用）。
+ *
  * @param {{ id: string, wins: number, pointsFor: number, pointsAgainst: number, endsWon: number }} a
  * @param {{ id: string, wins: number, pointsFor: number, pointsAgainst: number, endsWon: number }} b
  * @param {string[]} groupIds
  * @param {Array<{ redId: string, blueId: string, redScore: number, blueScore: number, winnerId: string | null, redEndsWon: number, blueEndsWon: number }>} matchRecords
- * @returns {number} sort 用（降順: b が先なら正）
+ * @returns {number} sort 用（a が上位なら負）
  */
 export function compareBgpPoolStandingRows(a, b, groupIds, matchRecords) {
   if (b.wins !== a.wins) {
@@ -159,9 +264,7 @@ export function sortPoolRowsByBgpRules(rows, matchRecords) {
   const out = [];
   for (const w of winLevels) {
     const group = byWin.get(w);
-    const groupIds = group.map((r) => r.id);
-    group.sort((a, b) => compareBgpPoolStandingRows(a, b, groupIds, matchRecords));
-    out.push(...group);
+    out.push(...orderTiedSubgroupByBgpRules(group, matchRecords));
   }
   return out;
 }
