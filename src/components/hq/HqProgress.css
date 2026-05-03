@@ -635,6 +635,68 @@ a.hqProgressDbInspectLink {
   border-color: rgba(200, 80, 80, 0.75);
 }
 
+/* TD 承認モーダル: 3 列テーブル（選手名｜ラベル｜…） */
+.hqProgressManualPaperReviewTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  table-layout: fixed;
+}
+
+.hqProgressManualPaperReviewTable td,
+.hqProgressManualPaperReviewTable th {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hqProgressManualPaperReviewTable tr:first-child td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.hqProgressManualPaperReviewTablePlayer {
+  text-align: left;
+}
+
+.hqProgressManualPaperReviewTablePlayer .hqProgressManualPaperSideBadge {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.hqProgressManualPaperReviewTablePlayerName {
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.hqProgressManualPaperReviewTableGap {
+  width: 4.5rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.hqProgressManualPaperReviewTableLabel {
+  width: 5rem;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: rgb(var(--color-gray-mid-light));
+  text-align: center;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.hqProgressManualPaperReviewTableNum {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.hqProgressManualPaperReviewMeta {
+  margin-top: 4px;
+}
+
 .hqProgressManualPaperReviewGrid {
   display: grid;
   grid-template-columns: minmax(100px, 120px) 1fr;
@@ -656,9 +718,4 @@ a.hqProgressDbInspectLink {
 
 .hqProgressManualPaperReviewGrid dd {
   margin: 0;
-}
-
-.hqProgressManualPaperMono {
-  font-family: ui-monospace, monospace;
-  font-size: 0.8rem;
 }
