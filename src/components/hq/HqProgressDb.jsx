@@ -48,7 +48,8 @@ const matchRowToDraft = (row) => ({
 });
 
 /**
- * 進行 SQLite（hq-progress.sqlite3）の参照・列単位の救済更新
+ * 進行 SQLite（hq-progress.sqlite3）の参照・列単位の救済更新。
+ * 本番運用では進行・結果の変更は専用 HTTP API 経由とすることを推奨（この UI は開発・救済用）。
  */
 const HqProgressDb = () => {
   const { eventId } = useParams();
@@ -293,9 +294,6 @@ const HqProgressDb = () => {
           </div>
           <div className="hqProgressTitleBarTrail scheduleTitleText">
             <h1 className="scheduleTitle">進行 SQLite</h1>
-            <p className="scheduleMeta hqProgressDbSubtitle">
-              hq-progress.sqlite3 の内容を確認・救済更新できます（本番は専用 API の利用を推奨）。
-            </p>
           </div>
         </header>
 

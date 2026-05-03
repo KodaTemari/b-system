@@ -165,6 +165,7 @@ async function ensureProgressionSchema(db) {
         blue_score INTEGER NOT NULL,
         red_ends_won INTEGER,
         blue_ends_won INTEGER,
+        match_ends_json TEXT,
         winner_player_id TEXT NOT NULL,
         referee_name TEXT NOT NULL,
         operator_name TEXT,
@@ -179,6 +180,14 @@ async function ensureProgressionSchema(db) {
       CREATE INDEX IF NOT EXISTS idx_manual_result_event_status ON manual_result_requests(event_id, status);
       CREATE INDEX IF NOT EXISTS idx_manual_result_event_match ON manual_result_requests(event_id, match_id);`,
     );
+  }
+  const manualCols = await allSql(db, `PRAGMA table_info(manual_result_requests)`);
+  const manualColNames = new Set(manualCols.map((item) => String(item.name)));
+  if (!manualColNames.has('match_ends_json')) {
+    await runSql(db, `ALTER TABLE manual_result_requests ADD COLUMN match_ends_json TEXT`);
+  }
+  if (!columnNames.has('hq_rejected_court_at')) {
+    await runSql(db, `ALTER TABLE matches ADD COLUMN hq_rejected_court_at TEXT`);
   }
 }
 
@@ -231,6 +240,7 @@ function normalizeMatchRow(row) {
     hqApprovedAt: row.hq_approved_at,
     hqApproverName: row.hq_approver_name,
     reflectedAt: row.reflected_at,
+    hqRejectedCourtAt: row.hq_rejected_court_at ?? null,
     version: row.version,
     updatedAt: row.updated_at,
   };
@@ -522,6 +532,63 @@ async function writeMatchGameSnapshotAfterCourtApprove(eventId, matchId, courtId
 }
 
 /**
+ * オペレーター申請のエンド別得点で match-snapshots を保存（コート game.json が無い場合の代替）
+ */
+async function writeMatchSnapshotFromManualRequest(eventId, matchId, courtId, reqRow) {
+  if (!reqRow || typeof reqRow !== 'object') {
+    return { ok: false, reason: 'no_row' };
+  }
+  let ends = [];
+  try {
+    ends = reqRow.match_ends_json ? JSON.parse(reqRow.match_ends_json) : [];
+  } catch {
+    ends = [];
+  }
+  if (!Array.isArray(ends) || ends.length === 0) {
+    return { ok: false, reason: 'no_ends' };
+  }
+  const redTotal = Number(reqRow.red_score);
+  const blueTotal = Number(reqRow.blue_score);
+  const wid = String(reqRow.winner_player_id ?? '').trim();
+  const rid = String(reqRow.red_player_id ?? '').trim();
+  const bid = String(reqRow.blue_player_id ?? '').trim();
+  const snapshot = {
+    matchID: matchId,
+    match: {
+      ends,
+      section: 'resultApproval',
+    },
+    scene: 'official',
+    red: {
+      score: redTotal,
+      isTieBreak: false,
+      result: wid === rid ? 'win' : 'lose',
+      playerID: rid,
+      yellowCard: 0,
+      penaltyBall: 0,
+      redCard: 0,
+    },
+    blue: {
+      score: blueTotal,
+      isTieBreak: false,
+      result: wid === bid ? 'win' : 'lose',
+      playerID: bid,
+      yellowCard: 0,
+      penaltyBall: 0,
+      redCard: 0,
+    },
+    courtId: String(courtId ?? ''),
+    lastUpdated: new Date().toISOString(),
+  };
+  const dir = path.join(DATA_ROOT, eventId, 'match-snapshots');
+  await fs.ensureDir(dir);
+  const filePath = path.join(dir, `${matchId}-game-snapshot.json`);
+  const jsonString = stringifyGameJsonForDisk(snapshot);
+  await writeTextFileAtomic(filePath, jsonString);
+  return { ok: true, path: filePath };
+}
+
+/**
  * match.ends から規定エンドの勝ちエンド数（タイブレイク用エンドは除外）
  * @param {unknown} ends
  * @returns {{ red: number, blue: number }}
@@ -545,6 +612,60 @@ function countRegulationEndsWonFromMatchEnds(ends) {
     }
   }
   return { red, blue };
+}
+
+function sumMatchEndsTotals(ends) {
+  if (!Array.isArray(ends)) {
+    return { red: 0, blue: 0 };
+  }
+  return ends.reduce(
+    (acc, e) => ({
+      red: acc.red + Math.trunc(Number(e?.redScore ?? 0)),
+      blue: acc.blue + Math.trunc(Number(e?.blueScore ?? 0)),
+    }),
+    { red: 0, blue: 0 },
+  );
+}
+
+/** オペレーター申請 body.matchEnds を正規化（end は表示順 1 起算で連番） */
+function normalizeMatchEndsFromRequestBody(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw createHttpError(400, 'matchEnds は1件以上の配列で指定してください');
+  }
+  const out = [];
+  for (let idx = 0; idx < raw.length; idx++) {
+    const item = raw[idx];
+    const rs = Number(item?.redScore);
+    const bs = Number(item?.blueScore);
+    if (!Number.isFinite(rs) || rs < 0 || !Number.isFinite(bs) || bs < 0) {
+      throw createHttpError(400, `matchEnds[${idx}] の赤・青得点は 0 以上の数値で指定してください`);
+    }
+    const isTb = item?.isTieBreak === true || item?.isTieBreak === 'true';
+    let tieBreakWinner = null;
+    if (item?.tieBreakWinner === 'red' || item?.tieBreakWinner === 'blue') {
+      tieBreakWinner = item.tieBreakWinner;
+    }
+    const row = {
+      end: idx + 1,
+      shots: Array.isArray(item?.shots) ? item.shots : [],
+      redScore: Math.trunc(rs),
+      blueScore: Math.trunc(bs),
+    };
+    if (isTb) {
+      row.isTieBreak = true;
+    }
+    if (tieBreakWinner) {
+      row.tieBreakWinner = tieBreakWinner;
+    }
+    if (isTb && Math.trunc(rs) === Math.trunc(bs) && !tieBreakWinner) {
+      throw createHttpError(
+        400,
+        `matchEnds[${idx}] はタイブレークで赤・青同点のため tieBreakWinner（"red" または "blue"）が必要です`,
+      );
+    }
+    out.push(row);
+  }
+  return out;
 }
 
 /** コート game.json から勝ちエンドを取得（matchID が一致しない場合は null） */
@@ -770,9 +891,53 @@ async function performCourtApproveInTransaction(db, eventId, matchId, options) {
   await runSql(
     db,
     `UPDATE matches
-         SET status = 'court_approved', court_approved_at = ?, court_referee_name = ?, version = version + 1, updated_at = ?
+         SET status = 'court_approved',
+             court_approved_at = ?,
+             court_referee_name = ?,
+             hq_rejected_court_at = NULL,
+             version = version + 1,
+             updated_at = ?
          WHERE event_id = ? AND match_id = ?`,
     [now, refereeName, now, eventId, matchId],
+  );
+  return getMatchOrFail(db, eventId, matchId);
+}
+
+/**
+ * 本部 TD がスコアボード経由のコート承認を却下し、オペレーターが「結果入力」から修正できる状態へ戻す。
+ * DB 上は court_approved のみ対象。results / court 承認記録を削除し、進行を announced または in_progress に戻す（コートの game.json は変更しない）。
+ */
+async function performHqRejectCourtApprovedForOperatorCorrection(db, eventId, matchId, reviewerName) {
+  const trimmedReviewer = String(reviewerName ?? '').trim();
+  if (!trimmedReviewer) {
+    throw createHttpError(400, 'reviewerName（承認者名）は必須です');
+  }
+  const row = await getMatchOrFail(db, eventId, matchId);
+  if (row.status !== 'court_approved') {
+    throw createHttpError(409, `court_approved のみ却下（差し戻し）可能です（現在: ${row.status}）`);
+  }
+  const hasFinished = row.finished_at != null && String(row.finished_at).trim() !== '';
+  const hasStarted = row.started_at != null && String(row.started_at).trim() !== '';
+  const revertStatus = hasFinished || hasStarted ? 'in_progress' : 'announced';
+
+  const now = toIsoNow();
+  await runSql(db, `DELETE FROM results WHERE event_id = ? AND match_id = ?`, [eventId, matchId]);
+  await runSql(
+    db,
+    `DELETE FROM approvals WHERE event_id = ? AND match_id = ? AND stage = 'court'`,
+    [eventId, matchId],
+  );
+  await runSql(
+    db,
+    `UPDATE matches
+     SET status = ?,
+         court_approved_at = NULL,
+         court_referee_name = NULL,
+         hq_rejected_court_at = ?,
+         version = version + 1,
+         updated_at = ?
+     WHERE event_id = ? AND match_id = ?`,
+    [revertStatus, now, now, eventId, matchId],
   );
   return getMatchOrFail(db, eventId, matchId);
 }
@@ -789,6 +954,17 @@ function normalizeManualResultRequestRow(row) {
     blueScore: row.blue_score,
     redEndsWon: row.red_ends_won,
     blueEndsWon: row.blue_ends_won,
+    matchEnds: (() => {
+      try {
+        if (!row.match_ends_json) {
+          return [];
+        }
+        const p = JSON.parse(row.match_ends_json);
+        return Array.isArray(p) ? p : [];
+      } catch {
+        return [];
+      }
+    })(),
     winnerPlayerId: row.winner_player_id,
     refereeName: row.referee_name,
     operatorName: row.operator_name,
@@ -1526,6 +1702,7 @@ app.post('/api/progress/:eventId/reset-all', async (req, res) => {
              hq_approved_at = NULL,
              hq_approver_name = NULL,
              reflected_at = NULL,
+             hq_rejected_court_at = NULL,
              version = version + 1,
              updated_at = ?`,
         [now],
@@ -1851,6 +2028,31 @@ app.get('/api/progress/:eventId/manual-result-requests/pending', async (req, res
   }
 });
 
+// 各試合の最新1件が rejected の match_id（オペ「申請却下」表示・結果入力ボタン用）
+app.get('/api/progress/:eventId/manual-result-requests/latest-rejected-match-ids', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const db = await getEventDb(eventId);
+    const rows = await allSql(
+      db,
+      `SELECT m.match_id AS match_id
+       FROM manual_result_requests m
+       INNER JOIN (
+         SELECT match_id, MAX(id) AS max_id
+         FROM manual_result_requests
+         WHERE event_id = ?
+         GROUP BY match_id
+       ) t ON m.match_id = t.match_id AND m.id = t.max_id
+       WHERE m.event_id = ? AND m.status = 'rejected'`,
+      [eventId, eventId],
+    );
+    const matchIds = rows.map((r) => String(r.match_id ?? '').trim()).filter(Boolean);
+    res.json({ matchIds });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
 // 紙スコアシート用: 当該試合の承認待ち（1件）
 app.get('/api/progress/:eventId/matches/:matchId/manual-result-request', async (req, res) => {
   try {
@@ -1875,10 +2077,7 @@ app.post('/api/progress/:eventId/matches/:matchId/manual-result-request', async 
     const {
       redPlayerId,
       bluePlayerId,
-      redScore,
-      blueScore,
-      redEndsWon,
-      blueEndsWon,
+      matchEnds: matchEndsRaw,
       winnerPlayerId,
       refereeName,
       operatorName = null,
@@ -1887,11 +2086,11 @@ app.post('/api/progress/:eventId/matches/:matchId/manual-result-request', async 
     if (!refereeName || String(refereeName).trim() === '') {
       throw createHttpError(400, 'refereeName（審判名）は必須です');
     }
-    const rs = Number(redScore);
-    const bs = Number(blueScore);
-    if (!Number.isFinite(rs) || !Number.isFinite(bs) || rs < 0 || bs < 0) {
-      throw createHttpError(400, 'redScore / blueScore は 0 以上の数値で指定してください');
-    }
+    const normalizedEnds = normalizeMatchEndsFromRequestBody(matchEndsRaw);
+    const totals = sumMatchEndsTotals(normalizedEnds);
+    const rs = totals.red;
+    const bs = totals.blue;
+    const ewCounts = countRegulationEndsWonFromMatchEnds(normalizedEnds);
     const wid = String(winnerPlayerId ?? '').trim();
     if (!wid) {
       throw createHttpError(400, 'winnerPlayerId は必須です');
@@ -1913,14 +2112,9 @@ app.post('/api/progress/:eventId/matches/:matchId/manual-result-request', async 
       if (wid !== rId && wid !== bId) {
         throw createHttpError(400, 'winnerPlayerId は赤または青の選手IDのいずれかにしてください');
       }
-      const re = redEndsWon === '' || redEndsWon === undefined || redEndsWon === null ? null : Number(redEndsWon);
-      const be = blueEndsWon === '' || blueEndsWon === undefined || blueEndsWon === null ? null : Number(blueEndsWon);
-      if (re != null && (!Number.isFinite(re) || re < 0)) {
-        throw createHttpError(400, 'redEndsWon が不正です');
-      }
-      if (be != null && (!Number.isFinite(be) || be < 0)) {
-        throw createHttpError(400, 'blueEndsWon が不正です');
-      }
+      const re = ewCounts.red;
+      const be = ewCounts.blue;
+      const endsJson = JSON.stringify(normalizedEnds);
       const now = toIsoNow();
       await runSql(
         db,
@@ -1933,9 +2127,10 @@ app.post('/api/progress/:eventId/matches/:matchId/manual-result-request', async 
         `INSERT INTO manual_result_requests (
           event_id, match_id, red_player_id, blue_player_id,
           red_score, blue_score, red_ends_won, blue_ends_won,
+          match_ends_json,
           winner_player_id, referee_name, operator_name, note,
           status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
         [
           eventId,
           matchId,
@@ -1945,12 +2140,20 @@ app.post('/api/progress/:eventId/matches/:matchId/manual-result-request', async 
           Math.trunc(bs),
           re,
           be,
+          endsJson,
           wid,
           String(refereeName).trim(),
           operatorName != null && String(operatorName).trim() !== '' ? String(operatorName).trim() : null,
           note != null && String(note).trim() !== '' ? String(note).trim() : null,
           now,
         ],
+      );
+      await runSql(
+        db,
+        `UPDATE matches
+         SET hq_rejected_court_at = NULL, version = version + 1, updated_at = ?
+         WHERE event_id = ? AND match_id = ?`,
+        [now, eventId, matchId],
       );
       const created = await getSql(
         db,
@@ -1999,12 +2202,32 @@ app.post('/api/progress/:eventId/manual-result-requests/:requestId/approve', asy
       ) {
         throw createHttpError(409, '進行上の当該試合の選手IDと申請内容が一致しません。申請を取り下げて再送してください。');
       }
+      let parsedEndsForEw = [];
+      try {
+        parsedEndsForEw = reqRow.match_ends_json ? JSON.parse(reqRow.match_ends_json) : [];
+      } catch {
+        parsedEndsForEw = [];
+      }
+      const ewFromEnds = countRegulationEndsWonFromMatchEnds(
+        Array.isArray(parsedEndsForEw) ? parsedEndsForEw : [],
+      );
+      const hasEndsJson = Array.isArray(parsedEndsForEw) && parsedEndsForEw.length > 0;
+      const ewRed = hasEndsJson
+        ? ewFromEnds.red
+        : reqRow.red_ends_won != null
+          ? Number(reqRow.red_ends_won)
+          : 0;
+      const ewBlue = hasEndsJson
+        ? ewFromEnds.blue
+        : reqRow.blue_ends_won != null
+          ? Number(reqRow.blue_ends_won)
+          : 0;
       const matchResult = await performCourtApproveInTransaction(db, eventId, reqRow.match_id, {
         refereeName: reqRow.referee_name,
         redScore: reqRow.red_score,
         blueScore: reqRow.blue_score,
         winnerPlayerId: reqRow.winner_player_id,
-        manualEnds: { redEndsWon: reqRow.red_ends_won, blueEndsWon: reqRow.blue_ends_won },
+        manualEnds: { redEndsWon: ewRed, blueEndsWon: ewBlue },
         approvalMeta: { source: 'manual_paper', manualResultRequestId: requestId, reviewedBy: String(reviewerName).trim() },
         relaxAnnouncedWithoutFinished: true,
       });
@@ -2019,7 +2242,20 @@ app.post('/api/progress/:eventId/manual-result-requests/:requestId/approve', asy
       return matchResult;
     });
     try {
-      await writeMatchGameSnapshotAfterCourtApprove(eventId, result.match_id, result.court_id);
+      const reqSnap = await getSql(
+        db,
+        `SELECT * FROM manual_result_requests WHERE id = ? AND event_id = ?`,
+        [requestId, eventId],
+      );
+      const manualSnap = await writeMatchSnapshotFromManualRequest(
+        eventId,
+        result.match_id,
+        result.court_id,
+        reqSnap,
+      );
+      if (!manualSnap.ok) {
+        await writeMatchGameSnapshotAfterCourtApprove(eventId, result.match_id, result.court_id);
+      }
     } catch (snapshotError) {
       console.error('[game-snapshot] 書き込み失敗（manual-result approve は成功のまま）', snapshotError);
     }
@@ -2110,6 +2346,21 @@ app.post('/api/progress/:eventId/matches/:matchId/hq-approve', async (req, res) 
       return getMatchOrFail(db, eventId, matchId);
     });
 
+    res.json({ success: true, match: normalizeMatchRow(result) });
+  } catch (error) {
+    res.status(error.statusCode ?? 500).json({ success: false, error: error.message });
+  }
+});
+
+// 進行システム: 本部がコート承認（スコアボード経由）を却下 → オペレーターが紙申請で修正可能な状態へ戻す
+app.post('/api/progress/:eventId/matches/:matchId/hq-reject-court-approved', async (req, res) => {
+  try {
+    const { eventId, matchId } = req.params;
+    const { reviewerName } = req.body ?? {};
+    const db = await getEventDb(eventId);
+    const result = await withTransaction(db, async () =>
+      performHqRejectCourtApprovedForOperatorCorrection(db, eventId, matchId, reviewerName),
+    );
     res.json({ success: true, match: normalizeMatchRow(result) });
   } catch (error) {
     res.status(error.statusCode ?? 500).json({ success: false, error: error.message });

@@ -16,11 +16,6 @@ a.hqProgressDbBackLink {
   flex: 0 0 auto;
 }
 
-.hqProgressDbSubtitle {
-  max-width: 42rem;
-  line-height: 1.45;
-}
-
 .hqProgressDbToolbar {
   display: flex;
   flex-wrap: wrap;

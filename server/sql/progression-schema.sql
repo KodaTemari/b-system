@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS matches (
   hq_approved_at TEXT,
   hq_approver_name TEXT,
   reflected_at TEXT,
+  hq_rejected_court_at TEXT,
   version INTEGER NOT NULL DEFAULT 1,
   updated_at TEXT NOT NULL,
   PRIMARY KEY (event_id, match_id)
@@ -69,6 +70,7 @@ CREATE TABLE IF NOT EXISTS manual_result_requests (
   blue_score INTEGER NOT NULL,
   red_ends_won INTEGER,
   blue_ends_won INTEGER,
+  match_ends_json TEXT,
   winner_player_id TEXT NOT NULL,
   referee_name TEXT NOT NULL,
   operator_name TEXT,

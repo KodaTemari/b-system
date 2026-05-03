@@ -13,6 +13,37 @@ body:has(.hqProgressPage),
   background-color: #000;
 }
 
+/* 本部モーダル: 選手ID（例: 13）を小さく角丸四角・白文字で、名前は従来サイズ */
+.hqProgressPlayerIdName {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-width: 0;
+  vertical-align: baseline;
+}
+
+.hqProgressPlayerIdPill {
+  flex-shrink: 0;
+  display: inline-block;
+  font-size: 0.68em;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: rgb(var(--color-white));
+  background: rgb(var(--color-gray));
+  border-radius: 6px;
+  padding: 0.12em 0.42em 0.14em;
+}
+
+.hqProgressPlayerIdNameText {
+  min-width: 0;
+}
+
+.hqProgressManualPaperReviewHeadInner--right .hqProgressPlayerIdName,
+.hqProgressManualPaperOpHeadInner--right .hqProgressPlayerIdName {
+  justify-content: flex-end;
+}
+
 /** ヘッダー固定時は DOM 上でヘッダーが浮くため、その分をコンテンツ上部に確保 */
 .hqProgressPage.hqProgressPage--fixedHeader .hqProgressSection {
   padding-top: 92px;
@@ -213,6 +244,24 @@ body:has(.hqProgressPage),
   margin: 10px 0 8px;
   line-height: 1.45;
   color: #d4a013;
+}
+
+/* 本部がオペ申請を却下（1行目は明るい赤） */
+.hqProgressStatus.hqProgressStatusOperatorPaperRejected {
+  margin: 10px 0 8px;
+  line-height: 1.45;
+}
+
+.hqProgressStatusOperatorPaperRejected .hqProgressStatusCourtApprovedLine1 {
+  color: #ff5252;
+  font-weight: 800;
+}
+
+.hqProgressStatusOperatorPaperRejected .hqProgressStatusCourtApprovedLine2 {
+  display: inline-block;
+  color: #ff5252;
+  font-size: 0.92em;
+  font-weight: 800;
 }
 
 .hqProgressStatus.isHqApproved {
@@ -424,15 +473,34 @@ a.hqProgressDbInspectLink {
   flex: none;
 }
 
-.hqProgressManualPaperInvertBar {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
+/* 得点表 1 行目中央: 赤青入れ替え */
+.hqProgressManualPaperOpInvertCell {
+  text-align: center;
+  vertical-align: middle !important;
 }
 
-.hqProgressManualPaperInvertButton {
-  font-size: 0.85rem;
-  font-weight: 600;
+.hqProgressManualPaperOpInvertButton {
+  min-width: 2.25rem;
+  min-height: 2.1rem;
+  padding: 4px 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgb(var(--color-white));
+}
+
+/* 左（赤）→ 右（青）。暗背景では素色だと沈むため、白を混ぜてコントラストを確保 */
+.hqProgressManualPaperOpInvertGlyph {
+  display: inline-block;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, rgb(var(--color-red)) 42%, white 58%) 0%,
+    color-mix(in srgb, rgb(var(--color-blue)) 38%, white 62%) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 /* オペレーター申請・結果入力モーダル */
@@ -487,18 +555,24 @@ a.hqProgressDbInspectLink {
   gap: 10px 12px;
 }
 
-.hqProgressManualPaperIdPairRow {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 14px;
-  align-items: start;
+/* 表は全幅 → その直下で審判名だけ右寄せ（表の右下付近） */
+.hqProgressManualPaperFormGrid--refereeBelowTable {
+  grid-template-columns: 1fr;
 }
 
-@media (max-width: 520px) {
-  .hqProgressManualPaperIdPairRow {
-    grid-template-columns: 1fr;
-  }
+.hqProgressManualPaperFormGrid--refereeBelowTable .hqProgressManualPaperEndsEditor {
+  margin-bottom: 0;
+}
+
+.hqProgressManualPaperFormGrid--refereeBelowTable .hqProgressManualPaperRefereeSlot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.hqProgressManualPaperRefereeField {
+  width: 50%;
+  max-width: 16rem;
 }
 
 .hqProgressManualPaperField {
@@ -545,7 +619,7 @@ a.hqProgressDbInspectLink {
 }
 
 .hqProgressManualPaperField span {
-  font-weight: 600;
+  margin-bottom: 0.5em;
   color: rgb(var(--color-white));
 }
 
@@ -570,6 +644,137 @@ a.hqProgressDbInspectLink {
   box-sizing: border-box;
 }
 
+/* オペレーター紙入力: TD 承認と同型の 3 列表（中央はエンド番号・合計） */
+.hqProgressManualPaperOpScoreTable {
+  margin-top: 4px;
+}
+
+/* 1 行目: 赤｜名前 … ⇔ … 名前｜青（flex は td 内ラッパーへ — td 自体を flex にしない） */
+.hqProgressManualPaperOpHeadCell {
+  vertical-align: middle !important;
+}
+
+.hqProgressManualPaperOpHeadInner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.hqProgressManualPaperOpHeadInner--left {
+  justify-content: flex-start;
+}
+
+.hqProgressManualPaperOpHeadInner--right {
+  justify-content: flex-end;
+}
+
+.hqProgressManualPaperOpHeadPlayerName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 1.1em;
+}
+
+.hqProgressManualPaperOpHeadInner--left .hqProgressManualPaperOpHeadPlayerName {
+  text-align: left;
+}
+
+.hqProgressManualPaperOpHeadInner--right .hqProgressManualPaperOpHeadPlayerName {
+  text-align: right;
+}
+
+.hqProgressManualPaperOpInvertInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+}
+
+
+/* 中央列を td で統一（th とのデフォルト差で縦線がずれるのを防ぐ） */
+.hqProgressManualPaperOpScoreTable .hqProgressManualPaperOpScoreCenterCell {
+  font-weight: 600;
+}
+
+.hqProgressManualPaperOpScoreNumCell {
+  padding: 6px 8px !important;
+  vertical-align: middle !important;
+}
+
+.hqProgressManualPaperOpScoreInput {
+  width: 100%;
+  max-width: 5.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+}
+
+/* 手動入力・合計行: タイブレーク勝者は CSS の白丸と数字を同一位置に重ねる（① 風） */
+.hqProgressManualPaperOpGrandTotalNumCell {
+  vertical-align: middle !important;
+}
+
+.hqProgressManualPaperOpGrandTotalCircled {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 2em;
+  min-height: 2em;
+}
+
+.hqProgressManualPaperOpGrandTotalCircled::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2em;
+  height: 2em;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.18),
+    inset 0 0 2px rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.hqProgressManualPaperOpGrandTotalCircledValue {
+  position: relative;
+  z-index: 1;
+  color: rgb(var(--color-white));
+}
+
+/* 同点時・勝者未選択／敗者側は丸なし。サイズを近づけて列のガタつきを抑える */
+.hqProgressManualPaperOpGrandTotalPlain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 2em;
+  min-height: 2em;
+}
+
 .hqProgressManualPaperWinnerSelect option {
   background-color: #2a2a2a;
   color: rgb(var(--color-white));
@@ -583,52 +788,47 @@ a.hqProgressDbInspectLink {
   grid-column: 1 / -1;
 }
 
-.hqProgressManualPaperFieldIdRow .hqProgressManualPaperIdNameRow {
-  display: grid;
-  grid-template-columns: 1fr 4fr;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-}
-
-.hqProgressManualPaperIdInput {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  font-size: 0.75rem;
-  padding: 4px 6px;
-}
-
-.hqProgressManualPaperNameReadout {
-  min-width: 0;
-  font-size: 0.85rem;
-  line-height: 1.35;
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: transparent;
-  color: rgb(var(--color-white));
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .hqProgressManualPaperModalActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 10px 20%;
   justify-content: flex-end;
   margin-top: 16px;
 }
 
-.hqProgressManualPaperSubmitButton {
-  font-weight: 700;
+/* 本部承認確認: 却下を左・本部承認を右（閉じるはオーバーレイクリックで） */
+.hqProgressManualPaperModalActions--hqApproveConfirm {
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 0;
+  flex-wrap: nowrap;
 }
 
+/* 却下と本部承認のあいだを行幅の 30% にする（紙申請フロー時のみ span が入る） */
+.hqProgressManualPaperModalActionsInterButtonGap {
+  flex: 0 0 30%;
+  max-width: 30%;
+  min-width: 0;
+  height: 1px;
+  align-self: center;
+}
+
+.hqProgressManualPaperModalActions--hqApproveConfirm .hqProgressManualPaperApproveButton {
+  margin-left: auto;
+}
+
+.hqProgressManualPaperModalActions--hqApproveConfirm:has(.hqProgressManualPaperRejectButton)
+  .hqProgressManualPaperApproveButton {
+  margin-left: 0;
+}
+
+.hqProgressManualPaperSubmitButton,
 .hqProgressManualPaperApproveButton {
-  font-weight: 700;
-  border-color: rgba(72, 160, 110, 0.9);
+  background-color: rgba(var(--color-green), 0.5);
+  border-color: rgba(var(--color-green), 0.8);
+  font-size: 1rem;
 }
 
 .hqProgressManualPaperRejectButton {
@@ -644,6 +844,14 @@ a.hqProgressDbInspectLink {
   table-layout: fixed;
 }
 
+/*
+ * table-layout:fixed では 1 行目の中央セル幅が列全体に効く。
+ * col で中央列幅を指定（およそ全角4字分＝4em。長いラベルは折り返し）。
+ */
+.hqProgressManualPaperReviewTable col.hqProgressManualPaperReviewColMid {
+  width: 5em;
+}
+
 .hqProgressManualPaperReviewTable td,
 .hqProgressManualPaperReviewTable th {
   padding: 10px 12px;
@@ -651,8 +859,88 @@ a.hqProgressDbInspectLink {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* 中央列は col で狭いため、横パディングだけ詰める（上下は共通のまま） */
+.hqProgressManualPaperReviewTable td.hqProgressManualPaperReviewTableLabel,
+.hqProgressManualPaperReviewTable th.hqProgressManualPaperReviewTableLabel {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
 .hqProgressManualPaperReviewTable tr:first-child td {
   background: rgba(255, 255, 255, 0.04);
+}
+
+/* 本部 TD 承認モーダル（ManualPaperRequestReviewDl）先頭行: 対戦バー風（赤バッジ＋名／名＋青バッジ、中央は狭い区切りのみ） */
+.hqProgressManualPaperReviewTable--tdPaperReview tr.hqProgressManualPaperReviewTableHeadRow td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.hqProgressManualPaperReviewTable--tdPaperReview .hqProgressManualPaperReviewTableGap--tdHead {
+  /* 列幅は col.hqProgressManualPaperReviewColMid（区切りは同じ列内の余白） */
+  padding: 0 4px;
+}
+
+.hqProgressManualPaperReviewHeadInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 2.5rem;
+  box-sizing: border-box;
+}
+
+.hqProgressManualPaperReviewHeadInner--left {
+  justify-content: flex-start;
+}
+
+.hqProgressManualPaperReviewHeadInner--right {
+  justify-content: flex-end;
+}
+
+.hqProgressManualPaperReviewHeadName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.hqProgressManualPaperReviewTable--tdPaperReview .hqProgressManualPaperReviewHeadInner--left .hqProgressManualPaperReviewHeadName {
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.hqProgressManualPaperReviewTable--tdPaperReview .hqProgressManualPaperReviewHeadInner--right .hqProgressManualPaperReviewHeadName {
+  flex: 1 1 auto;
+  text-align: right;
+}
+
+.hqProgressManualPaperReviewTable--tdPaperReview .hqProgressManualPaperReviewTablePlayer--tdHead {
+  width: 50%;
+}
+
+.hqProgressManualPaperReviewTable--tdPaperReview .hqProgressManualPaperReviewTablePlayer .hqProgressManualPaperSideBadge {
+  vertical-align: middle;
+  margin: 0;
+  padding: 0;
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 0.72rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hqProgressManualPaperReviewTable--tdPaperReview .hqProgressManualPaperSideBadge--red {
+  background-color: #661111;
+  border: 1px solid rgba(230, 90, 90, 0.55);
+  color: #fff;
+}
+
+.hqProgressManualPaperReviewTable--tdPaperReview .hqProgressManualPaperSideBadge--blue {
+  background-color: #113366;
+  border: 1px solid rgba(120, 170, 255, 0.45);
+  color: #fff;
 }
 
 .hqProgressManualPaperReviewTablePlayer {
@@ -662,16 +950,17 @@ a.hqProgressDbInspectLink {
 .hqProgressManualPaperReviewTablePlayer .hqProgressManualPaperSideBadge {
   vertical-align: middle;
   margin-right: 8px;
+  padding: 1.2em;
 }
 
 .hqProgressManualPaperReviewTablePlayerName {
   font-weight: 600;
   line-height: 1.4;
-  word-break: break-word;
+  text-align: center;
 }
 
 .hqProgressManualPaperReviewTableGap {
-  width: 4.5rem;
+  /* 列幅は col.hqProgressManualPaperReviewColMid（table-layout:fixed 対策） */
   text-align: center;
   color: rgba(255, 255, 255, 0.25);
   font-size: 0.75rem;
@@ -679,9 +968,11 @@ a.hqProgressDbInspectLink {
 }
 
 .hqProgressManualPaperReviewTableLabel {
-  width: 5rem;
+  box-sizing: border-box;
+  white-space: normal;
+  line-height: 1.25;
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: rgb(var(--color-gray-mid-light));
   text-align: center;
   background: rgba(0, 0, 0, 0.12);
@@ -693,8 +984,109 @@ a.hqProgressDbInspectLink {
   font-weight: 700;
 }
 
+.hqProgressManualPaperReviewScoreWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* 紙申請の勝者・審判: 表の下・モーダル右半分 */
+.hqProgressManualPaperReviewMetaHost {
+  width: 50%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-top: 8px;
+  margin-bottom: 0;
+  box-sizing: border-box;
+  padding-left: 12px;
+}
+
 .hqProgressManualPaperReviewMeta {
-  margin-top: 4px;
+  margin-top: 0;
+}
+
+.hqProgressManualPaperReviewMetaList {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+}
+
+.hqProgressManualPaperReviewMetaList .hqProgressManualPaperReviewGrid {
+  margin: 0;
+}
+
+/* 勝者ブロックと区切り線の間に余白（つまり防止） */
+.hqProgressManualPaperReviewMetaList > .hqProgressManualPaperReviewMetaGroup:first-child {
+  padding-bottom: 14px;
+}
+
+.hqProgressManualPaperReviewMetaGroup--sepBefore {
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  padding-top: 14px;
+  margin-top: 0;
+}
+
+.hqProgressManualPaperReviewTableGrandTotal .hqProgressManualPaperReviewTableNum,
+.hqProgressManualPaperReviewTableGrandTotal .hqProgressManualPaperReviewTableLabel {
+  font-weight: 700;
+  border-top: 3px double rgba(255, 255, 255, 0.22);
+}
+
+/* TD 承認モーダル: 合計行の左右の数字のみ */
+.hqProgressManualPaperReviewTable--tdPaperReview
+  .hqProgressManualPaperReviewTableGrandTotal
+  .hqProgressManualPaperReviewTableNum {
+  font-size: 1.5rem;
+}
+
+/* TD 承認: 手動入力と同型の白丸＋合計（内側クラスは 1.2rem 既定のため 1.5rem に上書き） */
+.hqProgressManualPaperOpGrandTotalCircled--tdReview,
+.hqProgressManualPaperOpGrandTotalPlain--tdReview {
+  font-size: 1.5rem;
+}
+
+.hqProgressManualPaperTdGrandTotalNumCell {
+  vertical-align: middle !important;
+}
+
+.hqProgressManualPaperReviewTableEmpty {
+  text-align: center;
+  font-size: 0.82rem;
+  color: rgb(var(--color-gray-mid-light));
+  padding: 12px !important;
+}
+
+.hqProgressManualPaperEndsEditor {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+}
+
+.hqProgressManualPaperMatchTieBreakField {
+  margin-top: 12px;
+}
+
+/* 条件で非表示でもレイアウト占有し、モーダル高さを一定にする */
+.hqProgressManualPaperMatchTieBreakField--inactive {
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hqProgressManualPaperMatchTieBreakSelect {
+  width: 100%;
+  max-width: 22rem;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgb(var(--color-white));
+}
+
+.hqProgressManualPaperMatchTieBreakSelect option {
+  background-color: #1a1a1a;
+  color: rgb(var(--color-white));
 }
 
 .hqProgressManualPaperReviewGrid {
