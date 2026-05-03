@@ -3,6 +3,7 @@ import { useScoreboard } from '../../hooks/scoreboard/useScoreboard';
 import { getText as getLocalizedText, getCurrentLanguage } from '../../locales';
 import { calculateBallCount } from '../../utils/scoreboard/gameLogic';
 import { TIMER_LIMITS } from '../../utils/scoreboard/constants';
+import { countRegulationEndsWonFromMatchEnds } from '../../utils/results/bgpPoolRank';
 import Header from './ui/Header';
 import PlayerInfoPanel from './ui/PlayerInfoPanel';
 import SectionNav from './ui/SectionNav';
@@ -865,6 +866,9 @@ const Scoreboard = () => {
       }
       if (eventId && matchId) {
         try {
+          const { red: redEndsWon, blue: blueEndsWon } = countRegulationEndsWonFromMatchEnds(
+            gameData?.match?.ends,
+          );
           const response = await fetch(`/api/progress/${eventId}/matches/${matchId}/court-approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -873,6 +877,8 @@ const Scoreboard = () => {
               redScore,
               blueScore,
               winnerPlayerId,
+              redEndsWon,
+              blueEndsWon,
             }),
           });
           if (!response.ok) {

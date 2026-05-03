@@ -1975,15 +1975,26 @@ app.post('/api/progress/:eventId/matches/:matchId/start', async (req, res) => {
 });
 
 // 進行システム: court_approved へ遷移（審判名と結果保存）
+// body に redEndsWon / blueEndsWon が含まれる場合はそれを採用（未指定時はコート game.json から推定）
 app.post('/api/progress/:eventId/matches/:matchId/court-approve', async (req, res) => {
   try {
     const { eventId, matchId } = req.params;
+    const body = req.body ?? {};
     const {
       refereeName,
       redScore = null,
       blueScore = null,
       winnerPlayerId = null,
-    } = req.body ?? {};
+    } = body;
+    const hasExplicitEnds =
+      Object.prototype.hasOwnProperty.call(body, 'redEndsWon') ||
+      Object.prototype.hasOwnProperty.call(body, 'blueEndsWon');
+    const manualEnds = hasExplicitEnds
+      ? {
+          redEndsWon: body.redEndsWon,
+          blueEndsWon: body.blueEndsWon,
+        }
+      : null;
 
     const db = await getEventDb(eventId);
     const result = await withTransaction(db, async () =>
@@ -1992,7 +2003,7 @@ app.post('/api/progress/:eventId/matches/:matchId/court-approve', async (req, re
         redScore,
         blueScore,
         winnerPlayerId,
-        manualEnds: null,
+        manualEnds,
         approvalMeta: { source: 'scoreboard' },
         relaxAnnouncedWithoutFinished: false,
       }),
@@ -2368,16 +2379,18 @@ app.post('/api/progress/:eventId/matches/:matchId/hq-reject-court-approved', asy
 });
 
 // 進行システム: 本部のみ結果修正
+// body に redEndsWon / blueEndsWon が含まれる場合はそれを採用（未指定時はコート game.json から推定）
 app.patch('/api/progress/:eventId/matches/:matchId/result', async (req, res) => {
   try {
     const { eventId, matchId } = req.params;
+    const body = req.body ?? {};
     const {
       approverName,
       correctionReason,
       redScore = null,
       blueScore = null,
       winnerPlayerId = null,
-    } = req.body ?? {};
+    } = body;
     if (!approverName || !correctionReason) {
       throw createHttpError(400, 'approverName と correctionReason は必須です');
     }
@@ -2388,7 +2401,27 @@ app.patch('/api/progress/:eventId/matches/:matchId/result', async (req, res) => 
         throw createHttpError(409, `現在の状態では修正できません（現在: ${row.status}）`);
       }
       const now = toIsoNow();
-      const { redEndsWon, blueEndsWon } = await resolveEndsWonFromCourtGame(eventId, row.court_id, matchId);
+      const hasExplicitEnds =
+        Object.prototype.hasOwnProperty.call(body, 'redEndsWon') ||
+        Object.prototype.hasOwnProperty.call(body, 'blueEndsWon');
+      let redEndsWon;
+      let blueEndsWon;
+      if (hasExplicitEnds) {
+        const r = body.redEndsWon;
+        const b = body.blueEndsWon;
+        redEndsWon = r === '' || r === undefined || r === null ? null : Number(r);
+        blueEndsWon = b === '' || b === undefined || b === null ? null : Number(b);
+        if (
+          (redEndsWon !== null && !Number.isFinite(redEndsWon)) ||
+          (blueEndsWon !== null && !Number.isFinite(blueEndsWon))
+        ) {
+          throw createHttpError(400, '勝ちエンド数が不正です');
+        }
+      } else {
+        const fromCourt = await resolveEndsWonFromCourtGame(eventId, row.court_id, matchId);
+        redEndsWon = fromCourt.redEndsWon;
+        blueEndsWon = fromCourt.blueEndsWon;
+      }
       await runSql(
         db,
         `INSERT INTO results (

@@ -1,13 +1,14 @@
 /**
- * デザイン・検証用: schedule.json を読み、指定時刻スロットを「いまここ」として大会進行っぽいデータを SQLite に書き込む。
+ * デザイン・検証用: schedule.json を読み、指定時刻スロットまでを「すべて終了済み」として大会進行っぽいデータを SQLite に書き込む。
  *
- * - 指定時刻より前に開始する試合: すべて勝敗確定（hq_approved + results に勝者あり）
- * - 指定時刻の試合: 試合中・勝者未確定（in_progress）。2エンド想定で合計点が常に 2 以上になるスコアのみ（1-0/0-1 は出さない）
+ * - 指定時刻のスロットより前に開始する試合: すべて勝敗確定（hq_approved + results に勝者あり）
+ * - 指定時刻のスロットの試合: 同様にすべて勝敗確定（その時刻まで試合が終わっている状態）
+ * - それより後のスロット: このスクリプトでは更新しない
  *
  * 使い方:
  *   cd server && node scripts/seedInProgressAtSlot.js <eventId> [HH:MM]
  * 例:
- *   node scripts/seedInProgressAtSlot.js bgp-2026-preliminary 11:30
+ *   node scripts/seedInProgressAtSlot.js bgp-2026-preliminary 15:30
  *
  * データルート: 環境変数 B_SYSTEM_DATA_ROOT がなければ private/data → public/data（server.js と同様）
  */
@@ -127,6 +128,30 @@ function randomDecisiveScores(redPlayerId, bluePlayerId) {
 }
 
 /**
+ * 総得点・勝者から妥当な範囲の規定勝ちエンド数をランダム生成（プール⑤用）
+ */
+function randomRegulationEndsWonFromTotals(redScore, blueScore, winnerPlayerId, redPlayerId, bluePlayerId) {
+  const r = Math.trunc(Number(redScore));
+  const b = Math.trunc(Number(blueScore));
+  const n = randomIntInclusive(4, 6);
+  if (r > b) {
+    const minWin = Math.ceil(n / 2);
+    const re = randomIntInclusive(minWin, n);
+    return { redEndsWon: re, blueEndsWon: n - re };
+  }
+  if (b > r) {
+    const minWin = Math.ceil(n / 2);
+    const be = randomIntInclusive(minWin, n);
+    return { redEndsWon: n - be, blueEndsWon: be };
+  }
+  const half = Math.floor(n / 2);
+  const redWinsTb = String(winnerPlayerId) === String(redPlayerId);
+  return redWinsTb
+    ? { redEndsWon: half + 1, blueEndsWon: half }
+    : { redEndsWon: half, blueEndsWon: half + 1 };
+}
+
+/**
  * 終了試合用: 通常勝ち・または同点からのタイブレーク勝ち（1-1 / 2-2 など）を混在
  */
 function randomFinishedMatchScores(redPlayerId, bluePlayerId) {
@@ -136,10 +161,24 @@ function randomFinishedMatchScores(redPlayerId, bluePlayerId) {
     const redScore = tiedLevel;
     const blueScore = tiedLevel;
     const winnerPlayerId = Math.random() < 0.5 ? redPlayerId : bluePlayerId;
-    return { redScore, blueScore, winnerPlayerId, pattern: 'tiebreak' };
+    const ew = randomRegulationEndsWonFromTotals(
+      redScore,
+      blueScore,
+      winnerPlayerId,
+      redPlayerId,
+      bluePlayerId,
+    );
+    return { redScore, blueScore, winnerPlayerId, pattern: 'tiebreak', ...ew };
   }
   const dec = randomDecisiveScores(redPlayerId, bluePlayerId);
-  return { ...dec, pattern: 'decisive' };
+  const ew = randomRegulationEndsWonFromTotals(
+    dec.redScore,
+    dec.blueScore,
+    dec.winnerPlayerId,
+    redPlayerId,
+    bluePlayerId,
+  );
+  return { ...dec, pattern: 'decisive', ...ew };
 }
 
 async function resolveSchedulePath(eventId, dataRoot) {
@@ -189,10 +228,8 @@ async function upsertFinishedMatch(db, eventId, match, now) {
   const redPlayerId = String(match.redPlayerId ?? '').trim();
   const bluePlayerId = String(match.bluePlayerId ?? '').trim();
   const scheduledAt = String(match.scheduledStart ?? '').trim();
-  const { redScore, blueScore, winnerPlayerId, pattern } = randomFinishedMatchScores(
-    redPlayerId,
-    bluePlayerId,
-  );
+  const { redScore, blueScore, winnerPlayerId, pattern, redEndsWon, blueEndsWon } =
+    randomFinishedMatchScores(redPlayerId, bluePlayerId);
 
   const t0 = new Date(now);
   const startedAt = new Date(t0.getTime() - 45 * 60 * 1000).toISOString();
@@ -283,7 +320,7 @@ async function upsertFinishedMatch(db, eventId, match, now) {
     `INSERT INTO results (
       event_id, match_id, red_score, blue_score, red_ends_won, blue_ends_won, winner_player_id,
       is_correction, correction_reason, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, NULL, NULL, ?, 0, NULL, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)
     ON CONFLICT(event_id, match_id) DO UPDATE SET
       red_score = excluded.red_score,
       blue_score = excluded.blue_score,
@@ -291,119 +328,12 @@ async function upsertFinishedMatch(db, eventId, match, now) {
       blue_ends_won = excluded.blue_ends_won,
       winner_player_id = excluded.winner_player_id,
       updated_at = excluded.updated_at`,
-    [eventId, matchId, redScore, blueScore, winnerPlayerId, now, now],
+    [eventId, matchId, redScore, blueScore, redEndsWon, blueEndsWon, winnerPlayerId, now, now],
   );
 
   const tbNote = pattern === 'tiebreak' ? '（同点・TB勝）' : '';
   console.log(
-    `[完了] ${matchId} court=${courtId} → hq_approved ${redScore}-${blueScore}${tbNote} 勝者 ${winnerPlayerId}`,
-  );
-}
-
-/**
- * 指定スロットの試合: 対戦カードは schedule どおり・試合中・勝者なし（winner_player_id NULL）。
- * 2エンド想定で合計点が常に 2 以上（1-0/0-1 は含めない）。
- */
-async function upsertCurrentSlotInProgressMidMatch(db, eventId, match, now) {
-  const matchId = String(match.matchId ?? '').trim();
-  const courtId = String(match.courtId ?? '').trim();
-  const redPlayerId = String(match.redPlayerId ?? '').trim();
-  const bluePlayerId = String(match.bluePlayerId ?? '').trim();
-  const scheduledAt = String(match.scheduledStart ?? '').trim();
-
-  const inProgressPatterns = [
-    [2, 0],
-    [0, 2],
-    [0, 3],
-    [3, 0],
-    [2, 1],
-    [1, 2],
-    [3, 1],
-    [1, 3],
-    [2, 2],
-    [4, 2],
-    [2, 4],
-  ];
-  const pick = inProgressPatterns[randomIntInclusive(0, inProgressPatterns.length - 1)];
-  const redScore = pick[0];
-  const blueScore = pick[1];
-
-  const startedAt = new Date(new Date(now).getTime() - 12 * 60 * 1000).toISOString();
-  const startedMs = new Date(startedAt).getTime();
-  const warmupStartedAt = new Date(startedMs - 22 * 60 * 1000).toISOString();
-  const warmupFinishedAt = new Date(startedMs - 6 * 60 * 1000).toISOString();
-
-  await runSql(db, `DELETE FROM active_locks WHERE event_id = ? AND match_id = ?`, [eventId, matchId]);
-
-  const existing = await getSql(
-    db,
-    `SELECT * FROM matches WHERE event_id = ? AND match_id = ?`,
-    [eventId, matchId],
-  );
-
-  if (!existing) {
-    await runSql(
-      db,
-      `INSERT INTO matches (
-        event_id, match_id, court_id, red_player_id, blue_player_id,
-        scheduled_at, status,
-        warmup_started_at, warmup_finished_at, started_at,
-        finished_at, court_approved_at, court_referee_name,
-        hq_approved_at, hq_approver_name, reflected_at,
-        version, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 'in_progress', ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, 1, ?)`,
-      [
-        eventId,
-        matchId,
-        courtId,
-        redPlayerId,
-        bluePlayerId,
-        scheduledAt,
-        warmupStartedAt,
-        warmupFinishedAt,
-        startedAt,
-        now,
-      ],
-    );
-  } else {
-    await runSql(
-      db,
-      `UPDATE matches SET
-        status = 'in_progress',
-        warmup_started_at = ?,
-        warmup_finished_at = ?,
-        started_at = COALESCE(started_at, ?),
-        finished_at = NULL,
-        court_approved_at = NULL,
-        court_referee_name = NULL,
-        hq_approved_at = NULL,
-        hq_approver_name = NULL,
-        reflected_at = NULL,
-        version = version + 1,
-        updated_at = ?
-      WHERE event_id = ? AND match_id = ?`,
-      [warmupStartedAt, warmupFinishedAt, startedAt, now, eventId, matchId],
-    );
-  }
-
-  await runSql(
-    db,
-    `INSERT INTO results (
-      event_id, match_id, red_score, blue_score, red_ends_won, blue_ends_won, winner_player_id,
-      is_correction, correction_reason, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, NULL, NULL, NULL, 0, NULL, ?, ?)
-    ON CONFLICT(event_id, match_id) DO UPDATE SET
-      red_score = excluded.red_score,
-      blue_score = excluded.blue_score,
-      red_ends_won = excluded.red_ends_won,
-      blue_ends_won = excluded.blue_ends_won,
-      winner_player_id = NULL,
-      updated_at = excluded.updated_at`,
-    [eventId, matchId, redScore, blueScore, now, now],
-  );
-
-  console.log(
-    `[進行中] ${matchId} court=${courtId} → in_progress ${redScore}-${blueScore}（WU済・試合中・勝者なし）`,
+    `[完了] ${matchId} court=${courtId} → hq_approved ${redScore}-${blueScore}${tbNote} 勝ちエンド ${redEndsWon}-${blueEndsWon} 勝者 ${winnerPlayerId}`,
   );
 }
 
@@ -448,6 +378,9 @@ async function run() {
     return Number.isFinite(t) && t < pivotMs;
   });
 
+  /** 指定 HH:MM のスロットまで（そのスロット含む）すべて終了済みとしてシードする対象 */
+  const finishedThroughSlotMatches = [...beforeMatches, ...slotMatches];
+
   const dbPath = path.join(dataRoot, eventId, 'hq-progress.sqlite3');
   await fs.ensureDir(path.dirname(dbPath));
 
@@ -463,32 +396,21 @@ async function run() {
   console.log(
     `基準スロット=Asia/Tokyo ${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}（${slotMatches.length} 試合）`,
   );
-  console.log(`それより前の試合: ${beforeMatches.length} 件 → すべて hq_approved（勝敗確定）`);
+  console.log(
+    `それより前: ${beforeMatches.length} 件 + 当該スロット: ${slotMatches.length} 件 → 計 ${finishedThroughSlotMatches.length} 試合をすべて hq_approved（勝敗確定）`,
+  );
   console.log('---');
 
-  for (const match of beforeMatches) {
+  for (const match of finishedThroughSlotMatches) {
     const matchId = String(match.matchId ?? '').trim();
     const courtId = String(match.courtId ?? '').trim();
     const redPlayerId = String(match.redPlayerId ?? '').trim();
     const bluePlayerId = String(match.bluePlayerId ?? '').trim();
     if (!matchId || !courtId || !redPlayerId || !bluePlayerId) {
-      console.warn(`[SKIP 過去枠] 欠損フィールド: ${JSON.stringify(match)}`);
+      console.warn(`[SKIP] 欠損フィールド: ${JSON.stringify(match)}`);
       continue;
     }
     await upsertFinishedMatch(db, eventId, match, now);
-  }
-
-  console.log('--- 基準スロット（試合中・複数スコアパターン・勝者なし） ---');
-  for (const match of slotMatches) {
-    const matchId = String(match.matchId ?? '').trim();
-    const courtId = String(match.courtId ?? '').trim();
-    const redPlayerId = String(match.redPlayerId ?? '').trim();
-    const bluePlayerId = String(match.bluePlayerId ?? '').trim();
-    if (!matchId || !courtId || !redPlayerId || !bluePlayerId) {
-      console.warn(`[SKIP スロット] 欠損フィールド: ${JSON.stringify(match)}`);
-      continue;
-    }
-    await upsertCurrentSlotInProgressMidMatch(db, eventId, match, now);
   }
 
   await new Promise((resolve, reject) => {
