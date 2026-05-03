@@ -393,3 +393,138 @@ a.hqProgressDbInspectLink {
   box-sizing: border-box;
   flex: none;
 }
+
+/* 紙スコアシート・結果入力 */
+.hqProgressManualPaperPending {
+  margin: 4px 0 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #d4a013;
+  letter-spacing: 0.02em;
+}
+
+.hqProgressManualPaperButton {
+  font-size: 0.78rem;
+}
+
+.hqProgressManualPaperReviewButton {
+  font-size: 0.78rem;
+  border-color: rgba(224, 124, 38, 0.85);
+}
+
+.hqProgressManualPaperModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+}
+
+.hqProgressManualPaperModal {
+  width: min(520px, 100%);
+  max-height: min(92vh, 900px);
+  overflow: auto;
+  background: rgba(34, 34, 34, 0.96);
+  border: 1px solid rgb(var(--color-gray-light));
+  border-radius: 10px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.hqProgressManualPaperModalTitle {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.hqProgressManualPaperModalNote {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: rgb(var(--color-gray-lighter));
+}
+
+.hqProgressManualPaperFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+
+.hqProgressManualPaperField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+}
+
+.hqProgressManualPaperField span {
+  font-weight: 600;
+  color: rgb(var(--color-gray-light));
+}
+
+.hqProgressManualPaperField input,
+.hqProgressManualPaperField select,
+.hqProgressManualPaperField textarea {
+  font-size: 0.9rem;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+}
+
+.hqProgressManualPaperFieldWide {
+  grid-column: 1 / -1;
+}
+
+.hqProgressManualPaperFieldFull {
+  grid-column: 1 / -1;
+}
+
+.hqProgressManualPaperModalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.hqProgressManualPaperSubmitButton {
+  font-weight: 700;
+}
+
+.hqProgressManualPaperApproveButton {
+  font-weight: 700;
+  border-color: rgba(72, 160, 110, 0.9);
+}
+
+.hqProgressManualPaperRejectButton {
+  border-color: rgba(200, 80, 80, 0.75);
+}
+
+.hqProgressManualPaperReviewGrid {
+  display: grid;
+  grid-template-columns: minmax(100px, 120px) 1fr;
+  gap: 6px 12px;
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+}
+
+.hqProgressManualPaperReviewGrid dt {
+  margin: 0;
+  font-weight: 600;
+  color: rgb(var(--color-gray-mid-light));
+}
+
+.hqProgressManualPaperReviewGrid dd {
+  margin: 0;
+}
+
+.hqProgressManualPaperMono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}

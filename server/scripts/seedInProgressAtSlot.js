@@ -170,6 +170,14 @@ async function ensureSchema(db) {
   if (!columnNames.has('finished_at')) {
     await runSql(db, 'ALTER TABLE matches ADD COLUMN finished_at TEXT');
   }
+  const resultColumns = await allSql(db, 'PRAGMA table_info(results)');
+  const resultColumnNames = new Set(resultColumns.map((item) => String(item.name)));
+  if (!resultColumnNames.has('red_ends_won')) {
+    await runSql(db, 'ALTER TABLE results ADD COLUMN red_ends_won INTEGER');
+  }
+  if (!resultColumnNames.has('blue_ends_won')) {
+    await runSql(db, 'ALTER TABLE results ADD COLUMN blue_ends_won INTEGER');
+  }
 }
 
 /**
@@ -273,12 +281,14 @@ async function upsertFinishedMatch(db, eventId, match, now) {
   await runSql(
     db,
     `INSERT INTO results (
-      event_id, match_id, red_score, blue_score, winner_player_id,
+      event_id, match_id, red_score, blue_score, red_ends_won, blue_ends_won, winner_player_id,
       is_correction, correction_reason, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, 0, NULL, ?, ?)
+    ) VALUES (?, ?, ?, ?, NULL, NULL, ?, 0, NULL, ?, ?)
     ON CONFLICT(event_id, match_id) DO UPDATE SET
       red_score = excluded.red_score,
       blue_score = excluded.blue_score,
+      red_ends_won = excluded.red_ends_won,
+      blue_ends_won = excluded.blue_ends_won,
       winner_player_id = excluded.winner_player_id,
       updated_at = excluded.updated_at`,
     [eventId, matchId, redScore, blueScore, winnerPlayerId, now, now],
@@ -379,12 +389,14 @@ async function upsertCurrentSlotInProgressMidMatch(db, eventId, match, now) {
   await runSql(
     db,
     `INSERT INTO results (
-      event_id, match_id, red_score, blue_score, winner_player_id,
+      event_id, match_id, red_score, blue_score, red_ends_won, blue_ends_won, winner_player_id,
       is_correction, correction_reason, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, NULL, 0, NULL, ?, ?)
+    ) VALUES (?, ?, ?, ?, NULL, NULL, NULL, 0, NULL, ?, ?)
     ON CONFLICT(event_id, match_id) DO UPDATE SET
       red_score = excluded.red_score,
       blue_score = excluded.blue_score,
+      red_ends_won = excluded.red_ends_won,
+      blue_ends_won = excluded.blue_ends_won,
       winner_player_id = NULL,
       updated_at = excluded.updated_at`,
     [eventId, matchId, redScore, blueScore, now, now],

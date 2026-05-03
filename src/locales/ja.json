@@ -46,7 +46,7 @@
     "refereeApproval": "主審 承認",
     "blueApproval": "青 承認",
     "matchCompleted": "試合完了",
-    "matchCompletedCtrl": "お疲れ様でした。本部で試合結果を承認します。",
+    "matchCompletedCtrl": "本部で試合結果が承認されました。",
     "penalty": "反則",
     "timeout": "タイムアウト",
     "redPenalty": "赤の反則",

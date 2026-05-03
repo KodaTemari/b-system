@@ -1,0 +1,422 @@
+/* BOCCIA GRAND PRIX 2026 予選 — 公式スコアシート（オリジナル準拠・ブロック分割・余白） */
+
+:root {
+  --ink: #111;
+  --sheet-border: 1px solid #000;
+  --cell-pad: 2.5mm 3.5mm;
+  --cell-pad-tight: 2mm 3mm;
+  --sheet-content-pad-x: 12mm;
+  --sheet-content-pad-top: 14mm;
+  --sheet-content-pad-bottom: 18mm;
+  --section-gap: 5mm;
+  --block-gap-after: 5mm;
+  --player-box-gap: 2mm;
+  --score-tables-gap: 5mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 10pt;
+  color: var(--ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "BIZ UDPGothic", "BIZ UDP ゴシック", "BIZ UDPゴシック", sans-serif;
+  line-height: 1.3;
+  font-weight: normal;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 18mm 15mm;
+}
+
+h1,
+th,
+td {
+  font-weight: normal;
+}
+
+.print-root {
+  background: transparent;
+}
+
+.official-sheet {
+  page-break-after: always;
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.official-sheet:last-child {
+  page-break-after: auto;
+}
+
+.official-sheet__content {
+  padding: var(--sheet-content-pad-top) var(--sheet-content-pad-x)
+    var(--sheet-content-pad-bottom) var(--sheet-content-pad-x);
+  box-sizing: border-box;
+}
+
+/* 標準：表の罫線・セル余白 */
+.official-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.official-sheet table th,
+.official-sheet table td {
+  border: var(--sheet-border);
+  border-width: 1px;
+  border-style: solid;
+  border-color: #000;
+  padding: var(--cell-pad);
+  vertical-align: middle;
+  text-align: center;
+  word-break: break-word;
+}
+
+/* ----- ロゴ（元画像: private/data/.../assets/print_logo.png → 生成時に public/event/.../print/assets/ へ） ----- */
+.official-sheet__logo {
+  width: 100%;
+  height: 20mm;
+  margin-bottom: 2mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.official-sheet__logo-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ----- 大会名：高さを確保し、下に余白 ----- */
+.official-sheet__event-name {
+  border-top: none;
+  margin-bottom: var(--block-gap-after);
+}
+
+.official-sheet__event-name td {
+  height: 15mm;
+  padding-top: 4mm;
+  padding-bottom: 4mm;
+  vertical-align: middle;
+}
+
+.official-sheet__event-name .event-name__label {
+  width: 16%;
+  font-size: 11pt;
+}
+
+.official-sheet__event-name .event-name__value {
+  font-size: 14pt;
+}
+
+/* ----- 試合情報（6セル・1行）の下に余白 ----- */
+.official-sheet__match-meta {
+  border-top: none;
+  margin-bottom: var(--block-gap-after);
+}
+
+.official-sheet__match-meta .meta-cell-label,
+.official-sheet__match-meta .meta-cell-value {
+  height: 15mm;
+}
+
+/* 6列：2列目（試合番号の値）のみ 1.5 倍、その分 3・5 列目を縮小 */
+.official-sheet__match-meta td:nth-child(1),
+.official-sheet__match-meta td:nth-child(4),
+.official-sheet__match-meta td:nth-child(6) {
+  width: 16.67%;
+}
+
+.official-sheet__match-meta td:nth-child(2) {
+  width: 25%;
+}
+
+.official-sheet__match-meta td:nth-child(3),
+.official-sheet__match-meta td:nth-child(5) {
+  width: 12.5%;
+}
+
+.official-sheet__match-meta .meta-cell-label {
+  font-size: 11pt;
+  padding: var(--cell-pad-tight);
+}
+
+.official-sheet__match-meta .meta-cell-value {
+  font-size: 14pt;
+  padding: var(--cell-pad);
+}
+
+/* ----- 選手：左右カラム内に独立ボックスを縦に積む ----- */
+.players-split {
+  margin: 0 0 var(--block-gap-after);
+  border: none;
+  width: 100%;
+}
+
+.players-split > tbody > tr > td.player-column {
+  width: 50%;
+  vertical-align: top;
+  padding: 0;
+  border: none;
+}
+
+.players-split > tbody > tr > td.player-column:first-child {
+  padding-right: calc(var(--score-tables-gap) / 2);
+}
+
+.players-split > tbody > tr > td.player-column:last-child {
+  padding-left: calc(var(--score-tables-gap) / 2);
+}
+
+.player-box {
+  width: 100%;
+  margin-bottom: var(--player-box-gap);
+  border: var(--sheet-border);
+}
+
+.player-box:last-child {
+  margin-bottom: 0;
+}
+
+.player-box th,
+.player-box td {
+  padding: var(--cell-pad-tight);
+}
+
+.player-box th {
+  font-size: 11pt;
+  line-height: 1.1;
+}
+
+.player-box__name-row td {
+  height: 15mm;
+  font-size: 14pt;
+  padding: 3mm 4mm;
+}
+
+.player-box__time-options {
+  font-size: 10pt;
+}
+
+.player-box--color {
+  height: 15mm;
+}
+
+.player-box--time td:first-child,
+.player-box--color td:first-child {
+  width: 33%;
+  font-size: 11pt;
+}
+
+.player-box--color td:last-child {
+  min-height: 8mm;
+}
+
+/* ----- 得点：左右2表の間にギャップ ----- */
+.score-grid-split {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--score-tables-gap);
+  margin-bottom: 2mm;
+  width: 100%;
+}
+
+.score-grid-split .score-grid {
+  flex: 1 1 0;
+  min-width: 0;
+  border: var(--sheet-border);
+}
+
+.official-sheet .score-grid th {
+  font-size: 11pt;
+  padding: 2mm 2mm;
+}
+
+.score-grid td {
+  font-size: 11pt;
+  padding: var(--cell-pad-tight);
+  height: 9mm;
+}
+
+.score-total-col {
+  vertical-align: middle;
+}
+
+/*
+ * 2エンド戦：3・4行はセル単位。見える斜線＝右上→左下（グラデ軸はその垂直＝左上→右下）
+ */
+.score-cell-strike {
+  position: relative;
+  overflow: hidden;
+}
+
+.score-cell-strike::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.4px),
+    #000 calc(50% - 0.4px),
+    #000 calc(50% + 0.4px),
+    transparent calc(50% + 0.4px)
+  );
+}
+
+.score-cell-strike__text {
+  position: relative;
+  z-index: 1;
+}
+
+.score-cell-strike--end-num {
+  text-align: center;
+  padding-left: var(--cell-pad-tight);
+  padding-right: var(--cell-pad-tight);
+  vertical-align: middle;
+}
+
+/* ----- タイブレイク：中央配置のブロック ----- */
+.score-tiebreak-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: var(--block-gap-after);
+}
+
+.score-tiebreak {
+  border: var(--sheet-border);
+  margin: 0 auto;
+  table-layout: fixed;
+}
+
+.score-tiebreak__col--side {
+  width: 16.2%;
+}
+
+.score-tiebreak__col--center {
+  width: 35.2%;
+}
+
+.score-tiebreak td {
+  padding: var(--cell-pad);
+  vertical-align: middle;
+  height: 9mm;
+}
+
+.score-tiebreak tr {
+  min-height: 12mm;
+}
+
+.score-tiebreak__title {
+  width: 30%;
+  font-size: 11pt;
+  line-height: 1.35;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* ----- 同意 ----- */
+.official-sheet table.consent-row,
+.official-sheet .consent-row td {
+  border: none;
+  margin-top: 0;
+}
+
+.official-sheet table.consent-row td {
+  width: 50%;
+  padding: 4mm 0mm;
+  font-size: 11pt;
+  letter-spacing: 0.1em;
+}
+
+.consent-row__box {
+  display: inline-block;
+  font-size: 1.5em;
+  line-height: 1;
+  vertical-align: -0.05em;
+}
+
+/* ----- サイン ----- */
+.signoff {
+  margin-left: auto;
+  margin-right: 0;
+  margin-top: 6mm;
+  width: 52%;
+  max-width: 103mm;
+  font-size: 11pt;
+  border-top: var(--sheet-border);
+}
+
+.signoff td {
+  padding: var(--cell-pad-tight);
+}
+
+.signoff tr:first-child td {
+  vertical-align: middle;
+  height: 8mm;
+}
+
+.signoff tr:last-child td {
+  height: 15mm;
+  vertical-align: bottom;
+}
+
+/* 旧セレクタ互換・削除済みブロック用の参照を排除したため個別指定のみ */
+
+@media screen {
+  body {
+    padding: 20px 16px 40px;
+    background: #b0b0b0;
+  }
+
+  .print-root {
+    padding: 0;
+  }
+
+  .official-sheet {
+    background: #fff;
+    box-shadow:
+      0 1px 4px rgba(0, 0, 0, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.18);
+    margin-bottom: 28px;
+  }
+
+  .official-sheet:last-child {
+    margin-bottom: 0;
+  }
+}
+
+@media print {
+  .official-sheet {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .official-sheet__content {
+    padding: 6mm 10mm 6mm 10mm;
+  }
+}

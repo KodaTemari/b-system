@@ -214,6 +214,8 @@ const buildPoolViewData = (
       },
     ])
   );
+  /** スケジュール上にいるが未試合の選手は順位数字を付けない（本集計に反映された試合数） */
+  const matchesPlayed = new Map(teamRows.map((team) => [team.id, 0]));
   const cellMap = new Map();
   const tieMatches = [];
   for (const match of poolMatches) {
@@ -236,6 +238,8 @@ const buildPoolViewData = (
     if (!score) {
       continue;
     }
+    matchesPlayed.set(redId, (matchesPlayed.get(redId) ?? 0) + 1);
+    matchesPlayed.set(blueId, (matchesPlayed.get(blueId) ?? 0) + 1);
     const endsRec = matchId && endsMap.has(matchId) ? endsMap.get(matchId) : { redEndsWon: 0, blueEndsWon: 0 };
     const redStats = statsMap.get(redId);
     const blueStats = statsMap.get(blueId);
@@ -294,7 +298,8 @@ const buildPoolViewData = (
       endsWon: stats.endsWon,
     };
   });
-  const rankSorted = sortPoolRowsByBgpRules(rankRows, tieMatches);
+  const rankRowsPlayed = rankRows.filter((row) => (matchesPlayed.get(row.id) ?? 0) > 0);
+  const rankSorted = sortPoolRowsByBgpRules(rankRowsPlayed, tieMatches);
   const rankMap = new Map(rankSorted.map((row, index) => [row.id, index + 1]));
 
   return { poolId, hasTargetPool, teamRows, statsMap, cellMap, rankMap };
@@ -801,7 +806,7 @@ const PoolStandings = ({ embedInHq = false, showEndsWonColumn = false }) => {
                                 <td className="poolMatrixSummaryCell">{rowStats.endsWon}</td>
                               ) : null}
                               <td className="poolMatrixSummaryCell poolMatrixRankCell">
-                                {view.rankMap.get(rowTeam.id) ?? '-'}
+                                {view.rankMap.get(rowTeam.id) ?? ''}
                               </td>
                             </tr>
                           );

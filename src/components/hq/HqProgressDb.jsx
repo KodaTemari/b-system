@@ -72,6 +72,8 @@ const HqProgressDb = () => {
   const [resultDraft, setResultDraft] = useState({
     redScore: '',
     blueScore: '',
+    redEndsWon: '',
+    blueEndsWon: '',
     winnerPlayerId: '',
     isCorrection: false,
     correctionReason: '',
@@ -124,6 +126,8 @@ const HqProgressDb = () => {
     setResultDraft({
       redScore: '',
       blueScore: '',
+      redEndsWon: '',
+      blueEndsWon: '',
       winnerPlayerId: '',
       isCorrection: false,
       correctionReason: '',
@@ -223,6 +227,8 @@ const HqProgressDb = () => {
     setResultDraft({
       redScore: row.redScore != null ? String(row.redScore) : '',
       blueScore: row.blueScore != null ? String(row.blueScore) : '',
+      redEndsWon: row.redEndsWon != null ? String(row.redEndsWon) : '',
+      blueEndsWon: row.blueEndsWon != null ? String(row.blueEndsWon) : '',
       winnerPlayerId: row.winnerPlayerId ?? '',
       isCorrection: Boolean(row.isCorrection),
       correctionReason: row.correctionReason ?? '',
@@ -239,6 +245,8 @@ const HqProgressDb = () => {
       const body = {
         redScore: resultDraft.redScore === '' ? null : Number(resultDraft.redScore),
         blueScore: resultDraft.blueScore === '' ? null : Number(resultDraft.blueScore),
+        redEndsWon: resultDraft.redEndsWon === '' ? null : Number(resultDraft.redEndsWon),
+        blueEndsWon: resultDraft.blueEndsWon === '' ? null : Number(resultDraft.blueEndsWon),
         winnerPlayerId: resultDraft.winnerPlayerId || null,
         isCorrection: resultDraft.isCorrection,
         correctionReason: resultDraft.correctionReason || null,
@@ -371,8 +379,10 @@ const HqProgressDb = () => {
               <thead>
                 <tr>
                   <th>matchId</th>
-                  <th>赤</th>
-                  <th>青</th>
+                  <th>赤スコア</th>
+                  <th>青スコア</th>
+                  <th>赤勝エンド</th>
+                  <th>青勝エンド</th>
                   <th>勝者</th>
                   <th>修正</th>
                   <th>更新</th>
@@ -385,6 +395,8 @@ const HqProgressDb = () => {
                     <td className="hqProgressDbMono">{r.matchId}</td>
                     <td>{r.redScore ?? '—'}</td>
                     <td>{r.blueScore ?? '—'}</td>
+                    <td>{r.redEndsWon ?? '—'}</td>
+                    <td>{r.blueEndsWon ?? '—'}</td>
                     <td className="hqProgressDbMono">{r.winnerPlayerId || '—'}</td>
                     <td>{r.isCorrection ? 'yes' : 'no'}</td>
                     <td className="hqProgressDbMono hqProgressDbCellSoft">{r.updatedAt || '—'}</td>
@@ -632,7 +644,7 @@ const HqProgressDb = () => {
               </h2>
               <div className="hqProgressDbFormGrid hqProgressDbFormGridNarrow">
                 <label className="hqProgressDbField">
-                  <span>redScore</span>
+                  <span>赤スコア</span>
                   <input
                     inputMode="numeric"
                     value={resultDraft.redScore}
@@ -640,11 +652,27 @@ const HqProgressDb = () => {
                   />
                 </label>
                 <label className="hqProgressDbField">
-                  <span>blueScore</span>
+                  <span>青スコア</span>
                   <input
                     inputMode="numeric"
                     value={resultDraft.blueScore}
                     onChange={(e) => setResultDraft((d) => ({ ...d, blueScore: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressDbField">
+                  <span>赤勝エンド</span>
+                  <input
+                    inputMode="numeric"
+                    value={resultDraft.redEndsWon}
+                    onChange={(e) => setResultDraft((d) => ({ ...d, redEndsWon: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressDbField">
+                  <span>青勝エンド</span>
+                  <input
+                    inputMode="numeric"
+                    value={resultDraft.blueEndsWon}
+                    onChange={(e) => setResultDraft((d) => ({ ...d, blueEndsWon: e.target.value }))}
                   />
                 </label>
                 <label className="hqProgressDbField">

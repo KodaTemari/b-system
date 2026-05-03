@@ -1,0 +1,283 @@
+/* BOCCIA GRAND PRIX 2026 予選 — プール表（会場と同じマトリクス形・記入用：白地・A4 横） */
+
+:root {
+  --ink: #111;
+  /* 罫線と対角 SVG の stroke を揃える */
+  --cell-border-width: 1pt;
+  --cell-border-color: #666;
+  --cell-border: var(--cell-border-width) solid var(--cell-border-color);
+  --svg-diagonal-stroke: 1px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 11pt;
+  color: var(--ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/*
+ * 印刷・印刷プレビューで罫線／斜線／ヘッダ色が消える対策（Chrome はセル単位でも指定が必要なことがある）
+ */
+.pool-sheet-print,
+.poolMatrixWrap,
+.poolMatrixTable,
+.poolMatrixTable thead,
+.poolMatrixTable tbody,
+.poolMatrixTable tr,
+.poolMatrixTable th,
+.poolMatrixTable td,
+.poolMatrixDiagonalSvg,
+line.poolMatrixDiagonalSvg__line {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "BIZ UDPGothic", "BIZ UDP ゴシック", "BIZ UDPゴシック", sans-serif;
+  line-height: 1.35;
+  font-weight: normal;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm 12mm;
+}
+
+h1,
+h2,
+h3,
+th,
+td {
+  font-weight: normal;
+}
+
+.print-root {
+  background: transparent;
+}
+
+/* 1 プール＝1 ページ。A4 横＝297mm×210mm。--poolHue は生成 HTML のインライン（0–360） */
+.pool-sheet-print {
+  page-break-after: always;
+  width: 100%;
+  max-width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.pool-sheet-print:last-child {
+  page-break-after: auto;
+}
+
+.pool-sheet-print__meta {
+  text-align: center;
+  margin-bottom: 20mm;
+  font-size: 10pt;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.pool-sheet-print__event {
+  font-size: 18pt;
+  letter-spacing: 0.02em;
+  margin-bottom: 10mm;
+}
+
+.pool-sheet-print__matrix.poolListItem {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.poolMatrixWrap {
+  overflow: visible;
+  border-radius: 4px;
+}
+
+.poolMatrixTable {
+  width: 100%;
+  min-height: 80mm;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  background: #fff;
+}
+
+
+.poolMatrixTable th,
+.poolMatrixTable td {
+  border-style: solid;
+  border-color: var(--cell-border-color);
+  border-width: 0;
+  border-right-width: var(--cell-border-width);
+  border-bottom-width: var(--cell-border-width);
+  text-align: center;
+  padding: 6px 5px;
+  font-size: 1rem;
+  color: var(--ink);
+  background: #fff;
+}
+
+/* 外周：上辺は thead のみ（tr:first-child に tbody 先頭行も当たり境目で二重になるため） */
+.poolMatrixTable thead tr > th,
+.poolMatrixTable thead tr > td {
+  border-top-width: var(--cell-border-width);
+}
+
+.poolMatrixTable tr > th:first-child,
+.poolMatrixTable tr > td:first-child {
+  border-left-width: var(--cell-border-width);
+}
+
+/* 見出し行・列：明るい地＋黒字（プールごとの色相は薄く） */
+.poolMatrixPoolHeader,
+.poolMatrixTeamHeader,
+.poolMatrixSummaryHeader {
+  background: hsl(var(--poolHue) 32% 94%) !important;
+  color: var(--ink) !important;
+  font-weight: normal;
+}
+
+.poolMatrixPoolHeader {
+  width: 120px;
+}
+
+.poolMatrixRowHeader {
+  text-align: left;
+  width: 120px;
+  background: hsl(var(--poolHue) 32% 94%) !important;
+  color: var(--ink) !important;
+}
+
+.poolMatrixSummaryHeader {
+  width: 40px;
+  font-size: 0.9rem;
+}
+
+.poolMatrixSummaryHeader.poolMatrixSummaryHeaderEndsWon {
+  font-size: calc(0.9rem * 0.75);
+}
+
+/* td に対する一般ルールより詳細度を上げないと background が #fff で上書きされ斜線が消える */
+.poolMatrixTable td.poolMatrixDiagonalCell {
+  position: relative;
+  min-height: 2.2em;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* インライン SVG 斜線（グラデ background より印刷で残りやすい） */
+.poolMatrixDiagonalSvg {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+line.poolMatrixDiagonalSvg__line {
+  stroke: var(--cell-border-color);
+  stroke-width: var(--svg-diagonal-stroke);
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+  paint-order: stroke fill;
+}
+
+.poolMatrixSummaryCell {
+  background: #fff !important;
+  color: var(--ink);
+  height: 25mm;
+}
+
+.poolMatrixTable td.poolMatrixScoreCell {
+  position: relative;
+  background: #fff !important;
+  color: var(--ink);
+  height: 25mm;
+  vertical-align: top;
+}
+
+/* 対戦マス左上：試合ID（A1 等）・記入の邪魔にならないよう小さく薄く */
+.poolMatrixScoreCell__match-id {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: #AAA;
+  letter-spacing: 0.04em;
+  font-weight: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.poolMatrixRankHeader {
+  width: 36px;
+}
+
+.poolMatrixRankCell {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 画面プレビュー：official-score-sheets と同様（灰背景・A4 横の白紙） */
+@media screen {
+  body {
+    padding: 20px 16px 40px;
+    background: #b0b0b0;
+  }
+
+  .print-root {
+    padding: 0;
+  }
+
+  .pool-sheet-print {
+    width: 297mm;
+    max-width: min(297mm, calc(100vw - 32px));
+    min-height: 210mm;
+    background: #fff;
+    box-shadow:
+      0 1px 4px rgba(0, 0, 0, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.18);
+    margin-bottom: 28px;
+    padding: 10mm 12mm;
+    box-sizing: border-box;
+  }
+
+  .pool-sheet-print:last-child {
+    margin-bottom: 0;
+  }
+}
+
+@media print {
+  
+  :root {
+    --cell-border-width: 2pt;
+    --cell-border-color: #999;
+  }
+
+  body {
+    background: #fff;
+    padding: 0;
+  }
+
+  .pool-sheet-print {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}

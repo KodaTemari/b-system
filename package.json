@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test": "node --test",
     "print:scorecards": "node scripts/generate-print-scorecards.mjs",
+    "print:official-sheets": "node scripts/generate-official-score-sheets.mjs",
+    "print:pool-sheets": "node scripts/generate-pool-sheets.mjs",
     "deploy": "npm run build && node -e \"console.log('ビルド完了。deploy.ps1またはdeploy.shを実行してデプロイしてください。')\"",
     "server": "cd server && node server.js"
   },

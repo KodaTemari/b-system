@@ -156,6 +156,13 @@ const HqProgress = () => {
   const [cmOverlayActiveByCourt, setCmOverlayActiveByCourt] = useState({});
   /** CM ボタン表示の「本部承認から3分」判定用 */
   const [nowTick, setNowTick] = useState(() => Date.now());
+  /** 紙スコアシート・オペレーター送信の承認待ち（matchId → request） */
+  const [pendingManualByMatchId, setPendingManualByMatchId] = useState(() => new Map());
+  /** 紙結果入力 / 承認モーダル */
+  const [manualPaperModal, setManualPaperModal] = useState(null);
+  const [manualPaperSaving, setManualPaperSaving] = useState(false);
+  const [paperForm, setPaperForm] = useState(() => ({}));
+  const [paperRejectReason, setPaperRejectReason] = useState('');
   /** 本部ヘッダー中央タブ: 選手一覧 / 試合進行 / プール表 */
   const [hqMainView, setHqMainView] = useState('schedule');
   const mode = useMemo(() => {
@@ -311,6 +318,58 @@ const HqProgress = () => {
     }, 2000);
     return () => clearInterval(timer);
   }, [eventId, fetchProgress]);
+
+  useEffect(() => {
+    if (!eventId) {
+      return undefined;
+    }
+    const poll = () => {
+      fetch(`/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data?.requests || !Array.isArray(data.requests)) {
+            return;
+          }
+          const next = new Map();
+          for (const req of data.requests) {
+            const mid = String(req?.matchId ?? '').trim();
+            if (mid) {
+              next.set(mid, req);
+            }
+          }
+          setPendingManualByMatchId(next);
+        })
+        .catch(() => {
+          /* 進行の補助情報のため握りつぶす */
+        });
+    };
+    poll();
+    const timer = setInterval(poll, 4000);
+    return () => clearInterval(timer);
+  }, [eventId]);
+
+  useEffect(() => {
+    if (!manualPaperModal) {
+      setPaperForm({});
+      setPaperRejectReason('');
+      return;
+    }
+    if (manualPaperModal.mode === 'submit' && manualPaperModal.match) {
+      const m = manualPaperModal.match;
+      setPaperForm({
+        redPlayerId: String(m.redPlayerId ?? '').trim(),
+        bluePlayerId: String(m.bluePlayerId ?? '').trim(),
+        redScore: '',
+        blueScore: '',
+        redEndsWon: '',
+        blueEndsWon: '',
+        winnerPlayerId: '',
+        refereeName: '',
+        operatorName: '',
+        note: '',
+      });
+    }
+  }, [manualPaperModal]);
 
   useEffect(() => {
     const timer = setInterval(() => setNowTick(Date.now()), 1000);
@@ -543,6 +602,170 @@ const HqProgress = () => {
       setActionBusyKey('');
     }
   };
+
+  const submitManualPaperResult = useCallback(async () => {
+    if (!eventId || !manualPaperModal?.match || manualPaperModal.mode !== 'submit') {
+      return;
+    }
+    const match = manualPaperModal.match;
+    const mid = String(match.matchId ?? '').trim();
+    setManualPaperSaving(true);
+    setOperationError('');
+    try {
+      const body = {
+        redPlayerId: String(paperForm.redPlayerId ?? '').trim(),
+        bluePlayerId: String(paperForm.bluePlayerId ?? '').trim(),
+        redScore: paperForm.redScore === '' ? null : Number(paperForm.redScore),
+        blueScore: paperForm.blueScore === '' ? null : Number(paperForm.blueScore),
+        redEndsWon: paperForm.redEndsWon === '' ? null : paperForm.redEndsWon,
+        blueEndsWon: paperForm.blueEndsWon === '' ? null : paperForm.blueEndsWon,
+        winnerPlayerId: String(paperForm.winnerPlayerId ?? '').trim(),
+        refereeName: String(paperForm.refereeName ?? '').trim(),
+        operatorName: String(paperForm.operatorName ?? '').trim() || null,
+        note: String(paperForm.note ?? '').trim() || null,
+      };
+      if (!Number.isFinite(body.redScore) || !Number.isFinite(body.blueScore)) {
+        throw new Error('赤・青のスコアを数値で入力してください。');
+      }
+      if (!body.winnerPlayerId) {
+        throw new Error('勝者（選手ID）を選択してください。');
+      }
+      if (!body.refereeName) {
+        throw new Error('審判名を入力してください。');
+      }
+      const res = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/matches/${encodeURIComponent(mid)}/manual-result-request`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '送信に失敗しました。');
+      }
+      setManualPaperModal(null);
+      setOperationMessage(
+        `${toShortMatchId(mid)} の紙スコア結果を送信しました。本部エディタ（TD）の承認を待ちます。`,
+      );
+      const poll = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`,
+      );
+      if (poll.ok) {
+        const pData = await poll.json();
+        const next = new Map();
+        for (const req of pData.requests || []) {
+          if (req.matchId) {
+            next.set(String(req.matchId), req);
+          }
+        }
+        setPendingManualByMatchId(next);
+      }
+    } catch (e) {
+      setOperationError(e.message || '送信に失敗しました。');
+    } finally {
+      setManualPaperSaving(false);
+    }
+  }, [eventId, manualPaperModal, paperForm]);
+
+  const approveManualPaperRequest = useCallback(async () => {
+    if (!eventId || !manualPaperModal?.request?.id) {
+      return;
+    }
+    const reviewerName = String(hqApproverName ?? '').trim();
+    if (!reviewerName) {
+      setOperationError('上部で本部承認者名（TD名）を確定してから承認してください。');
+      return;
+    }
+    const requestId = manualPaperModal.request.id;
+    setManualPaperSaving(true);
+    setOperationError('');
+    try {
+      const res = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/${encodeURIComponent(requestId)}/approve`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviewerName }),
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '承認に失敗しました。');
+      }
+      setManualPaperModal(null);
+      setOperationMessage('紙スコア結果を反映し、コート承認済みとしました。続けて本部承認が可能です。');
+      await fetchProgress();
+      const poll = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`,
+      );
+      if (poll.ok) {
+        const pData = await poll.json();
+        const next = new Map();
+        for (const req of pData.requests || []) {
+          if (req.matchId) {
+            next.set(String(req.matchId), req);
+          }
+        }
+        setPendingManualByMatchId(next);
+      }
+    } catch (e) {
+      setOperationError(e.message || '承認に失敗しました。');
+    } finally {
+      setManualPaperSaving(false);
+    }
+  }, [eventId, manualPaperModal, hqApproverName, fetchProgress]);
+
+  const rejectManualPaperRequest = useCallback(async () => {
+    if (!eventId || !manualPaperModal?.request?.id) {
+      return;
+    }
+    const reviewerName = String(hqApproverName ?? '').trim();
+    if (!reviewerName) {
+      setOperationError('上部で本部承認者名（TD名）を確定してから却下してください。');
+      return;
+    }
+    const requestId = manualPaperModal.request.id;
+    setManualPaperSaving(true);
+    setOperationError('');
+    try {
+      const res = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/${encodeURIComponent(requestId)}/reject`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reviewerName,
+            rejectionReason: paperRejectReason.trim() || null,
+          }),
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '却下に失敗しました。');
+      }
+      setManualPaperModal(null);
+      setOperationMessage('紙スコアの申請を却下しました。');
+      const poll = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`,
+      );
+      if (poll.ok) {
+        const pData = await poll.json();
+        const next = new Map();
+        for (const req of pData.requests || []) {
+          if (req.matchId) {
+            next.set(String(req.matchId), req);
+          }
+        }
+        setPendingManualByMatchId(next);
+      }
+    } catch (e) {
+      setOperationError(e.message || '却下に失敗しました。');
+    } finally {
+      setManualPaperSaving(false);
+    }
+  }, [eventId, manualPaperModal, hqApproverName, paperRejectReason]);
 
   const handleAnnounce = async (match) => {
     await callProgressAction(match, 'announce', {
@@ -1138,6 +1361,9 @@ const HqProgress = () => {
                           ) : (
                             <p className={`hqProgressStatus ${statusClassName}`}>{statusLabel}</p>
                           )}
+                          {pendingManualByMatchId.has(String(match.matchId)) ? (
+                            <p className="hqProgressManualPaperPending">紙結果・承認待ち</p>
+                          ) : null}
                           {isOperatorMode && (
                             <div className="hqProgressTimeline">
                               <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 0 ? 'isDone' : ''}`}>
@@ -1195,6 +1421,38 @@ const HqProgress = () => {
                               </div>
                             </>
                           )}
+                          {isOperatorMode &&
+                            progress &&
+                            (rawStatus === 'announced' || rawStatus === 'in_progress') && (
+                              <div className="hqProgressButtonRow">
+                                <button
+                                  type="button"
+                                  className="hqProgressActionButton hqProgressManualPaperButton"
+                                  onClick={() => setManualPaperModal({ mode: 'submit', match })}
+                                  disabled={actionBusyKey !== '' || importing || manualPaperSaving}
+                                >
+                                  結果入力
+                                </button>
+                              </div>
+                            )}
+                          {isTdMode && pendingManualByMatchId.has(String(match.matchId)) && (
+                            <div className="hqProgressButtonRow">
+                              <button
+                                type="button"
+                                className="hqProgressActionButton hqProgressManualPaperReviewButton"
+                                onClick={() =>
+                                  setManualPaperModal({
+                                    mode: 'review',
+                                    match,
+                                    request: pendingManualByMatchId.get(String(match.matchId)),
+                                  })
+                                }
+                                disabled={actionBusyKey !== '' || importing || manualPaperSaving}
+                              >
+                                紙結果を承認
+                              </button>
+                            </div>
+                          )}
                           {isTdMode && (
                             <div className="hqProgressButtonRow">
                               <button
@@ -1223,6 +1481,250 @@ const HqProgress = () => {
           </div>
         )}
       </section>
+      {manualPaperModal ? (
+        <div
+          className="hqProgressManualPaperModalOverlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hq-manual-paper-title"
+          onClick={() => {
+            if (!manualPaperSaving) {
+              setManualPaperModal(null);
+            }
+          }}
+        >
+          <div
+            className="hqProgressManualPaperModal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {manualPaperModal.mode === 'submit' ? (
+              <>
+                <h2 id="hq-manual-paper-title" className="hqProgressManualPaperModalTitle">
+                  紙スコアシート・結果入力
+                </h2>
+                <p className="hqProgressManualPaperModalNote">
+                  スコアボードが使用できないときの記録です。送信後、TD が内容を確認してコート承認として反映します。
+                </p>
+                <div className="hqProgressManualPaperFormGrid">
+                  <label className="hqProgressManualPaperField">
+                    <span>赤 選手ID</span>
+                    <input
+                      type="text"
+                      value={paperForm.redPlayerId ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, redPlayerId: e.target.value }))
+                      }
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField">
+                    <span>青 選手ID</span>
+                    <input
+                      type="text"
+                      value={paperForm.bluePlayerId ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, bluePlayerId: e.target.value }))
+                      }
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField">
+                    <span>赤スコア</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={paperForm.redScore ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, redScore: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField">
+                    <span>青スコア</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={paperForm.blueScore ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, blueScore: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField">
+                    <span>赤 勝ちエンド（任意）</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={paperForm.redEndsWon ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, redEndsWon: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField">
+                    <span>青 勝ちエンド（任意）</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={paperForm.blueEndsWon ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, blueEndsWon: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
+                    <span>勝者（選手ID）</span>
+                    <select
+                      value={paperForm.winnerPlayerId ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, winnerPlayerId: e.target.value }))
+                      }
+                    >
+                      <option value="">選択してください</option>
+                      <option value={String(paperForm.redPlayerId ?? '').trim()}>
+                        赤 {String(paperForm.redPlayerId ?? '').trim() || '—'}
+                      </option>
+                      <option value={String(paperForm.bluePlayerId ?? '').trim()}>
+                        青 {String(paperForm.bluePlayerId ?? '').trim() || '—'}
+                      </option>
+                    </select>
+                  </label>
+                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
+                    <span>審判名（必須）</span>
+                    <input
+                      type="text"
+                      value={paperForm.refereeName ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, refereeName: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
+                    <span>オペレーター名（任意）</span>
+                    <input
+                      type="text"
+                      value={paperForm.operatorName ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, operatorName: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldFull">
+                    <span>備考（任意）</span>
+                    <textarea
+                      rows={2}
+                      value={paperForm.note ?? ''}
+                      onChange={(e) =>
+                        setPaperForm((f) => ({ ...f, note: e.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+                <div className="hqProgressManualPaperModalActions">
+                  <button
+                    type="button"
+                    className="hqProgressActionButton"
+                    onClick={() => setManualPaperModal(null)}
+                    disabled={manualPaperSaving}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="button"
+                    className="hqProgressActionButton hqProgressManualPaperSubmitButton"
+                    onClick={() => submitManualPaperResult()}
+                    disabled={manualPaperSaving}
+                  >
+                    {manualPaperSaving ? '送信中…' : '本部へ送信（承認待ち）'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="hq-manual-paper-title" className="hqProgressManualPaperModalTitle">
+                  紙スコア結果の承認
+                </h2>
+                <p className="hqProgressManualPaperModalNote">
+                  内容を確認し、問題なければ「コート承認として反映」を押してください。反映後は通常どおり「本部承認」へ進めます。
+                </p>
+                {manualPaperModal.request ? (
+                  <dl className="hqProgressManualPaperReviewGrid">
+                    <dt>赤 選手ID</dt>
+                    <dd>{manualPaperModal.request.redPlayerId}</dd>
+                    <dt>青 選手ID</dt>
+                    <dd>{manualPaperModal.request.bluePlayerId}</dd>
+                    <dt>赤スコア</dt>
+                    <dd>{manualPaperModal.request.redScore}</dd>
+                    <dt>青スコア</dt>
+                    <dd>{manualPaperModal.request.blueScore}</dd>
+                    <dt>赤 勝ちエンド</dt>
+                    <dd>
+                      {manualPaperModal.request.redEndsWon != null
+                        ? manualPaperModal.request.redEndsWon
+                        : '—'}
+                    </dd>
+                    <dt>青 勝ちエンド</dt>
+                    <dd>
+                      {manualPaperModal.request.blueEndsWon != null
+                        ? manualPaperModal.request.blueEndsWon
+                        : '—'}
+                    </dd>
+                    <dt>勝者</dt>
+                    <dd>{manualPaperModal.request.winnerPlayerId}</dd>
+                    <dt>審判名</dt>
+                    <dd>{manualPaperModal.request.refereeName}</dd>
+                    <dt>オペレーター</dt>
+                    <dd>{manualPaperModal.request.operatorName || '—'}</dd>
+                    <dt>備考</dt>
+                    <dd>{manualPaperModal.request.note || '—'}</dd>
+                    <dt>送信時刻</dt>
+                    <dd className="hqProgressManualPaperMono">{manualPaperModal.request.createdAt || '—'}</dd>
+                  </dl>
+                ) : null}
+                <label className="hqProgressManualPaperField hqProgressManualPaperFieldFull">
+                  <span>却下理由（却下時のみ）</span>
+                  <textarea
+                    rows={2}
+                    value={paperRejectReason}
+                    onChange={(e) => setPaperRejectReason(e.target.value)}
+                    placeholder="必要に応じて入力"
+                  />
+                </label>
+                <div className="hqProgressManualPaperModalActions">
+                  <button
+                    type="button"
+                    className="hqProgressActionButton"
+                    onClick={() => setManualPaperModal(null)}
+                    disabled={manualPaperSaving}
+                  >
+                    閉じる
+                  </button>
+                  <button
+                    type="button"
+                    className="hqProgressActionButton hqProgressManualPaperRejectButton"
+                    onClick={() => rejectManualPaperRequest()}
+                    disabled={manualPaperSaving}
+                  >
+                    {manualPaperSaving ? '処理中…' : '却下'}
+                  </button>
+                  <button
+                    type="button"
+                    className="hqProgressActionButton hqProgressManualPaperApproveButton"
+                    onClick={() => approveManualPaperRequest()}
+                    disabled={manualPaperSaving}
+                  >
+                    {manualPaperSaving ? '処理中…' : 'コート承認として反映'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
       {isTdMode && showApproverModal ? (
         <div
           className="hqProgressApproverModalOverlay"

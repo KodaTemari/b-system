@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS results (
   match_id TEXT NOT NULL,
   red_score INTEGER,
   blue_score INTEGER,
+  red_ends_won INTEGER,
+  blue_ends_won INTEGER,
   winner_player_id TEXT,
   is_correction INTEGER NOT NULL DEFAULT 0,
   correction_reason TEXT,
@@ -56,6 +58,31 @@ CREATE TABLE IF NOT EXISTS active_locks (
   PRIMARY KEY (event_id, lock_type, lock_key),
   FOREIGN KEY (event_id, match_id) REFERENCES matches(event_id, match_id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS manual_result_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id TEXT NOT NULL,
+  match_id TEXT NOT NULL,
+  red_player_id TEXT NOT NULL,
+  blue_player_id TEXT NOT NULL,
+  red_score INTEGER NOT NULL,
+  blue_score INTEGER NOT NULL,
+  red_ends_won INTEGER,
+  blue_ends_won INTEGER,
+  winner_player_id TEXT NOT NULL,
+  referee_name TEXT NOT NULL,
+  operator_name TEXT,
+  note TEXT,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at TEXT NOT NULL,
+  reviewed_at TEXT,
+  reviewer_name TEXT,
+  rejection_reason TEXT,
+  FOREIGN KEY (event_id, match_id) REFERENCES matches(event_id, match_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_manual_result_event_status ON manual_result_requests(event_id, status);
+CREATE INDEX IF NOT EXISTS idx_manual_result_event_match ON manual_result_requests(event_id, match_id);
 
 CREATE INDEX IF NOT EXISTS idx_matches_event_status ON matches(event_id, status);
 CREATE INDEX IF NOT EXISTS idx_matches_event_schedule ON matches(event_id, scheduled_at);

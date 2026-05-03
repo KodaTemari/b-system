@@ -1,5 +1,5 @@
 /**
- * public/print/bgp-2026-preliminary/scorecards.html を生成する。
+ * public/event/bgp-2026-preliminary/print/scorecards.html を生成する。
  * データ: public/data/bgp-2026-preliminary/schedule.json + classes/FRD/player.json
  *
  * スタイルは同じディレクトリの scorecards.css を <link> で参照する。
@@ -17,7 +17,10 @@ const root = path.join(__dirname, "..")
 
 const SCHEDULE_PATH = path.join(root, "public/data/bgp-2026-preliminary/schedule.json")
 const PLAYERS_PATH = path.join(root, "public/data/bgp-2026-preliminary/classes/FRD/player.json")
-const OUT_PATH = path.join(root, "public/print/bgp-2026-preliminary/scorecards.html")
+const OUT_PATH = path.join(root, "public/event/bgp-2026-preliminary/print/scorecards.html")
+
+/** true: A4 1ページ分（スコアカード2枚）のみ出力。CSS調整時は軽量化。本番前は false に戻す */
+const PREVIEW_SINGLE_PAGE_ONLY = false
 
 function esc(s) {
   return String(s)
@@ -130,6 +133,10 @@ matches.sort((a, b) => {
   return a.round - b.round
 })
 
+if (PREVIEW_SINGLE_PAGE_ONLY) {
+  matches = matches.slice(0, 2)
+}
+
 const cards = matches.map((m) => {
   const red = playerMap[m.redPlayerId]
   const blue = playerMap[m.bluePlayerId]
@@ -176,4 +183,5 @@ ${sheetsHtml}
 `
 
 fs.writeFileSync(OUT_PATH, html, "utf8")
-console.log(`Wrote ${OUT_PATH} (${matches.length} matches, ${sheets.length} sheets)`)
+const previewNote = PREVIEW_SINGLE_PAGE_ONLY ? " [プレビュー: 1ページのみ]" : ""
+console.log(`Wrote ${OUT_PATH} (${matches.length} matches, ${sheets.length} sheets)${previewNote}`)
