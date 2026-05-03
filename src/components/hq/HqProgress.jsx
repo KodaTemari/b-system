@@ -19,7 +19,6 @@ import {
   normalizePlayers,
   renderNameWithLineBreaks,
   toDateTimeLabel,
-  toEventDateLabel,
   toShortMatchId,
   toTimeSlotKey,
 } from '../schedule/scheduleDisplayUtils';
@@ -73,7 +72,7 @@ const statusClassMap = {
   hq_approved: 'isHqApproved',
 };
 
-/** 紙スコアシートと同様、ID が若い方を左に並べる比較（数字のみは数値順、それ以外は日本語ロケール順） */
+/** 公式並びと同様、ID が若い方を左に並べる比較（数字のみは数値順、それ以外は日本語ロケール順） */
 function comparePlayerIdsForPaperOrder(idA, idB) {
   const a = String(idA ?? '').trim();
   const b = String(idB ?? '').trim();
@@ -257,6 +256,521 @@ const HqProgressManualPaperIdFields = memo(function HqProgressManualPaperIdField
 });
 
 /**
+ * 親の nowTick / 進行ポーリングで再レンダーされても、入力中に DOM が差し替わり続けないよう切り離す
+ */
+const HqProgressManualPaperModal = memo(function HqProgressManualPaperModal({
+  match,
+  eventId,
+  playerNameMap,
+  onClose,
+  refreshManualPendingMap,
+  setOperationMessage,
+  setOperationError,
+}) {
+  const [paperForm, setPaperForm] = useState(() => ({}));
+  const [manualPaperRedOnLeft, setManualPaperRedOnLeft] = useState(true);
+  const [manualPaperSaving, setManualPaperSaving] = useState(false);
+
+  const matchId = String(match?.matchId ?? '').trim();
+
+  useEffect(() => {
+    if (!matchId) {
+      return;
+    }
+    setManualPaperRedOnLeft(true);
+    setPaperForm({
+      redPlayerId: String(match.redPlayerId ?? '').trim(),
+      bluePlayerId: String(match.bluePlayerId ?? '').trim(),
+      redScore: '',
+      blueScore: '',
+      redEndsWon: '',
+      blueEndsWon: '',
+      winnerPlayerId: '',
+      refereeName: '',
+      operatorName: '',
+      note: '',
+    });
+    // match オブジェクト参照は親のポーリングで変わり得るが、試合 ID が同じならフォームを初期化し直さない
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- matchId のみでオープン時 1 回相当
+  }, [matchId]);
+
+  const invertManualPaperRedBlue = useCallback(() => {
+    setManualPaperRedOnLeft((v) => !v);
+    setPaperForm((f) => ({
+      ...f,
+      redPlayerId: String(f.bluePlayerId ?? '').trim(),
+      bluePlayerId: String(f.redPlayerId ?? '').trim(),
+      redScore: f.blueScore ?? '',
+      blueScore: f.redScore ?? '',
+      redEndsWon: f.blueEndsWon ?? '',
+      blueEndsWon: f.redEndsWon ?? '',
+    }));
+  }, []);
+
+  const submitManualPaperResult = useCallback(async () => {
+    if (!eventId || !matchId) {
+      return;
+    }
+    setManualPaperSaving(true);
+    setOperationError('');
+    try {
+      const body = {
+        redPlayerId: String(paperForm.redPlayerId ?? '').trim(),
+        bluePlayerId: String(paperForm.bluePlayerId ?? '').trim(),
+        redScore: paperForm.redScore === '' ? null : Number(paperForm.redScore),
+        blueScore: paperForm.blueScore === '' ? null : Number(paperForm.blueScore),
+        redEndsWon: paperForm.redEndsWon === '' ? null : paperForm.redEndsWon,
+        blueEndsWon: paperForm.blueEndsWon === '' ? null : paperForm.blueEndsWon,
+        winnerPlayerId: String(paperForm.winnerPlayerId ?? '').trim(),
+        refereeName: String(paperForm.refereeName ?? '').trim(),
+        operatorName: String(paperForm.operatorName ?? '').trim() || null,
+        note: String(paperForm.note ?? '').trim() || null,
+      };
+      if (!Number.isFinite(body.redScore) || !Number.isFinite(body.blueScore)) {
+        throw new Error('赤・青のスコアを数値で入力してください。');
+      }
+      if (!body.winnerPlayerId) {
+        throw new Error('勝者を選択してください。');
+      }
+      if (!body.refereeName) {
+        throw new Error('審判名を入力してください。');
+      }
+      const res = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/matches/${encodeURIComponent(matchId)}/manual-result-request`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || '送信に失敗しました。');
+      }
+      onClose();
+      setOperationMessage(
+        `${toShortMatchId(matchId)} の申請を送信しました。TD の本部承認を待ちます。`,
+      );
+      await refreshManualPendingMap();
+    } catch (e) {
+      setOperationError(e.message || '送信に失敗しました。');
+    } finally {
+      setManualPaperSaving(false);
+    }
+  }, [
+    eventId,
+    matchId,
+    paperForm,
+    onClose,
+    refreshManualPendingMap,
+    setOperationMessage,
+    setOperationError,
+  ]);
+
+  return (
+    <div
+      className="hqProgressManualPaperModalOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hq-manual-paper-title"
+      onClick={() => {
+        if (!manualPaperSaving) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="hqProgressManualPaperModal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <>
+          <h2 id="hq-manual-paper-title" className="hqProgressManualPaperModalTitle">
+            オペレーター申請・結果入力
+          </h2>
+          <p className="hqProgressManualPaperModalNote">
+            スコアボードで記録できない場合に、把握した結果を入力します。送信後、TD が本部承認します。
+          </p>
+          <div className="hqProgressManualPaperInvertBar">
+            <button
+              type="button"
+              className="hqProgressActionButton hqProgressManualPaperInvertButton"
+              onClick={invertManualPaperRedBlue}
+              disabled={manualPaperSaving}
+            >
+              赤・青反転
+            </button>
+          </div>
+          <div className="hqProgressManualPaperFormGrid">
+            <HqProgressManualPaperIdFields
+              redPlayerId={String(paperForm.redPlayerId ?? '')}
+              bluePlayerId={String(paperForm.bluePlayerId ?? '')}
+              redOnLeft={manualPaperRedOnLeft}
+              setPaperForm={setPaperForm}
+              playerNameMap={playerNameMap}
+            />
+            {manualPaperRedOnLeft ? (
+              <>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+                    スコア
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.redScore ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, redScore: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+                    スコア
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.blueScore ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, blueScore: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+                    勝エンド
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.redEndsWon ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, redEndsWon: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+                    勝エンド
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.blueEndsWon ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, blueEndsWon: e.target.value }))}
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+                    スコア
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.blueScore ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, blueScore: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+                    スコア
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.redScore ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, redScore: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+                    勝エンド
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.blueEndsWon ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, blueEndsWon: e.target.value }))}
+                  />
+                </label>
+                <label className="hqProgressManualPaperField">
+                  <span className="hqProgressManualPaperFieldLabelRow">
+                    <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+                    勝エンド
+                  </span>
+                  <input
+                    className="hqProgressManualPaperScoreEndsInput"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={paperForm.redEndsWon ?? ''}
+                    onChange={(e) => setPaperForm((f) => ({ ...f, redEndsWon: e.target.value }))}
+                  />
+                </label>
+              </>
+            )}
+            <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
+              <span>勝者</span>
+              <select
+                className="hqProgressManualPaperWinnerSelect"
+                value={paperForm.winnerPlayerId ?? ''}
+                onChange={(e) => setPaperForm((f) => ({ ...f, winnerPlayerId: e.target.value }))}
+              >
+                <option value="">選択してください</option>
+                {manualPaperRedOnLeft ? (
+                  <>
+                    <option value={String(paperForm.redPlayerId ?? '').trim()}>
+                      {(() => {
+                        const id = String(paperForm.redPlayerId ?? '').trim();
+                        const nm = id ? playerNameMap.get(id) : '';
+                        return `赤 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
+                      })()}
+                    </option>
+                    <option value={String(paperForm.bluePlayerId ?? '').trim()}>
+                      {(() => {
+                        const id = String(paperForm.bluePlayerId ?? '').trim();
+                        const nm = id ? playerNameMap.get(id) : '';
+                        return `青 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
+                      })()}
+                    </option>
+                  </>
+                ) : (
+                  <>
+                    <option value={String(paperForm.bluePlayerId ?? '').trim()}>
+                      {(() => {
+                        const id = String(paperForm.bluePlayerId ?? '').trim();
+                        const nm = id ? playerNameMap.get(id) : '';
+                        return `青 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
+                      })()}
+                    </option>
+                    <option value={String(paperForm.redPlayerId ?? '').trim()}>
+                      {(() => {
+                        const id = String(paperForm.redPlayerId ?? '').trim();
+                        const nm = id ? playerNameMap.get(id) : '';
+                        return `赤 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
+                      })()}
+                    </option>
+                  </>
+                )}
+              </select>
+            </label>
+            <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
+              <span>審判名（必須）</span>
+              <input
+                type="text"
+                value={paperForm.refereeName ?? ''}
+                onChange={(e) => setPaperForm((f) => ({ ...f, refereeName: e.target.value }))}
+              />
+            </label>
+            <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
+              <span>オペレーター名（任意）</span>
+              <input
+                type="text"
+                value={paperForm.operatorName ?? ''}
+                onChange={(e) => setPaperForm((f) => ({ ...f, operatorName: e.target.value }))}
+              />
+            </label>
+            <label className="hqProgressManualPaperField hqProgressManualPaperFieldFull">
+              <span>備考（任意）</span>
+              <textarea
+                rows={2}
+                value={paperForm.note ?? ''}
+                onChange={(e) => setPaperForm((f) => ({ ...f, note: e.target.value }))}
+              />
+            </label>
+          </div>
+          <div className="hqProgressManualPaperModalActions">
+            <button
+              type="button"
+              className="hqProgressActionButton"
+              onClick={onClose}
+              disabled={manualPaperSaving}
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              className="hqProgressActionButton hqProgressManualPaperSubmitButton"
+              onClick={() => submitManualPaperResult()}
+              disabled={manualPaperSaving}
+            >
+              {manualPaperSaving ? '送信中…' : '本部へ送信（承認待ち）'}
+            </button>
+          </div>
+        </>
+      </div>
+    </div>
+  );
+});
+
+/** オペレーター申請内容の確認リスト（本部承認モーダルでも再利用） */
+function ManualPaperRequestReviewDl({ request: req }) {
+  if (!req) {
+    return null;
+  }
+  const rId = String(req.redPlayerId ?? '').trim();
+  const bId = String(req.bluePlayerId ?? '').trim();
+  const reviewLeftIsRed = !rId || !bId ? true : comparePlayerIdsForPaperOrder(rId, bId) <= 0;
+  return (
+    <dl className="hqProgressManualPaperReviewGrid">
+      {reviewLeftIsRed ? (
+        <>
+          <dt>赤 選手ID</dt>
+          <dd>{req.redPlayerId}</dd>
+          <dt>青 選手ID</dt>
+          <dd>{req.bluePlayerId}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+              スコア
+            </span>
+          </dt>
+          <dd>{req.redScore}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+              スコア
+            </span>
+          </dt>
+          <dd>{req.blueScore}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+              勝エンド
+            </span>
+          </dt>
+          <dd>{req.redEndsWon != null ? req.redEndsWon : '—'}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+              勝エンド
+            </span>
+          </dt>
+          <dd>{req.blueEndsWon != null ? req.blueEndsWon : '—'}</dd>
+        </>
+      ) : (
+        <>
+          <dt>青 選手ID</dt>
+          <dd>{req.bluePlayerId}</dd>
+          <dt>赤 選手ID</dt>
+          <dd>{req.redPlayerId}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+              スコア
+            </span>
+          </dt>
+          <dd>{req.blueScore}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+              スコア
+            </span>
+          </dt>
+          <dd>{req.redScore}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+              勝エンド
+            </span>
+          </dt>
+          <dd>{req.blueEndsWon != null ? req.blueEndsWon : '—'}</dd>
+          <dt>
+            <span className="hqProgressManualPaperFieldLabelRow">
+              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+              勝エンド
+            </span>
+          </dt>
+          <dd>{req.redEndsWon != null ? req.redEndsWon : '—'}</dd>
+        </>
+      )}
+      <dt>勝者</dt>
+      <dd>{req.winnerPlayerId}</dd>
+      <dt>審判名</dt>
+      <dd>{req.refereeName}</dd>
+      <dt>オペレーター</dt>
+      <dd>{req.operatorName || '—'}</dd>
+      <dt>備考</dt>
+      <dd>{req.note || '—'}</dd>
+      <dt>送信時刻</dt>
+      <dd className="hqProgressManualPaperMono">{req.createdAt || '—'}</dd>
+    </dl>
+  );
+}
+
+/** コート承認済み（スコアボード経由）を本部承認する前の確認リスト */
+function HqScoreboardCourtApproveReviewDl({ match, colorState, progress }) {
+  const rid = String(colorState?.redPlayerId || match?.redPlayerId || '').trim();
+  const bid = String(colorState?.bluePlayerId || match?.bluePlayerId || '').trim();
+  const rs = colorState?.redScore;
+  const bs = colorState?.blueScore;
+  const rsLabel = Number.isFinite(Number(rs)) ? rs : '—';
+  const bsLabel = Number.isFinite(Number(bs)) ? bs : '—';
+  const ws = colorState?.winnerSide;
+  const wid =
+    ws === 'red' && rid ? rid : ws === 'blue' && bid ? bid : '—';
+  const refName = progress?.courtRefereeName ? String(progress.courtRefereeName) : '—';
+  return (
+    <dl className="hqProgressManualPaperReviewGrid">
+      <dt>赤 選手ID</dt>
+      <dd>{rid || '—'}</dd>
+      <dt>青 選手ID</dt>
+      <dd>{bid || '—'}</dd>
+      <dt>
+        <span className="hqProgressManualPaperFieldLabelRow">
+          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+          スコア
+        </span>
+      </dt>
+      <dd>{rsLabel}</dd>
+      <dt>
+        <span className="hqProgressManualPaperFieldLabelRow">
+          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+          スコア
+        </span>
+      </dt>
+      <dd>{bsLabel}</dd>
+      <dt>
+        <span className="hqProgressManualPaperFieldLabelRow">
+          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
+          勝エンド
+        </span>
+      </dt>
+      <dd>—</dd>
+      <dt>
+        <span className="hqProgressManualPaperFieldLabelRow">
+          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
+          勝エンド
+        </span>
+      </dt>
+      <dd>—</dd>
+      <dt>勝者</dt>
+      <dd>{wid}</dd>
+      <dt>審判名（コート承認）</dt>
+      <dd>{refName}</dd>
+    </dl>
+  );
+}
+
+/**
  * 本部：試合進行（announce / unannounce / start / hq-approve）
  * URL: /event/:eventId/hq/progress（のちほど認証をかける想定）
  */
@@ -289,15 +803,14 @@ const HqProgress = () => {
   const [cmOverlayActiveByCourt, setCmOverlayActiveByCourt] = useState({});
   /** CM ボタン表示の「本部承認から3分」判定用 */
   const [nowTick, setNowTick] = useState(() => Date.now());
-  /** 紙スコアシート・オペレーター送信の承認待ち（matchId → request） */
+  /** オペレーター手動送信の承認待ち（matchId → request） */
   const [pendingManualByMatchId, setPendingManualByMatchId] = useState(() => new Map());
-  /** 紙結果入力 / 承認モーダル */
+  /** 手動結果入力モーダル（mode: submit のみ） */
   const [manualPaperModal, setManualPaperModal] = useState(null);
-  const [manualPaperSaving, setManualPaperSaving] = useState(false);
-  const [paperForm, setPaperForm] = useState(() => ({}));
+  /** 本部承認（手動申請・スコアボード共通）の確認モーダル */
+  const [hqApproveConfirmModal, setHqApproveConfirmModal] = useState(null);
+  const [hqApproveConfirmBusy, setHqApproveConfirmBusy] = useState(false);
   const [paperRejectReason, setPaperRejectReason] = useState('');
-  /** 紙モーダル: true で左列＝赤の入力群。「赤・青反転」で列トグルとともに赤青のID・スコア・勝エンドを入れ替え */
-  const [manualPaperRedOnLeft, setManualPaperRedOnLeft] = useState(true);
   /** 本部ヘッダー中央タブ: 選手一覧 / 試合進行 / プール表 */
   const [hqMainView, setHqMainView] = useState('schedule');
   const mode = useMemo(() => {
@@ -351,6 +864,24 @@ const HqProgress = () => {
       nextMap.set(String(match.matchId), match);
     }
     setProgressMap(nextMap);
+  }, [eventId]);
+
+  const refreshManualPendingMap = useCallback(async () => {
+    if (!eventId) {
+      return;
+    }
+    const poll = await fetch(`/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`);
+    if (!poll.ok) {
+      return;
+    }
+    const pData = await poll.json();
+    const next = new Map();
+    for (const req of pData.requests || []) {
+      if (req.matchId) {
+        next.set(String(req.matchId), req);
+      }
+    }
+    setPendingManualByMatchId(next);
   }, [eventId]);
 
   const refreshCmOverlayStatesForCourts = useCallback(
@@ -485,25 +1016,7 @@ const HqProgress = () => {
 
   useEffect(() => {
     if (!manualPaperModal) {
-      setPaperForm({});
       setPaperRejectReason('');
-      return;
-    }
-    if (manualPaperModal.mode === 'submit' && manualPaperModal.match) {
-      const m = manualPaperModal.match;
-      setManualPaperRedOnLeft(true);
-      setPaperForm({
-        redPlayerId: String(m.redPlayerId ?? '').trim(),
-        bluePlayerId: String(m.bluePlayerId ?? '').trim(),
-        redScore: '',
-        blueScore: '',
-        redEndsWon: '',
-        blueEndsWon: '',
-        winnerPlayerId: '',
-        refereeName: '',
-        operatorName: '',
-        note: '',
-      });
     }
   }, [manualPaperModal]);
 
@@ -739,135 +1252,102 @@ const HqProgress = () => {
     }
   };
 
-  const submitManualPaperResult = useCallback(async () => {
-    if (!eventId || !manualPaperModal?.match || manualPaperModal.mode !== 'submit') {
-      return;
-    }
-    const match = manualPaperModal.match;
-    const mid = String(match.matchId ?? '').trim();
-    setManualPaperSaving(true);
-    setOperationError('');
-    try {
-      const body = {
-        redPlayerId: String(paperForm.redPlayerId ?? '').trim(),
-        bluePlayerId: String(paperForm.bluePlayerId ?? '').trim(),
-        redScore: paperForm.redScore === '' ? null : Number(paperForm.redScore),
-        blueScore: paperForm.blueScore === '' ? null : Number(paperForm.blueScore),
-        redEndsWon: paperForm.redEndsWon === '' ? null : paperForm.redEndsWon,
-        blueEndsWon: paperForm.blueEndsWon === '' ? null : paperForm.blueEndsWon,
-        winnerPlayerId: String(paperForm.winnerPlayerId ?? '').trim(),
-        refereeName: String(paperForm.refereeName ?? '').trim(),
-        operatorName: String(paperForm.operatorName ?? '').trim() || null,
-        note: String(paperForm.note ?? '').trim() || null,
-      };
-      if (!Number.isFinite(body.redScore) || !Number.isFinite(body.blueScore)) {
-        throw new Error('赤・青のスコアを数値で入力してください。');
-      }
-      if (!body.winnerPlayerId) {
-        throw new Error('勝者を選択してください。');
-      }
-      if (!body.refereeName) {
-        throw new Error('審判名を入力してください。');
-      }
-      const res = await fetch(
-        `/api/progress/${encodeURIComponent(eventId)}/matches/${encodeURIComponent(mid)}/manual-result-request`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        },
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || '送信に失敗しました。');
-      }
-      setManualPaperModal(null);
-      setOperationMessage(
-        `${toShortMatchId(mid)} の紙スコア結果を送信しました。本部エディタ（TD）の承認を待ちます。`,
-      );
-      const poll = await fetch(
-        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`,
-      );
-      if (poll.ok) {
-        const pData = await poll.json();
-        const next = new Map();
-        for (const req of pData.requests || []) {
-          if (req.matchId) {
-            next.set(String(req.matchId), req);
-          }
-        }
-        setPendingManualByMatchId(next);
-      }
-    } catch (e) {
-      setOperationError(e.message || '送信に失敗しました。');
-    } finally {
-      setManualPaperSaving(false);
-    }
-  }, [eventId, manualPaperModal, paperForm]);
-
-  const invertManualPaperRedBlue = useCallback(() => {
-    setManualPaperRedOnLeft((v) => !v);
-    setPaperForm((f) => ({
-      ...f,
-      redPlayerId: String(f.bluePlayerId ?? '').trim(),
-      bluePlayerId: String(f.redPlayerId ?? '').trim(),
-      redScore: f.blueScore ?? '',
-      blueScore: f.redScore ?? '',
-      redEndsWon: f.blueEndsWon ?? '',
-      blueEndsWon: f.redEndsWon ?? '',
-    }));
+  const closeManualPaperModal = useCallback(() => {
+    setManualPaperModal(null);
   }, []);
 
-  const approveManualPaperRequest = useCallback(async () => {
-    if (!eventId || !manualPaperModal?.request?.id) {
+  const openHqApproveConfirm = useCallback(
+    (match) => {
+      const approverName = hqApproverName.trim();
+      if (!approverName) {
+        setOperationError('本部承認者名を入力してください。');
+        setApproverNameDraft((prev) => String(prev).trim() || DEFAULT_HQ_TD_APPROVER_NAME);
+        setShowApproverModal(true);
+        return;
+      }
+      const mid = String(match?.matchId ?? '').trim();
+      if (!mid) {
+        return;
+      }
+      const pending = pendingManualByMatchId.get(mid);
+      const st = progressMap.get(mid)?.status;
+      if (pending) {
+        setPaperRejectReason('');
+        setHqApproveConfirmModal({ match, flow: 'paper', request: pending });
+        return;
+      }
+      if (st === 'court_approved') {
+        setHqApproveConfirmModal({ match, flow: 'scoreboard' });
+      }
+    },
+    [hqApproverName, pendingManualByMatchId, progressMap],
+  );
+
+  const executeHqApproveConfirm = useCallback(async () => {
+    const ctx = hqApproveConfirmModal;
+    if (!ctx?.match || !eventId) {
       return;
     }
-    const reviewerName = String(hqApproverName ?? '').trim();
-    if (!reviewerName) {
-      setOperationError('上部で本部承認者名（TD名）を確定してから承認してください。');
+    const approverName = hqApproverName.trim();
+    if (!approverName) {
+      setOperationError('本部承認者名を入力してください。');
       return;
     }
-    const requestId = manualPaperModal.request.id;
-    setManualPaperSaving(true);
+    const mid = String(ctx.match.matchId ?? '').trim();
+    setHqApproveConfirmBusy(true);
     setOperationError('');
     try {
-      const res = await fetch(
-        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/${encodeURIComponent(requestId)}/approve`,
+      if (ctx.flow === 'paper' && ctx.request?.id) {
+        const res = await fetch(
+          `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/${encodeURIComponent(ctx.request.id)}/approve`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewerName: approverName }),
+          },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || '申請内容の反映に失敗しました。');
+        }
+        await fetchProgress();
+        await refreshManualPendingMap();
+      }
+      const hqRes = await fetch(
+        `/api/progress/${encodeURIComponent(eventId)}/matches/${encodeURIComponent(mid)}/hq-approve`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reviewerName }),
+          body: JSON.stringify({ approverName }),
         },
       );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || '承認に失敗しました。');
+      const hqData = await hqRes.json().catch(() => ({}));
+      if (!hqRes.ok) {
+        throw new Error(hqData.error || '本部承認に失敗しました。');
       }
-      setManualPaperModal(null);
-      setOperationMessage('紙スコア結果を反映し、コート承認済みとしました。続けて本部承認が可能です。');
       await fetchProgress();
-      const poll = await fetch(
-        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`,
+      setHqApproveConfirmModal(null);
+      setOperationMessage(
+        ctx.flow === 'paper'
+          ? `${toShortMatchId(mid)} の申請内容を反映し、本部承認しました。`
+          : `${toShortMatchId(mid)} を本部承認しました。`,
       );
-      if (poll.ok) {
-        const pData = await poll.json();
-        const next = new Map();
-        for (const req of pData.requests || []) {
-          if (req.matchId) {
-            next.set(String(req.matchId), req);
-          }
-        }
-        setPendingManualByMatchId(next);
-      }
     } catch (e) {
-      setOperationError(e.message || '承認に失敗しました。');
+      setOperationError(e.message || '本部承認に失敗しました。');
     } finally {
-      setManualPaperSaving(false);
+      setHqApproveConfirmBusy(false);
     }
-  }, [eventId, manualPaperModal, hqApproverName, fetchProgress]);
+  }, [
+    hqApproveConfirmModal,
+    eventId,
+    hqApproverName,
+    fetchProgress,
+    refreshManualPendingMap,
+  ]);
 
-  const rejectManualPaperRequest = useCallback(async () => {
-    if (!eventId || !manualPaperModal?.request?.id) {
+  const executeHqApproveReject = useCallback(async () => {
+    const ctx = hqApproveConfirmModal;
+    if (!ctx || ctx.flow !== 'paper' || !ctx.request?.id || !eventId) {
       return;
     }
     const reviewerName = String(hqApproverName ?? '').trim();
@@ -875,12 +1355,11 @@ const HqProgress = () => {
       setOperationError('上部で本部承認者名（TD名）を確定してから却下してください。');
       return;
     }
-    const requestId = manualPaperModal.request.id;
-    setManualPaperSaving(true);
+    setHqApproveConfirmBusy(true);
     setOperationError('');
     try {
       const res = await fetch(
-        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/${encodeURIComponent(requestId)}/reject`,
+        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/${encodeURIComponent(ctx.request.id)}/reject`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -894,27 +1373,16 @@ const HqProgress = () => {
       if (!res.ok) {
         throw new Error(data.error || '却下に失敗しました。');
       }
-      setManualPaperModal(null);
-      setOperationMessage('紙スコアの申請を却下しました。');
-      const poll = await fetch(
-        `/api/progress/${encodeURIComponent(eventId)}/manual-result-requests/pending`,
-      );
-      if (poll.ok) {
-        const pData = await poll.json();
-        const next = new Map();
-        for (const req of pData.requests || []) {
-          if (req.matchId) {
-            next.set(String(req.matchId), req);
-          }
-        }
-        setPendingManualByMatchId(next);
-      }
+      setHqApproveConfirmModal(null);
+      setPaperRejectReason('');
+      setOperationMessage('オペレーター申請を却下しました。修正して再送信できます。');
+      await refreshManualPendingMap();
     } catch (e) {
       setOperationError(e.message || '却下に失敗しました。');
     } finally {
-      setManualPaperSaving(false);
+      setHqApproveConfirmBusy(false);
     }
-  }, [eventId, manualPaperModal, hqApproverName, paperRejectReason]);
+  }, [hqApproveConfirmModal, eventId, hqApproverName, paperRejectReason, refreshManualPendingMap]);
 
   const handleAnnounce = async (match) => {
     await callProgressAction(match, 'announce', {
@@ -985,17 +1453,6 @@ const HqProgress = () => {
       return;
     }
     await callProgressAction(match, 'unannounce');
-  };
-
-  const handleHqApprove = async (match) => {
-    const approverName = hqApproverName.trim();
-    if (!approverName) {
-      setOperationError('本部承認者名を入力してください。');
-      setApproverNameDraft((prev) => String(prev).trim() || DEFAULT_HQ_TD_APPROVER_NAME);
-      setShowApproverModal(true);
-      return;
-    }
-    await callProgressAction(match, 'hq-approve', { approverName });
   };
 
   const handleApproverModalSubmit = () => {
@@ -1410,7 +1867,6 @@ const HqProgress = () => {
                       const effectiveStatus = rawStatus;
                       const canAnnounce = effectiveStatus === 'scheduled';
                       const canUnannounce = effectiveStatus === 'announced';
-                      const canHqApprove = effectiveStatus === 'court_approved';
                       const warmupStartedLabel = toClockLabel(progress?.warmupStartedAt);
                       const warmupFinishedLabel = toClockLabel(progress?.warmupFinishedAt);
                       const startedLabel = toClockLabel(progress?.startedAt);
@@ -1507,12 +1963,19 @@ const HqProgress = () => {
                                 本部承認をお願いします
                               </span>
                             </p>
+                          ) : pendingManualByMatchId.has(String(match.matchId)) ? (
+                            <p
+                              className={`hqProgressStatus ${statusClassName} hqProgressStatusOperatorPaperPending`}
+                            >
+                              <span className="hqProgressStatusCourtApprovedLine1">オペレーター申請</span>
+                              <br />
+                              <span className="hqProgressStatusCourtApprovedLine2">
+                                本部承認をお願いします
+                              </span>
+                            </p>
                           ) : (
                             <p className={`hqProgressStatus ${statusClassName}`}>{statusLabel}</p>
                           )}
-                          {pendingManualByMatchId.has(String(match.matchId)) ? (
-                            <p className="hqProgressManualPaperPending">紙結果・承認待ち</p>
-                          ) : null}
                           {isOperatorMode && (
                             <div className="hqProgressTimeline">
                               <p className={`hqProgressTimelineItem ${shouldHighlightTimelineLatest && lastDoneIndex === 0 ? 'isDone' : ''}`}>
@@ -1578,30 +2041,12 @@ const HqProgress = () => {
                                   type="button"
                                   className="hqProgressActionButton hqProgressManualPaperButton"
                                   onClick={() => setManualPaperModal({ mode: 'submit', match })}
-                                  disabled={actionBusyKey !== '' || importing || manualPaperSaving}
+                                  disabled={actionBusyKey !== '' || importing}
                                 >
                                   結果入力
                                 </button>
                               </div>
                             )}
-                          {isTdMode && pendingManualByMatchId.has(String(match.matchId)) && (
-                            <div className="hqProgressButtonRow">
-                              <button
-                                type="button"
-                                className="hqProgressActionButton hqProgressManualPaperReviewButton"
-                                onClick={() =>
-                                  setManualPaperModal({
-                                    mode: 'review',
-                                    match,
-                                    request: pendingManualByMatchId.get(String(match.matchId)),
-                                  })
-                                }
-                                disabled={actionBusyKey !== '' || importing || manualPaperSaving}
-                              >
-                                紙結果を承認
-                              </button>
-                            </div>
-                          )}
                           {isTdMode && (
                             <div className="hqProgressButtonRow">
                               <button
@@ -1610,9 +2055,19 @@ const HqProgress = () => {
                                   ['hq_approved', 'reflected'].includes(effectiveStatus)
                                     ? 'isFullyTransparent'
                                     : ''
-                                } ${effectiveStatus === 'court_approved' ? 'isHqApproveReady' : ''}`}
-                                onClick={() => handleHqApprove(match)}
-                                disabled={!canHqApprove || actionBusyKey !== '' || importing}
+                                } ${
+                                  effectiveStatus === 'court_approved' ||
+                                  pendingManualByMatchId.has(String(match.matchId ?? ''))
+                                    ? 'isHqApproveReady'
+                                    : ''
+                                }`}
+                                onClick={() => openHqApproveConfirm(match)}
+                                disabled={
+                                  (!pendingManualByMatchId.has(String(match.matchId ?? '')) &&
+                                    effectiveStatus !== 'court_approved') ||
+                                  actionBusyKey !== '' ||
+                                  importing
+                                }
                               >
                                 本部承認
                               </button>
@@ -1630,15 +2085,26 @@ const HqProgress = () => {
           </div>
         )}
       </section>
-      {manualPaperModal ? (
+      {manualPaperModal?.match ? (
+        <HqProgressManualPaperModal
+          match={manualPaperModal.match}
+          eventId={eventId}
+          playerNameMap={playerNameMap}
+          onClose={closeManualPaperModal}
+          refreshManualPendingMap={refreshManualPendingMap}
+          setOperationMessage={setOperationMessage}
+          setOperationError={setOperationError}
+        />
+      ) : null}
+      {hqApproveConfirmModal ? (
         <div
           className="hqProgressManualPaperModalOverlay"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="hq-manual-paper-title"
+          aria-labelledby="hq-hq-approve-confirm-title"
           onClick={() => {
-            if (!manualPaperSaving) {
-              setManualPaperModal(null);
+            if (!hqApproveConfirmBusy) {
+              setHqApproveConfirmModal(null);
             }
           }}
         >
@@ -1646,409 +2112,64 @@ const HqProgress = () => {
             className="hqProgressManualPaperModal"
             onClick={(e) => e.stopPropagation()}
           >
-            {manualPaperModal.mode === 'submit' ? (
-              <>
-                <h2 id="hq-manual-paper-title" className="hqProgressManualPaperModalTitle">
-                  紙スコアシート・結果入力
-                </h2>
-                <p className="hqProgressManualPaperModalNote">
-                  スコアボードが使用できないときの記録です。送信後、TD が内容を確認してコート承認として反映します。
-                </p>
-                <div className="hqProgressManualPaperInvertBar">
-                  <button
-                    type="button"
-                    className="hqProgressActionButton hqProgressManualPaperInvertButton"
-                    onClick={invertManualPaperRedBlue}
-                    disabled={manualPaperSaving}
-                  >
-                    赤・青反転
-                  </button>
-                </div>
-                <div className="hqProgressManualPaperFormGrid">
-                  <HqProgressManualPaperIdFields
-                    redPlayerId={String(paperForm.redPlayerId ?? '')}
-                    bluePlayerId={String(paperForm.bluePlayerId ?? '')}
-                    redOnLeft={manualPaperRedOnLeft}
-                    setPaperForm={setPaperForm}
-                    playerNameMap={playerNameMap}
-                  />
-                  {manualPaperRedOnLeft ? (
-                    <>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                          スコア
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.redScore ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, redScore: e.target.value }))
-                          }
-                        />
-                      </label>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                          スコア
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.blueScore ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, blueScore: e.target.value }))
-                          }
-                        />
-                      </label>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                          勝エンド
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.redEndsWon ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, redEndsWon: e.target.value }))
-                          }
-                        />
-                      </label>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                          勝エンド
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.blueEndsWon ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, blueEndsWon: e.target.value }))
-                          }
-                        />
-                      </label>
-                    </>
-                  ) : (
-                    <>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                          スコア
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.blueScore ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, blueScore: e.target.value }))
-                          }
-                        />
-                      </label>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                          スコア
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.redScore ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, redScore: e.target.value }))
-                          }
-                        />
-                      </label>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                          勝エンド
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.blueEndsWon ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, blueEndsWon: e.target.value }))
-                          }
-                        />
-                      </label>
-                      <label className="hqProgressManualPaperField">
-                        <span className="hqProgressManualPaperFieldLabelRow">
-                          <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                          勝エンド
-                        </span>
-                        <input
-                          className="hqProgressManualPaperScoreEndsInput"
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          value={paperForm.redEndsWon ?? ''}
-                          onChange={(e) =>
-                            setPaperForm((f) => ({ ...f, redEndsWon: e.target.value }))
-                          }
-                        />
-                      </label>
-                    </>
-                  )}
-                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
-                    <span>勝者</span>
-                    <select
-                      className="hqProgressManualPaperWinnerSelect"
-                      value={paperForm.winnerPlayerId ?? ''}
-                      onChange={(e) =>
-                        setPaperForm((f) => ({ ...f, winnerPlayerId: e.target.value }))
-                      }
-                    >
-                      <option value="">選択してください</option>
-                      {manualPaperRedOnLeft ? (
-                        <>
-                          <option value={String(paperForm.redPlayerId ?? '').trim()}>
-                            {(() => {
-                              const id = String(paperForm.redPlayerId ?? '').trim();
-                              const nm = id ? playerNameMap.get(id) : '';
-                              return `赤 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
-                            })()}
-                          </option>
-                          <option value={String(paperForm.bluePlayerId ?? '').trim()}>
-                            {(() => {
-                              const id = String(paperForm.bluePlayerId ?? '').trim();
-                              const nm = id ? playerNameMap.get(id) : '';
-                              return `青 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
-                            })()}
-                          </option>
-                        </>
-                      ) : (
-                        <>
-                          <option value={String(paperForm.bluePlayerId ?? '').trim()}>
-                            {(() => {
-                              const id = String(paperForm.bluePlayerId ?? '').trim();
-                              const nm = id ? playerNameMap.get(id) : '';
-                              return `青 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
-                            })()}
-                          </option>
-                          <option value={String(paperForm.redPlayerId ?? '').trim()}>
-                            {(() => {
-                              const id = String(paperForm.redPlayerId ?? '').trim();
-                              const nm = id ? playerNameMap.get(id) : '';
-                              return `赤 ${id || '—'}${nm ? ` — ${nm}` : ''}`;
-                            })()}
-                          </option>
-                        </>
-                      )}
-                    </select>
-                  </label>
-                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
-                    <span>審判名（必須）</span>
-                    <input
-                      type="text"
-                      value={paperForm.refereeName ?? ''}
-                      onChange={(e) =>
-                        setPaperForm((f) => ({ ...f, refereeName: e.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldWide">
-                    <span>オペレーター名（任意）</span>
-                    <input
-                      type="text"
-                      value={paperForm.operatorName ?? ''}
-                      onChange={(e) =>
-                        setPaperForm((f) => ({ ...f, operatorName: e.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="hqProgressManualPaperField hqProgressManualPaperFieldFull">
-                    <span>備考（任意）</span>
-                    <textarea
-                      rows={2}
-                      value={paperForm.note ?? ''}
-                      onChange={(e) =>
-                        setPaperForm((f) => ({ ...f, note: e.target.value }))
-                      }
-                    />
-                  </label>
-                </div>
-                <div className="hqProgressManualPaperModalActions">
-                  <button
-                    type="button"
-                    className="hqProgressActionButton"
-                    onClick={() => setManualPaperModal(null)}
-                    disabled={manualPaperSaving}
-                  >
-                    キャンセル
-                  </button>
-                  <button
-                    type="button"
-                    className="hqProgressActionButton hqProgressManualPaperSubmitButton"
-                    onClick={() => submitManualPaperResult()}
-                    disabled={manualPaperSaving}
-                  >
-                    {manualPaperSaving ? '送信中…' : '本部へ送信（承認待ち）'}
-                  </button>
-                </div>
-              </>
+            <h2 id="hq-hq-approve-confirm-title" className="hqProgressManualPaperModalTitle">
+              本部承認の確認
+            </h2>
+            {hqApproveConfirmModal.flow !== 'paper' ? (
+              <p className="hqProgressManualPaperModalNote">
+                コート承認済みの結果を確認し、問題なければ本部承認してください。
+              </p>
+            ) : null}
+            {hqApproveConfirmModal.flow === 'paper' && hqApproveConfirmModal.request ? (
+              <ManualPaperRequestReviewDl request={hqApproveConfirmModal.request} />
             ) : (
-              <>
-                <h2 id="hq-manual-paper-title" className="hqProgressManualPaperModalTitle">
-                  紙スコア結果の承認
-                </h2>
-                <p className="hqProgressManualPaperModalNote">
-                  内容を確認し、問題なければ「コート承認として反映」を押してください。反映後は通常どおり「本部承認」へ進めます。
-                </p>
-                {manualPaperModal.request ? (
-                  <dl className="hqProgressManualPaperReviewGrid">
-                    {(() => {
-                      const req = manualPaperModal.request;
-                      const rId = String(req.redPlayerId ?? '').trim();
-                      const bId = String(req.bluePlayerId ?? '').trim();
-                      const reviewLeftIsRed =
-                        !rId || !bId ? true : comparePlayerIdsForPaperOrder(rId, bId) <= 0;
-                      return reviewLeftIsRed ? (
-                        <>
-                          <dt>赤 選手ID</dt>
-                          <dd>{req.redPlayerId}</dd>
-                          <dt>青 選手ID</dt>
-                          <dd>{req.bluePlayerId}</dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                              スコア
-                            </span>
-                          </dt>
-                          <dd>{req.redScore}</dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                              スコア
-                            </span>
-                          </dt>
-                          <dd>{req.blueScore}</dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                              勝エンド
-                            </span>
-                          </dt>
-                          <dd>
-                            {req.redEndsWon != null ? req.redEndsWon : '—'}
-                          </dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                              勝エンド
-                            </span>
-                          </dt>
-                          <dd>
-                            {req.blueEndsWon != null ? req.blueEndsWon : '—'}
-                          </dd>
-                        </>
-                      ) : (
-                        <>
-                          <dt>青 選手ID</dt>
-                          <dd>{req.bluePlayerId}</dd>
-                          <dt>赤 選手ID</dt>
-                          <dd>{req.redPlayerId}</dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                              スコア
-                            </span>
-                          </dt>
-                          <dd>{req.blueScore}</dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                              スコア
-                            </span>
-                          </dt>
-                          <dd>{req.redScore}</dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--blue">青</span>
-                              勝エンド
-                            </span>
-                          </dt>
-                          <dd>
-                            {req.blueEndsWon != null ? req.blueEndsWon : '—'}
-                          </dd>
-                          <dt>
-                            <span className="hqProgressManualPaperFieldLabelRow">
-                              <span className="hqProgressManualPaperSideBadge hqProgressManualPaperSideBadge--red">赤</span>
-                              勝エンド
-                            </span>
-                          </dt>
-                          <dd>
-                            {req.redEndsWon != null ? req.redEndsWon : '—'}
-                          </dd>
-                        </>
-                      );
-                    })()}
-                    <dt>勝者</dt>
-                    <dd>{manualPaperModal.request.winnerPlayerId}</dd>
-                    <dt>審判名</dt>
-                    <dd>{manualPaperModal.request.refereeName}</dd>
-                    <dt>オペレーター</dt>
-                    <dd>{manualPaperModal.request.operatorName || '—'}</dd>
-                    <dt>備考</dt>
-                    <dd>{manualPaperModal.request.note || '—'}</dd>
-                    <dt>送信時刻</dt>
-                    <dd className="hqProgressManualPaperMono">{manualPaperModal.request.createdAt || '—'}</dd>
-                  </dl>
-                ) : null}
-                <label className="hqProgressManualPaperField hqProgressManualPaperFieldFull">
-                  <span>却下理由（却下時のみ）</span>
-                  <textarea
-                    rows={2}
-                    value={paperRejectReason}
-                    onChange={(e) => setPaperRejectReason(e.target.value)}
-                    placeholder="必要に応じて入力"
-                  />
-                </label>
-                <div className="hqProgressManualPaperModalActions">
-                  <button
-                    type="button"
-                    className="hqProgressActionButton"
-                    onClick={() => setManualPaperModal(null)}
-                    disabled={manualPaperSaving}
-                  >
-                    閉じる
-                  </button>
-                  <button
-                    type="button"
-                    className="hqProgressActionButton hqProgressManualPaperRejectButton"
-                    onClick={() => rejectManualPaperRequest()}
-                    disabled={manualPaperSaving}
-                  >
-                    {manualPaperSaving ? '処理中…' : '却下'}
-                  </button>
-                  <button
-                    type="button"
-                    className="hqProgressActionButton hqProgressManualPaperApproveButton"
-                    onClick={() => approveManualPaperRequest()}
-                    disabled={manualPaperSaving}
-                  >
-                    {manualPaperSaving ? '処理中…' : 'コート承認として反映'}
-                  </button>
-                </div>
-              </>
+              <HqScoreboardCourtApproveReviewDl
+                match={hqApproveConfirmModal.match}
+                colorState={courtColorStateMap.get(
+                  String(hqApproveConfirmModal.match?.matchId ?? ''),
+                )}
+                progress={progressMap.get(String(hqApproveConfirmModal.match?.matchId ?? ''))}
+              />
             )}
+            {hqApproveConfirmModal.flow === 'paper' ? (
+              <label className="hqProgressManualPaperField hqProgressManualPaperFieldFull">
+                <span>却下理由（却下時のみ）</span>
+                <textarea
+                  rows={2}
+                  value={paperRejectReason}
+                  onChange={(e) => setPaperRejectReason(e.target.value)}
+                  placeholder="必要に応じて入力"
+                />
+              </label>
+            ) : null}
+            <div className="hqProgressManualPaperModalActions">
+              <button
+                type="button"
+                className="hqProgressActionButton"
+                onClick={() => setHqApproveConfirmModal(null)}
+                disabled={hqApproveConfirmBusy}
+              >
+                閉じる
+              </button>
+              {hqApproveConfirmModal.flow === 'paper' ? (
+                <button
+                  type="button"
+                  className="hqProgressActionButton hqProgressManualPaperRejectButton"
+                  onClick={() => executeHqApproveReject()}
+                  disabled={hqApproveConfirmBusy}
+                >
+                  {hqApproveConfirmBusy ? '処理中…' : '却下'}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="hqProgressActionButton hqProgressManualPaperApproveButton"
+                onClick={() => executeHqApproveConfirm()}
+                disabled={hqApproveConfirmBusy}
+              >
+                {hqApproveConfirmBusy ? '処理中…' : '本部承認'}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

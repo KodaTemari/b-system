@@ -208,6 +208,13 @@ body:has(.hqProgressPage),
   font-weight: 700;
 }
 
+/* オペレーター申請・本部承認待ち（2行表示） */
+.hqProgressStatus.hqProgressStatusOperatorPaperPending {
+  margin: 10px 0 8px;
+  line-height: 1.45;
+  color: #d4a013;
+}
+
 .hqProgressStatus.isHqApproved {
   color: rgb(var(--color-gray-mid-light));
 }
@@ -428,16 +435,7 @@ a.hqProgressDbInspectLink {
   font-weight: 600;
 }
 
-/* 紙スコアシート・結果入力 */
-.hqProgressManualPaperPending {
-  margin: 4px 0 2px;
-  text-align: center;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #d4a013;
-  letter-spacing: 0.02em;
-}
-
+/* オペレーター申請・結果入力モーダル */
 .hqProgressManualPaperButton {
   font-size: 0.78rem;
 }
