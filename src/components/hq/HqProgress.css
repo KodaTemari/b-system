@@ -1,14 +1,37 @@
 /* 本部進行画面（掲示用 Schedule.css のテーブルレイアウトを流用） */
 
+html:has(.hqProgressPage),
+body:has(.hqProgressPage),
+#root:has(.hqProgressPage) {
+  background-color: #000;
+}
+
 .hqProgressPage {
   padding: 20px;
   min-height: 100vh;
   box-sizing: border-box;
+  background-color: #000;
 }
 
-/* ロゴ | 中央タブ（試合進行｜プール表） | 右上タイトル */
+/** ヘッダー固定時は DOM 上でヘッダーが浮くため、その分をコンテンツ上部に確保 */
+.hqProgressPage.hqProgressPage--fixedHeader .hqProgressSection {
+  padding-top: 92px;
+}
+
+/* ロゴ | 中央タブ（試合進行｜プール表） | 右上タイトル（viewport 固定） */
 .hqProgressTitleBar.scheduleTitleBar {
   justify-content: flex-start;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 12px 20px;
+  background: #000;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .hqProgressTitleBarLead {
@@ -394,9 +417,21 @@ a.hqProgressDbInspectLink {
   flex: none;
 }
 
+.hqProgressManualPaperInvertBar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.hqProgressManualPaperInvertButton {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 /* 紙スコアシート・結果入力 */
 .hqProgressManualPaperPending {
   margin: 4px 0 2px;
+  text-align: center;
   font-size: 0.68rem;
   font-weight: 700;
   color: #d4a013;
@@ -454,6 +489,20 @@ a.hqProgressDbInspectLink {
   gap: 10px 12px;
 }
 
+.hqProgressManualPaperIdPairRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+  align-items: start;
+}
+
+@media (max-width: 520px) {
+  .hqProgressManualPaperIdPairRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 .hqProgressManualPaperField {
   display: flex;
   flex-direction: column;
@@ -461,9 +510,49 @@ a.hqProgressDbInspectLink {
   font-size: 0.78rem;
 }
 
+.hqProgressManualPaperFieldLabelRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-weight: 600;
+  color: rgb(var(--color-white));
+}
+
+.hqProgressManualPaperSideBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 50%;
+  font-size: 0.86em;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* 地は暗色、枠はテーマの通常明度の赤・青 */
+.hqProgressManualPaperSideBadge--red {
+  background-color: #551418;
+  border: 1px solid rgb(var(--color-red));
+  color: #fff;
+}
+
+.hqProgressManualPaperSideBadge--blue {
+  background-color: #0f3568;
+  border: 1px solid rgb(var(--color-blue));
+  color: #fff;
+}
+
 .hqProgressManualPaperField span {
   font-weight: 600;
-  color: rgb(var(--color-gray-light));
+  color: rgb(var(--color-white));
+}
+
+.hqProgressManualPaperField span.hqProgressManualPaperSideBadge {
+  font-weight: 700;
 }
 
 .hqProgressManualPaperField input,
@@ -477,12 +566,54 @@ a.hqProgressDbInspectLink {
   color: inherit;
 }
 
+.hqProgressManualPaperField input.hqProgressManualPaperScoreEndsInput {
+  width: 10em;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.hqProgressManualPaperWinnerSelect option {
+  background-color: #2a2a2a;
+  color: rgb(var(--color-white));
+}
+
 .hqProgressManualPaperFieldWide {
   grid-column: 1 / -1;
 }
 
 .hqProgressManualPaperFieldFull {
   grid-column: 1 / -1;
+}
+
+.hqProgressManualPaperFieldIdRow .hqProgressManualPaperIdNameRow {
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.hqProgressManualPaperIdInput {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 0.75rem;
+  padding: 4px 6px;
+}
+
+.hqProgressManualPaperNameReadout {
+  min-width: 0;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: rgb(var(--color-white));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hqProgressManualPaperModalActions {
@@ -518,6 +649,11 @@ a.hqProgressDbInspectLink {
   margin: 0;
   font-weight: 600;
   color: rgb(var(--color-gray-mid-light));
+  align-self: center;
+}
+
+.hqProgressManualPaperReviewGrid dt .hqProgressManualPaperFieldLabelRow {
+  color: rgb(var(--color-white));
 }
 
 .hqProgressManualPaperReviewGrid dd {

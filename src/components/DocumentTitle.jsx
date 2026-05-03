@@ -24,7 +24,9 @@ function buildDocumentTitle(pathname, searchParams) {
   }
 
   if (/^\/event\/[^/]+\/hq\/progress$/.test(pathname)) {
-    return '本部-試合進行-operator';
+    const hqMode = String(searchParams.get('mode') ?? '').trim().toLowerCase();
+    const modeLabel = hqMode === 'td' ? 'td' : 'operator';
+    return `本部-試合進行-${modeLabel}`;
   }
   if (/^\/event\/[^/]+\/hq\/progress-db$/.test(pathname)) {
     return '本部-試合進行DB-operator';
